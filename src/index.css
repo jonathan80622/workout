@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    background-color: #0c0a09;
+    color: #f7f3ee;
+  }
+
+  h1, h2, h3, .font-serif-title {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+  }
+
+  .font-syne {
+    font-family: 'Syne', sans-serif;
+  }
+}
+
+/* Custom ambient glow & blur effects */
+.amber-glow {
+  background: radial-gradient(circle, rgba(217, 119, 36, 0.18) 0%, rgba(12, 10, 9, 0) 70%);
+}
+
+.terracotta-glow {
+  background: radial-gradient(circle, rgba(200, 109, 81, 0.15) 0%, rgba(12, 10, 9, 0) 70%);
+}
+
+.sage-glow {
+  background: radial-gradient(circle, rgba(132, 154, 136, 0.15) 0%, rgba(12, 10, 9, 0) 70%);
+}
+
+/* Custom smooth scrollbar for mobile view */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(28, 24, 21, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(184, 171, 160, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(217, 119, 36, 0.5);
+}
