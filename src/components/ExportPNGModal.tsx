@@ -28,18 +28,18 @@ export const ExportPNGModal: React.FC<ExportPNGModalProps> = ({
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState<boolean>(false);
 
   const [clientName, setClientName] = useState<string>(() => {
-    if (workout.clientName && workout.clientName !== 'Jordan' && workout.clientName !== 'Jordan Vance') {
-      return workout.clientName;
-    }
+    if (workout.clientName) return workout.clientName;
     const prof = loadUserProfile();
-    return prof.clientName && prof.clientName !== 'Jordan Vance' ? prof.clientName : 'Jonathan';
+    return prof.clientName || '';
   });
 
   const [ptName, setPtName] = useState<string>(() => {
     if (workout.ptName) return workout.ptName;
     const prof = loadUserProfile();
-    return prof.ptName || 'Coach Marcus';
+    return prof.ptName || '';
   });
+
+  const [cardDate, setCardDate] = useState<string>(workout.date || new Date().toISOString());
 
   if (!isOpen) return null;
 
@@ -255,6 +255,35 @@ export const ExportPNGModal: React.FC<ExportPNGModalProps> = ({
             </div>
           </div>
 
+          {/* Card Session Date Picker */}
+          <div className="flex items-center justify-between pt-2.5 border-t border-[#2b241f]">
+            <label className="font-serif italic text-[#c8b8a8] text-[11px] flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5 text-[#e6a15c]" />
+              {isZh ? '卡片紀錄日期:' : 'Card Session Date:'}
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={cardDate ? cardDate.split('T')[0] : new Date().toISOString().split('T')[0]}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setCardDate(e.target.value + 'T12:00:00.000Z');
+                  }
+                }}
+                className="bg-[#181412] border border-[#2b241f] rounded-xl px-2 py-1 text-xs text-[#f7f3ee] outline-none focus:ring-1 focus:ring-[#d97724]"
+              />
+              <button
+                type="button"
+                onClick={() => setCardDate(new Date().toISOString())}
+                className="px-2.5 py-1 bg-[#d97724]/20 hover:bg-[#d97724]/30 text-[#e6a15c] border border-[#d97724]/40 rounded-xl text-[11px] font-syne font-semibold transition-all"
+              >
+                {isZh ? '設為今天' : 'Set Today'}
+              </button>
+            </div>
+          </div>
+
+          {/* Toggle Seat Settings */}
+
           {/* Toggle Seat Settings */}
           <div className="flex items-center justify-between pt-2 border-t border-[#2b241f]">
             <span className="font-serif italic text-[#c8b8a8]">
@@ -295,6 +324,7 @@ export const ExportPNGModal: React.FC<ExportPNGModalProps> = ({
             language={language}
             customClientName={clientName}
             customPtName={ptName}
+            customDate={cardDate}
           />
         </div>
 

@@ -62,6 +62,22 @@ export default function App() {
     saveWorkouts(newWorkouts);
   };
 
+  const handleUpdateWorkoutTitle = (workoutId: string, newTitle: string) => {
+    const updated = workouts.map((w) => (w.id === workoutId ? { ...w, title: newTitle } : w));
+    handleUpdateWorkouts(updated);
+    if (activeWorkout && activeWorkout.id === workoutId) {
+      handleUpdateActiveWorkout({ ...activeWorkout, title: newTitle });
+    }
+  };
+
+  const handleUpdateWorkoutDate = (workoutId: string, newDateIso: string) => {
+    const updated = workouts.map((w) => (w.id === workoutId ? { ...w, date: newDateIso } : w));
+    handleUpdateWorkouts(updated);
+    if (activeWorkout && activeWorkout.id === workoutId) {
+      handleUpdateActiveWorkout({ ...activeWorkout, date: newDateIso });
+    }
+  };
+
   const handleUpdateMachines = (newMachines: MachinePreset[]) => {
     setMachines(newMachines);
     saveMachines(newMachines);
@@ -349,6 +365,8 @@ export default function App() {
               onRepeatWorkout={handleRepeatWorkout}
               onDeleteWorkout={handleDeleteWorkout}
               onStartNewWorkout={handleStartNewWorkout}
+              onUpdateWorkoutTitle={handleUpdateWorkoutTitle}
+              onUpdateWorkoutDate={handleUpdateWorkoutDate}
             />
           )}
 

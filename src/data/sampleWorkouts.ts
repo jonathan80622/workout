@@ -7,8 +7,8 @@ export const SAMPLE_WORKOUTS: Workout[] = [
     date: new Date(Date.now() - 86400000 * 1).toISOString(), // Yesterday
     durationMinutes: 52,
     unit: 'lbs',
-    clientName: 'Jonathan',
-    ptName: 'Coach Marcus',
+    clientName: '',
+    ptName: '',
     ptNotes: 'Hey Coach Marcus! Focused on slow, controlled eccentrics today. Leg press felt great with strong mind-muscle connection in the quads.',
     isCompleted: true,
     exercises: [
@@ -78,8 +78,8 @@ export const SAMPLE_WORKOUTS: Workout[] = [
     date: new Date(Date.now() - 86400000 * 3).toISOString(), // 3 days ago
     durationMinutes: 48,
     unit: 'lbs',
-    clientName: 'Jonathan',
-    ptName: 'Coach Marcus',
+    clientName: '',
+    ptName: '',
     ptNotes: 'Used Seated Chest Press instead of flat bench to keep shoulder capsule safe and stable.',
     isCompleted: true,
     exercises: [
@@ -149,8 +149,8 @@ export const SAMPLE_WORKOUTS: Workout[] = [
     date: new Date(Date.now() - 86400000 * 5).toISOString(), // 5 days ago
     durationMinutes: 30,
     unit: 'lbs',
-    clientName: 'Jonathan',
-    ptName: 'Coach Marcus',
+    clientName: '',
+    ptName: '',
     ptNotes: 'Solid 3.2 mile treadmill run at 7:48/mi average pace. Heart rate stayed steady.',
     isCompleted: true,
     runningDistance: 3.2,

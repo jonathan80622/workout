@@ -27,9 +27,14 @@ function sanitizeWorkout(w: Workout): Workout {
     .replace(/Somatic/gi, 'Workout')
     .replace(/Vessel/gi, 'Body');
 
+  const clientName = w.clientName === 'Jordan Vance' || w.clientName === 'Jordan' ? '' : w.clientName;
+  const ptName = w.ptName === 'Coach Marcus' ? '' : w.ptName;
+
   return {
     ...w,
-    title
+    title,
+    clientName,
+    ptName
   };
 }
 
@@ -109,8 +114,8 @@ export function saveActiveWorkout(workout: Workout | null): void {
 
 export function loadUserProfile(): UserProfile {
   const defaultProfile: UserProfile = {
-    clientName: 'Jonathan',
-    ptName: 'Coach Marcus',
+    clientName: '',
+    ptName: '',
     appTitle: 'Workout Studio',
     preferredUnit: 'lbs',
     themeColor: 'ios-blue'

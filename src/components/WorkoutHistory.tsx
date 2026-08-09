@@ -11,6 +11,7 @@ interface WorkoutHistoryProps {
   onDeleteWorkout: (workoutId: string) => void;
   onStartNewWorkout: () => void;
   onUpdateWorkoutTitle?: (workoutId: string, newTitle: string) => void;
+  onUpdateWorkoutDate?: (workoutId: string, newDateIso: string) => void;
 }
 
 export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
@@ -20,7 +21,8 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
   onRepeatWorkout,
   onDeleteWorkout,
   onStartNewWorkout,
-  onUpdateWorkoutTitle
+  onUpdateWorkoutTitle,
+  onUpdateWorkoutDate
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -117,9 +119,33 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                 {/* Top Row: Title, Date & Action Buttons */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1">
-                    <span className="text-[10px] font-syne font-semibold text-[#e6a15c] uppercase tracking-wider flex items-center gap-1">
-                      <Calendar className="w-3 h-3" /> {formatWorkoutDate(workout.date)}
-                    </span>
+                    <div className="flex items-center gap-2 flex-wrap text-[10px] font-syne font-semibold text-[#e6a15c] uppercase tracking-wider mb-1">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5" /> {formatWorkoutDate(workout.date)}
+                      </span>
+                      {onUpdateWorkoutDate && (
+                        <div className="flex items-center gap-1 lowercase font-normal">
+                          <input
+                            type="date"
+                            value={workout.date ? workout.date.split('T')[0] : new Date().toISOString().split('T')[0]}
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                onUpdateWorkoutDate(workout.id, e.target.value + 'T12:00:00.000Z');
+                              }
+                            }}
+                            className="bg-[#100d0b] border border-[#382f29] rounded-lg px-2 py-0.5 text-[11px] text-[#f7f3ee] outline-none focus:ring-1 focus:ring-[#d97724] font-mono"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => onUpdateWorkoutDate(workout.id, new Date().toISOString())}
+                            className="px-1.5 py-0.5 bg-[#d97724]/20 hover:bg-[#d97724]/40 text-[#f5c999] border border-[#d97724]/30 rounded-lg text-[10px] font-syne font-bold capitalize"
+                            title="Set date to today"
+                          >
+                            Set Today
+                          </button>
+                        </div>
+                      )}
+                    </div>
 
                     {editingId === workout.id ? (
                       <div className="flex items-center gap-1.5 mt-1 bg-[#100d0b] border border-[#d97724] rounded-xl px-2.5 py-1">

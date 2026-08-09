@@ -25,6 +25,7 @@ interface PTSummaryCardProps {
   language?: 'en' | 'zh';
   customClientName?: string;
   customPtName?: string;
+  customDate?: string;
 }
 
 const CATEGORY_MAP_ZH: Record<string, string> = {
@@ -49,9 +50,11 @@ export const PTSummaryCard: React.FC<PTSummaryCardProps> = ({
   showSeatSettings = true,
   language = 'zh',
   customClientName,
-  customPtName
+  customPtName,
+  customDate
 }) => {
   const isZh = language === 'zh';
+  const dateToUse = customDate || workout.date;
   const totalVolume = calculateWorkoutVolume(workout);
   const totalSets = calculateCompletedSets(workout);
   const totalReps = calculateCompletedReps(workout);
@@ -60,16 +63,16 @@ export const PTSummaryCard: React.FC<PTSummaryCardProps> = ({
   const totalRunningTime = calculateTotalRunningTime(workout);
   const avgPace = calculateAveragePace(totalDistance, totalRunningTime);
 
-  const displayClientName = customClientName !== undefined && customClientName.trim() !== ''
+  const displayClientName = customClientName !== undefined
     ? customClientName
-    : (workout.clientName || 'Athlete');
+    : (workout.clientName || '');
 
-  const displayPtName = customPtName !== undefined && customPtName.trim() !== ''
+  const displayPtName = customPtName !== undefined
     ? customPtName
-    : (workout.ptName || 'Coach');
+    : (workout.ptName || '');
 
   // Calculate Day of Week theme
-  const dayTheme = getDayOfWeekTheme(workout.date);
+  const dayTheme = getDayOfWeekTheme(dateToUse);
 
   const themeClassesMap = {
     'amber-warmth': {
@@ -146,9 +149,9 @@ export const PTSummaryCard: React.FC<PTSummaryCardProps> = ({
           </div>
           <p className="text-sm font-mono font-medium text-white/90 flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5 text-white/80" />
-            <span>{formatDateZh(workout.date)}</span>
+            <span>{formatDateZh(dateToUse)}</span>
             <span className="opacity-50">|</span>
-            <span className="text-xs opacity-90">{formatDateEn(workout.date)}</span>
+            <span className="text-xs opacity-90">{formatDateEn(dateToUse)}</span>
           </p>
         </div>
 
@@ -169,15 +172,21 @@ export const PTSummaryCard: React.FC<PTSummaryCardProps> = ({
         </div>
 
         {/* Client & Coach Row */}
-        <div className="flex items-center justify-between text-xs font-medium pt-2.5 mt-2.5 border-t border-white/15">
-          <div className="flex items-center gap-1.5">
-            <UserCheck className="w-3.5 h-3.5 text-white/90" />
-            <span>{isZh ? '學員' : 'Athlete'}: <strong className="font-serif font-bold text-white underline underline-offset-2">{displayClientName}</strong></span>
+        {(displayClientName.trim() !== '' || displayPtName.trim() !== '') && (
+          <div className="flex items-center justify-between text-xs font-medium pt-2.5 mt-2.5 border-t border-white/15">
+            {displayClientName.trim() !== '' ? (
+              <div className="flex items-center gap-1.5">
+                <UserCheck className="w-3.5 h-3.5 text-white/90" />
+                <span>{isZh ? '學員' : 'Athlete'}: <strong className="font-serif font-bold text-white underline underline-offset-2">{displayClientName}</strong></span>
+              </div>
+            ) : <div />}
+            {displayPtName.trim() !== '' ? (
+              <div className="text-white/90">
+                <span>{isZh ? '教練 / PT' : 'Coach'}: <strong className="font-serif font-bold text-white">{displayPtName}</strong></span>
+              </div>
+            ) : <div />}
           </div>
-          <div className="text-white/90">
-            <span>{isZh ? '教練 / PT' : 'Coach'}: <strong className="font-serif font-bold text-white">{displayPtName}</strong></span>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Core Metrics & Breakdown Section */}

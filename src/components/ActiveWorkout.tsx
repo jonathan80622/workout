@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { Plus, Play, Pause, CheckCircle2, Share2, Trash2, Compass, Clock, Settings, Sparkles, Feather, Flame } from 'lucide-react';
+import { Plus, Play, Pause, CheckCircle2, Share2, Trash2, Compass, Clock, Settings, Sparkles, Feather, Flame, Calendar } from 'lucide-react';
 import { Workout, ExerciseLog, WorkoutSet, MachinePreset, WeightUnit, MuscleGroup } from '../types';
 import { SetRow } from './SetRow';
 import { MuscleFeelInput } from './MuscleFeelInput';
@@ -236,6 +236,33 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
             <span className="font-bold text-[#e6a15c] text-sm">
               {totalRunningTime > 0 ? `${totalRunningTime}m (${avgPace})` : '0m'}
             </span>
+          </div>
+        </div>
+
+        {/* Workout Session Date Editor */}
+        <div className="flex items-center justify-between gap-2 border-t border-[#2b241f] pt-2.5 text-xs">
+          <div className="flex items-center gap-1.5 text-[#a39588]">
+            <Calendar className="w-3.5 h-3.5 text-[#e6a15c]" />
+            <span className="font-syne font-semibold">訓練日期 (Date):</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={workout.date ? workout.date.split('T')[0] : new Date().toISOString().split('T')[0]}
+              onChange={(e) => {
+                if (e.target.value) {
+                  onUpdateWorkout({ ...workout, date: e.target.value + 'T12:00:00.000Z' });
+                }
+              }}
+              className="bg-[#100d0b] border border-[#2b241f] rounded-xl px-2.5 py-1 text-xs text-[#f7f3ee] outline-none focus:ring-1 focus:ring-[#d97724]"
+            />
+            <button
+              type="button"
+              onClick={() => onUpdateWorkout({ ...workout, date: new Date().toISOString() })}
+              className="px-2.5 py-1 bg-[#d97724]/20 hover:bg-[#d97724]/30 text-[#e6a15c] border border-[#d97724]/30 rounded-xl text-[11px] font-syne font-semibold transition-all"
+            >
+              設為今天
+            </button>
           </div>
         </div>
       </div>
