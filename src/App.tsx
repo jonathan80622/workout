@@ -25,6 +25,7 @@ import { ProfileModal } from './components/ProfileModal';
 import { ScheduleCalendarModal } from './components/ScheduleCalendarModal';
 import { NextSessionBanner } from './components/NextSessionBanner';
 import { PTSummaryCard } from './components/PTSummaryCard';
+import { PTSummaryStudio } from './components/PTSummaryStudio';
 import { Compass, Share2, Plus, Sparkles, Feather, Calendar } from 'lucide-react';
 
 export default function App() {
@@ -373,32 +374,21 @@ export default function App() {
           {activeTab === 'pt-export' && (
             <div className="space-y-4 pb-28">
               {/* Top Title */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-serif font-bold text-[#f7f3ee] flex items-center gap-2">
-                    <Feather className="w-5 h-5 text-[#e6a15c]" /> PT Export Studio
-                  </h2>
-                  <p className="text-xs text-[#a39588] font-light">
-                    Preview your workout card & export a high-res PNG for your Personal Trainer
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => workoutForPtTab && handleOpenExportModal(workoutForPtTab)}
-                  className="px-3.5 py-2 bg-gradient-to-r from-[#d97724] to-[#e6a15c] text-[#0c0a09] font-syne font-bold text-xs rounded-2xl shadow-lg shadow-[#d97724]/20 flex items-center gap-1 transition-all"
-                >
-                  <Sparkles className="w-3.5 h-3.5" /> Export PNG
-                </button>
+              <div>
+                <h2 className="text-lg font-serif font-bold text-[#f7f3ee] flex items-center gap-2">
+                  <Feather className="w-5 h-5 text-[#e6a15c]" /> PT Export Studio
+                </h2>
+                <p className="text-xs text-[#a39588] font-light">
+                  即時預覽訓練報告卡，自由切換主題語言與備忘，一鍵下載 PNG。
+                </p>
               </div>
 
-              {/* Card Preview */}
+              {/* Unified Studio Preview & Controls */}
               {workoutForPtTab ? (
-                <div className="bg-[#100d0b] p-2.5 rounded-3xl border border-[#382f29] shadow-2xl">
-                  <PTSummaryCard workout={workoutForPtTab} unit={unit} />
-                </div>
+                <PTSummaryStudio workout={workoutForPtTab} unit={unit} />
               ) : (
                 <div className="text-center py-10 text-[#8c7e72] text-xs font-serif italic">
-                  No session logs available to export yet.
+                  目前尚無訓練紀錄可供匯出。
                 </div>
               )}
             </div>

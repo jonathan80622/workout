@@ -76,32 +76,40 @@ export const PTSummaryCard: React.FC<PTSummaryCardProps> = ({
 
   const themeClassesMap = {
     'amber-warmth': {
+      hexBg: '#14110f',
       bg: 'bg-[#14110f] text-[#f7f3ee]',
       headerBg: 'bg-gradient-to-r from-[#d97724] via-[#c86d51] to-[#e6a15c]',
+      headerStyle: { background: 'linear-gradient(to right, #d97724, #c86d51, #e6a15c)' },
       accentText: 'text-[#e6a15c]',
       badgeBg: 'bg-[#d97724]/15 border-[#d97724]/30 text-[#f5c999]',
       exerciseCard: 'bg-[#1c1815] border-[#2b241f]',
       feedbackCard: 'bg-[#231d19] border-[#382f29]'
     },
     'sage-green': {
+      hexBg: '#111814',
       bg: 'bg-[#111814] text-[#f4f7f4]',
       headerBg: 'bg-gradient-to-r from-[#5a7360] via-[#849a88] to-[#a3b8a7]',
+      headerStyle: { background: 'linear-gradient(to right, #5a7360, #849a88, #a3b8a7)' },
       accentText: 'text-[#a3b8a7]',
       badgeBg: 'bg-[#849a88]/20 border-[#849a88]/40 text-[#e4ece5]',
       exerciseCard: 'bg-[#18211b] border-[#28352b]',
       feedbackCard: 'bg-[#1e2a22] border-[#2a382d]'
     },
     'sunset-rose': {
+      hexBg: '#181116',
       bg: 'bg-[#181116] text-[#f9f2f5]',
       headerBg: 'bg-gradient-to-r from-[#c08497] via-[#d97724] to-[#e2b3c2]',
+      headerStyle: { background: 'linear-gradient(to right, #c08497, #d97724, #e2b3c2)' },
       accentText: 'text-[#e2b3c2]',
       badgeBg: 'bg-[#c08497]/20 border-[#c08497]/40 text-[#f7e2e8]',
       exerciseCard: 'bg-[#21171e] border-[#33222e]',
       feedbackCard: 'bg-[#2b1c27] border-[#3d2737]'
     },
     'light-sand': {
+      hexBg: '#f7f3ee',
       bg: 'bg-[#f7f3ee] text-[#1c1815]',
       headerBg: 'bg-gradient-to-r from-[#2c241f] via-[#382f29] to-[#1c1815]',
+      headerStyle: { background: 'linear-gradient(to right, #2c241f, #382f29, #1c1815)' },
       accentText: 'text-[#d97724]',
       badgeBg: 'bg-[#d97724]/10 border-[#d97724]/20 text-[#8c4b18]',
       exerciseCard: 'bg-[#ffffff] border-[#e6ddd2] shadow-sm',
@@ -118,13 +126,14 @@ export const PTSummaryCard: React.FC<PTSummaryCardProps> = ({
     <div
       id="pt-summary-card-export"
       style={{
+        backgroundColor: themeClasses.hexBg,
         borderColor: dayTheme.borderColor,
         boxShadow: `0 0 28px ${dayTheme.glowColor}`
       }}
       className={`w-full max-w-lg mx-auto rounded-3xl border-[3.5px] shadow-2xl overflow-hidden ${themeClasses.bg} font-sans select-none relative transition-all`}
     >
       {/* First-Class Hero Day of Week & Date Header Banner */}
-      <div className={`p-5 ${themeClasses.headerBg} text-white relative`}>
+      <div style={themeClasses.headerStyle} className={`p-5 ${themeClasses.headerBg} text-white relative`}>
         {/* Top Badges */}
         <div className="flex items-center justify-between mb-3">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/30 backdrop-blur-md text-xs font-syne font-bold border border-white/20">
