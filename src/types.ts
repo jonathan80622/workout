@@ -14,7 +14,8 @@ export type MuscleGroup =
   | 'Abs & Core'
   | 'Calves'
   | 'Lower Back'
-  | 'Forearms';
+  | 'Forearms'
+  | 'Cardio & Running';
 
 export type SorenessLevel = 'none' | 'mild' | 'moderate' | 'intense';
 export type JointComfort = 'great' | 'minor_stiffness' | 'discomfort';
@@ -27,6 +28,8 @@ export interface WorkoutSet {
   reps: number;
   completed: boolean;
   rpe?: number; // Rate of Perceived Exertion (1-10)
+  distance?: number; // Distance in miles or km
+  runningTimeMinutes?: number; // Running duration in minutes
 }
 
 export interface MuscleFeeling {
@@ -46,6 +49,8 @@ export interface ExerciseLog {
   sets: WorkoutSet[];
   muscleFeeling: MuscleFeeling;
   notes?: string;
+  distance?: number; // Total distance for cardio exercise
+  runningTimeMinutes?: number; // Total running time for exercise
 }
 
 export interface Workout {
@@ -57,6 +62,8 @@ export interface Workout {
   durationMinutes: number;
   unit: WeightUnit;
   exercises: ExerciseLog[];
+  runningDistance?: number; // Total running distance in miles/km
+  runningTimeMinutes?: number; // Total running time in minutes
   ptNotes?: string; // Special note intended for PT
   ptName?: string; // e.g. "Trainer Coach Sarah"
   clientName?: string; // User name e.g. "Alex"
@@ -68,7 +75,7 @@ export interface MachinePreset {
   name: string;
   category: MuscleGroup;
   defaultSeatSettings?: string;
-  equipmentType: 'Machine' | 'Cable' | 'Free Weight' | 'Smith Machine';
+  equipmentType: 'Machine' | 'Cable' | 'Free Weight' | 'Smith Machine' | 'Cardio / Treadmill';
   targetDescription: string;
 }
 

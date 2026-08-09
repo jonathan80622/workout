@@ -112,5 +112,21 @@ export const DEFAULT_MACHINES: MachinePreset[] = [
     defaultSeatSettings: 'Seat Pin: #2',
     equipmentType: 'Machine',
     targetDescription: 'Focus on curling ribcage toward pelvis, slow eccentric.'
+  },
+  {
+    id: 'm15',
+    name: 'Treadmill Interval Run',
+    category: 'Cardio & Running',
+    defaultSeatSettings: 'Speed: 6.5 mph, Incline: 1.5%',
+    equipmentType: 'Cardio / Treadmill',
+    targetDescription: 'Track running time, distance, and cadence pace for cardiovascular endurance.'
+  },
+  {
+    id: 'm16',
+    name: 'Outdoor Distance Run',
+    category: 'Cardio & Running',
+    defaultSeatSettings: 'GPS Tracked',
+    equipmentType: 'Cardio / Treadmill',
+    targetDescription: 'Aerobic running session tracking total distance, time elapsed, and average pace.'
   }
 ];

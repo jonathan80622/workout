@@ -16,29 +16,29 @@ export const IOSTabBar: React.FC<IOSTabBarProps> = ({
   const tabs = [
     {
       id: 'workout' as ActiveTab,
-      label: 'Session',
+      label: 'Workout',
       icon: Flame,
       badge: hasActiveWorkout ? 'Active' : undefined
     },
     {
       id: 'history' as ActiveTab,
-      label: 'Journals',
+      label: 'History',
       icon: History
     },
     {
       id: 'pt-export' as ActiveTab,
-      label: 'PT Guide',
+      label: 'PT Export',
       icon: Share2,
       highlight: true
     },
     {
       id: 'machines' as ActiveTab,
-      label: 'Vessels',
+      label: 'Machines',
       icon: Compass
     },
     {
       id: 'analytics' as ActiveTab,
-      label: 'Aura',
+      label: 'Analytics',
       icon: Sparkles
     }
   ];

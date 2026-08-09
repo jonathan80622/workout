@@ -10,8 +10,27 @@ const USER_PROFILE_KEY = 'ios_workout_tracker_user_profile_v1';
 export interface UserProfile {
   clientName: string;
   ptName: string;
+  appTitle?: string;
   preferredUnit: 'lbs' | 'kg';
   themeColor: 'ios-blue' | 'ios-emerald' | 'ios-purple' | 'ios-orange';
+}
+
+function sanitizeWorkout(w: Workout): Workout {
+  let title = w.title || 'Workout';
+  title = title
+    .replace(/Grounding Lower Vessel Flow/gi, 'Leg Day & Quad Focus')
+    .replace(/Grounding Lower Vessel Movement/gi, 'Leg Day & Quad Focus')
+    .replace(/Grounding Lower Vessel/gi, 'Leg Day & Quad Focus')
+    .replace(/Somatic Movement/gi, 'Workout')
+    .replace(/Somatic Flow/gi, 'Workout')
+    .replace(/Grounding/gi, 'Strength')
+    .replace(/Somatic/gi, 'Workout')
+    .replace(/Vessel/gi, 'Body');
+
+  return {
+    ...w,
+    title
+  };
 }
 
 export function loadWorkouts(): Workout[] {
@@ -21,7 +40,11 @@ export function loadWorkouts(): Workout[] {
       localStorage.setItem(WORKOUTS_KEY, JSON.stringify(SAMPLE_WORKOUTS));
       return SAMPLE_WORKOUTS;
     }
-    return JSON.parse(raw);
+    const parsed: Workout[] = JSON.parse(raw);
+    const sanitized = parsed.map(sanitizeWorkout);
+    // Persist cleaned version back to storage
+    localStorage.setItem(WORKOUTS_KEY, JSON.stringify(sanitized));
+    return sanitized;
   } catch (err) {
     console.error('Failed to load workouts from localStorage:', err);
     return SAMPLE_WORKOUTS;
@@ -62,7 +85,10 @@ export function loadActiveWorkout(): Workout | null {
   try {
     const raw = localStorage.getItem(ACTIVE_WORKOUT_KEY);
     if (!raw) return null;
-    return JSON.parse(raw);
+    const parsed: Workout = JSON.parse(raw);
+    const sanitized = sanitizeWorkout(parsed);
+    localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(sanitized));
+    return sanitized;
   } catch (err) {
     console.error('Failed to load active session:', err);
     return null;
@@ -85,6 +111,7 @@ export function loadUserProfile(): UserProfile {
   const defaultProfile: UserProfile = {
     clientName: 'Jordan Vance',
     ptName: 'Coach Marcus',
+    appTitle: 'Workout Studio',
     preferredUnit: 'lbs',
     themeColor: 'ios-blue'
   };

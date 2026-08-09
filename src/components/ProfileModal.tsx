@@ -19,6 +19,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 }) => {
   const [clientName, setClientName] = useState<string>(profile.clientName);
   const [ptName, setPtName] = useState<string>(profile.ptName);
+  const [appTitle, setAppTitle] = useState<string>(profile.appTitle || 'Workout Studio');
   const [unit, setUnit] = useState<'lbs' | 'kg'>(profile.preferredUnit);
 
   if (!isOpen) return null;
@@ -27,7 +28,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     onSaveProfile({
       ...profile,
       clientName: clientName.trim() || 'Jordan',
-      ptName: ptName.trim() || 'Guide',
+      ptName: ptName.trim() || 'Coach',
+      appTitle: appTitle.trim() || 'Workout Studio',
       preferredUnit: unit
     });
     onClose();
@@ -38,7 +40,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       <div className="bg-[#181412] border border-[#382f29] rounded-3xl p-5 w-full max-w-md space-y-4 shadow-2xl">
         <div className="flex items-center justify-between border-b border-[#2b241f] pb-3">
           <h3 className="text-base font-serif font-bold text-[#f7f3ee] flex items-center gap-2">
-            <Compass className="w-5 h-5 text-[#e6a15c]" /> Guide & Vessel Profile
+            <Compass className="w-5 h-5 text-[#e6a15c]" /> Athlete & Trainer Settings
           </h3>
           <button onClick={onClose} className="text-[#8c7e72] hover:text-[#f7f3ee]">
             <X className="w-5 h-5" />
@@ -46,6 +48,19 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         </div>
 
         <div className="space-y-3 text-xs">
+          <div>
+            <label className="font-syne font-semibold text-[#c8b8a8] block mb-1">
+              App / Studio Name
+            </label>
+            <input
+              type="text"
+              value={appTitle}
+              onChange={(e) => setAppTitle(e.target.value)}
+              placeholder="e.g. My Gym Studio"
+              className="w-full bg-[#100d0b] border border-[#2b241f] rounded-xl p-2.5 text-xs text-[#f7f3ee] outline-none focus:ring-1 focus:ring-[#d97724]"
+            />
+          </div>
+
           <div>
             <label className="font-syne font-semibold text-[#c8b8a8] block mb-1">
               Your Name
@@ -61,13 +76,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
           <div>
             <label className="font-syne font-semibold text-[#c8b8a8] block mb-1">
-              Personal Trainer / Guide Name
+              Personal Trainer / Coach Name
             </label>
             <input
               type="text"
               value={ptName}
               onChange={(e) => setPtName(e.target.value)}
-              placeholder="e.g. Guide Marcus"
+              placeholder="e.g. Coach Marcus"
               className="w-full bg-[#100d0b] border border-[#2b241f] rounded-xl p-2.5 text-xs text-[#f7f3ee] outline-none focus:ring-1 focus:ring-[#d97724]"
             />
           </div>

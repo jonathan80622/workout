@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Compass, Plus, Search, Settings, Trash2, Edit2, Check, Sparkles } from 'lucide-react';
 import { MachinePreset, MuscleGroup } from '../types';
+import { translateSeatSettings } from '../utils/formatters';
 
 interface MachineLibraryProps {
   machines: MachinePreset[];
@@ -30,6 +31,8 @@ export const MachineLibrary: React.FC<MachineLibraryProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [editingMachineId, setEditingMachineId] = useState<string | null>(null);
   const [editSeatSettings, setEditSeatSettings] = useState<string>('');
+  const [editingNameId, setEditingNameId] = useState<string | null>(null);
+  const [editNameText, setEditNameText] = useState<string>('');
 
   const [isNewModalOpen, setIsNewModalOpen] = useState<boolean>(false);
   const [newName, setNewName] = useState<string>('');
@@ -59,6 +62,21 @@ export const MachineLibrary: React.FC<MachineLibraryProps> = ({
     setEditingMachineId(null);
   };
 
+  const handleStartEditName = (m: MachinePreset) => {
+    setEditingNameId(m.id);
+    setEditNameText(m.name);
+  };
+
+  const handleSaveNameEdit = (machineId: string) => {
+    if (editNameText.trim()) {
+      const updated = machines.map((m) =>
+        m.id === machineId ? { ...m, name: editNameText.trim() } : m
+      );
+      onUpdateMachines(updated);
+    }
+    setEditingNameId(null);
+  };
+
   const handleDeleteMachine = (id: string) => {
     const updated = machines.filter((m) => m.id !== id);
     onUpdateMachines(updated);
@@ -72,7 +90,7 @@ export const MachineLibrary: React.FC<MachineLibraryProps> = ({
       category: newCategory,
       defaultSeatSettings: newSeatSettings.trim(),
       equipmentType: newEquipmentType,
-      targetDescription: newTargetDesc.trim() || 'Custom vessel added to personal library.'
+      targetDescription: newTargetDesc.trim() || 'Custom exercise machine added to gym library.'
     };
     onUpdateMachines([...machines, newM]);
     setNewName('');
@@ -86,9 +104,9 @@ export const MachineLibrary: React.FC<MachineLibraryProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-serif font-bold text-[#f7f3ee]">Sanctuary Vessels</h2>
+          <h2 className="text-lg font-serif font-bold text-[#f7f3ee]">Exercise Machines</h2>
           <p className="text-xs text-[#a39588] font-light">
-            Store seat alignment notches, pin settings & somatic cues
+            Store seat alignment notches, pin settings & form cues
           </p>
         </div>
 
@@ -96,7 +114,7 @@ export const MachineLibrary: React.FC<MachineLibraryProps> = ({
           onClick={() => setIsNewModalOpen(true)}
           className="px-3.5 py-2 bg-gradient-to-r from-[#d97724] to-[#e6a15c] text-[#0c0a09] font-syne font-bold text-xs rounded-2xl shadow-lg shadow-[#d97724]/20 flex items-center gap-1 transition-all"
         >
-          <Plus className="w-4 h-4" /> Add Vessel
+          <Plus className="w-4 h-4" /> Add Machine
         </button>
       </div>
 
@@ -108,7 +126,7 @@ export const MachineLibrary: React.FC<MachineLibraryProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search vessel name (e.g. Pec Deck)..."
+            placeholder="Search machine name (e.g. Leg Press)..."
             className="w-full bg-[#181412] border border-[#382f29] rounded-2xl pl-10 pr-4 py-2.5 text-xs text-[#f7f3ee] placeholder-[#6b5e54] focus:outline-none focus:ring-1 focus:ring-[#d97724]"
           />
         </div>
@@ -122,7 +140,7 @@ export const MachineLibrary: React.FC<MachineLibraryProps> = ({
                 : 'bg-[#181412] text-[#8c7e72] border border-[#382f29]'
             }`}
           >
-            All Vessels
+            All Machines
           </button>
           {MUSCLE_GROUPS.map((cat) => (
             <button
@@ -147,22 +165,48 @@ export const MachineLibrary: React.FC<MachineLibraryProps> = ({
             key={machine.id}
             className="bg-[#181412]/90 border border-[#382f29] hover:border-[#4a3f36] rounded-3xl p-4 shadow-xl space-y-3 transition-all"
           >
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base font-serif font-bold text-[#f7f3ee]">
-                    {machine.name}
-                  </h3>
-                  <span className="text-[10px] font-syne font-semibold bg-[#d97724]/20 text-[#e6a15c] border border-[#d97724]/30 px-2 py-0.5 rounded-full">
-                    {machine.equipmentType}
-                  </span>
-                </div>
-                <span className="text-xs text-[#a39588] font-light">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1">
+                {editingNameId === machine.id ? (
+                  <div className="flex items-center gap-1.5 bg-[#100d0b] border border-[#d97724] rounded-xl px-2.5 py-1">
+                    <input
+                      type="text"
+                      value={editNameText}
+                      onChange={(e) => setEditNameText(e.target.value)}
+                      className="bg-transparent text-sm font-serif font-bold text-[#f7f3ee] outline-none w-full"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => handleSaveNameEdit(machine.id)}
+                      className="p-1 bg-[#d97724] text-[#0c0a09] rounded-lg font-bold text-xs"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-serif font-bold text-[#f7f3ee]">
+                      {machine.name}
+                    </h3>
+                    <button
+                      onClick={() => handleStartEditName(machine)}
+                      className="p-1 text-[#8c7e72] hover:text-[#e6a15c] transition-colors"
+                      title="Rename machine"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="text-[10px] font-syne font-semibold bg-[#d97724]/20 text-[#e6a15c] border border-[#d97724]/30 px-2 py-0.5 rounded-full">
+                      {machine.equipmentType}
+                    </span>
+                  </div>
+                )}
+
+                <span className="text-xs text-[#a39588] font-light mt-0.5 block">
                   Target: <strong className="text-[#f7f3ee] font-medium">{machine.category}</strong>
                 </span>
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 shrink-0">
                 <button
                   onClick={() => onSelectMachineToLog(machine)}
                   className="px-3 py-1.5 bg-[#d97724] hover:bg-[#e6a15c] text-[#0c0a09] rounded-2xl text-xs font-syne font-bold flex items-center gap-1 shadow-md shadow-[#d97724]/20 transition-all"
@@ -206,12 +250,17 @@ export const MachineLibrary: React.FC<MachineLibraryProps> = ({
                   type="text"
                   value={editSeatSettings}
                   onChange={(e) => setEditSeatSettings(e.target.value)}
-                  placeholder="e.g. Seat #4, Lever Pin Notch B"
+                  placeholder="例：座椅角度 Seat Angle #3, 靠背刻度 Notch #2"
                   className="w-full bg-[#181412] border border-[#382f29] rounded-xl p-2 text-xs text-[#f7f3ee] outline-none focus:ring-1 focus:ring-[#d97724]"
                 />
               ) : (
-                <p className="text-[#f7f3ee] font-medium">
-                  {machine.defaultSeatSettings || 'No seat adjustments saved yet. Tap edit to add!'}
+                <p className="text-[#f7f3ee] font-medium flex items-center justify-between">
+                  <span>{machine.defaultSeatSettings || '未儲存角度刻度（點擊編輯新增）'}</span>
+                  {machine.defaultSeatSettings && (
+                    <span className="text-[11px] text-[#e6a15c] font-syne font-normal ml-2">
+                      ({translateSeatSettings(machine.defaultSeatSettings, true)})
+                    </span>
+                  )}
                 </p>
               )}
             </div>
@@ -230,7 +279,7 @@ export const MachineLibrary: React.FC<MachineLibraryProps> = ({
           <div className="bg-[#181412] border border-[#382f29] rounded-3xl p-5 w-full max-w-md space-y-4">
             <div className="flex items-center justify-between border-b border-[#2b241f] pb-3">
               <h3 className="text-base font-serif font-bold text-[#f7f3ee] flex items-center gap-2">
-                <Compass className="w-5 h-5 text-[#e6a15c]" /> Add Vessel
+                <Compass className="w-5 h-5 text-[#e6a15c]" /> Add Machine
               </h3>
               <button
                 onClick={() => setIsNewModalOpen(false)}
@@ -242,7 +291,7 @@ export const MachineLibrary: React.FC<MachineLibraryProps> = ({
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="font-syne font-semibold text-[#c8b8a8] block mb-1">Vessel / Machine Name *</label>
+                <label className="font-syne font-semibold text-[#c8b8a8] block mb-1">Machine Name *</label>
                 <input
                   type="text"
                   value={newName}
@@ -295,12 +344,12 @@ export const MachineLibrary: React.FC<MachineLibraryProps> = ({
               </div>
 
               <div>
-                <label className="font-syne font-semibold text-[#c8b8a8] block mb-1">Somatic Tip / Focus</label>
+                <label className="font-syne font-semibold text-[#c8b8a8] block mb-1">Form Tip / Notes</label>
                 <textarea
                   rows={2}
                   value={newTargetDesc}
                   onChange={(e) => setNewTargetDesc(e.target.value)}
-                  placeholder="e.g. Squeeze lats gently with grounded breath."
+                  placeholder="e.g. Squeeze lats controlled at bottom position."
                   className="w-full bg-[#100d0b] border border-[#2b241f] rounded-xl p-2.5 text-xs text-[#f7f3ee] outline-none focus:ring-1 focus:ring-[#d97724] resize-none"
                 />
               </div>
@@ -311,7 +360,7 @@ export const MachineLibrary: React.FC<MachineLibraryProps> = ({
               disabled={!newName.trim()}
               className="w-full py-3 bg-[#d97724] hover:bg-[#e6a15c] disabled:opacity-50 text-[#0c0a09] font-syne font-bold text-xs rounded-xl shadow-lg shadow-[#d97724]/20"
             >
-              Save Vessel
+              Save Machine
             </button>
           </div>
         </div>

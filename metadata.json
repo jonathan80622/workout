@@ -1,6 +1,6 @@
 {
-  "name": "Somatic Movement & PT Tracker",
-  "description": "Othership-inspired alt wellness & somatic workout logger for tracking vessel movement, machine settings, sets, reps, and muscle feel feedback, with 1-click PNG export for your Personal Trainer.",
+  "name": "Workout Tracker & PT Report",
+  "description": "Othership-inspired workout logger for tracking exercise machines, seat adjustments, sets, reps, and muscle feel feedback, with 1-click PNG export cards for your Personal Trainer.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

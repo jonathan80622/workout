@@ -24,13 +24,13 @@ const MUSCLE_GROUPS: MuscleGroup[] = [
 
 const PRESET_QUICK_TAGS = [
   '👁️ Mind-Muscle Connection',
-  '🕯️ Deep Somatic Release',
-  '🌊 Fluid Joint Harmony',
-  '⚡ Peak Vitality / High Aura',
-  '🌿 100% Pain Free & Grounded',
-  '🪵 Sacred Slow Eccentrics',
-  '🧘 Deep Breath & Core Anchor',
-  '✨ Ethereal Muscle Sensation'
+  '🔥 Deep Muscle Burn',
+  '🌊 Smooth Movement Path',
+  '⚡ High Intensity Pump',
+  '🌿 100% Pain Free',
+  '🪵 Controlled Slow Eccentrics',
+  '🧘 Solid Core Bracing',
+  '✨ Great Contraction'
 ];
 
 export const MuscleFeelInput: React.FC<MuscleFeelInputProps> = ({
@@ -78,23 +78,23 @@ export const MuscleFeelInput: React.FC<MuscleFeelInputProps> = ({
           </div>
           <div>
             <h4 className="text-sm font-serif font-semibold text-[#f7f3ee] flex items-center gap-1.5 tracking-wide">
-              Somatic Sensation & Muscle Feel
+              Muscle Sensation & Form Notes
             </h4>
             <p className="text-[11px] text-[#a39588] font-light">
-              {machineName ? `Mind-body feedback for ${machineName}` : 'Describe physical resonance for your Guide / PT'}
+              {machineName ? `Muscle feedback for ${machineName}` : 'Describe muscle sensation for your Personal Trainer / Coach'}
             </p>
           </div>
         </div>
         <span className="text-[10px] font-syne font-semibold bg-[#d97724]/10 text-[#f5c999] border border-[#d97724]/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
           <Sparkles className="w-3 h-3 text-[#e6a15c]" />
-          Guide Export
+          PT Export
         </span>
       </div>
 
       {/* Target Muscle Selector */}
       <div>
         <label className="text-xs font-serif italic text-[#c8b8a8] block mb-1.5">
-          Where did your vessel feel the deepest activation or heat?
+          Where did you feel the deepest muscle activation or burn?
         </label>
         <div className="flex flex-wrap gap-1.5">
           {MUSCLE_GROUPS.map((group) => {
@@ -122,7 +122,7 @@ export const MuscleFeelInput: React.FC<MuscleFeelInputProps> = ({
         <label className="text-xs font-serif italic text-[#c8b8a8] flex items-center justify-between mb-1.5">
           <span className="flex items-center gap-1">
             <Heart className="w-3.5 h-3.5 text-[#c86d51]" />
-            Somatic Sensation Details
+            Muscle Sensation Details
           </span>
           <span className="text-[10px] text-[#8c7e72] font-sans">Included in PT PNG</span>
         </label>
@@ -130,7 +130,7 @@ export const MuscleFeelInput: React.FC<MuscleFeelInputProps> = ({
           rows={3}
           value={value.notes}
           onChange={(e) => handleNotesChange(e.target.value)}
-          placeholder="e.g. Deep quad activation on the final set. Felt grounded in the heels with zero knee tightness."
+          placeholder="e.g. Deep quad activation on the final set. Felt strong drive through heels with zero knee tightness."
           className="w-full bg-[#100d0b] border border-[#2b241f] rounded-xl p-3 text-xs text-[#f7f3ee] placeholder-[#6b5e54] focus:outline-none focus:ring-1 focus:ring-[#d97724] resize-none leading-relaxed"
         />
       </div>
@@ -138,7 +138,7 @@ export const MuscleFeelInput: React.FC<MuscleFeelInputProps> = ({
       {/* Quick Feeling Tags */}
       <div>
         <label className="text-[11px] font-syne text-[#a39588] block mb-1.5">
-          Somatic Feeling Badges (Tap to toggle)
+          Muscle Sensation Badges (Tap to toggle)
         </label>
         <div className="flex flex-wrap gap-1.5">
           {PRESET_QUICK_TAGS.map((tag) => {
@@ -163,10 +163,10 @@ export const MuscleFeelInput: React.FC<MuscleFeelInputProps> = ({
 
       {/* Pump & Joint Controls */}
       <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[#2b241f]">
-        {/* Vitality / Pump Rating */}
+        {/* Pump Rating */}
         <div>
           <span className="text-[11px] font-syne text-[#a39588] block mb-1 flex items-center gap-1">
-            <Flame className="w-3 h-3 text-[#e6a15c]" /> Vitality / Pump
+            <Flame className="w-3 h-3 text-[#e6a15c]" /> Pump Quality
           </span>
           <div className="flex items-center gap-1 bg-[#100d0b] p-1.5 rounded-xl border border-[#2b241f]">
             {[1, 2, 3, 4, 5].map((star) => (
@@ -186,17 +186,17 @@ export const MuscleFeelInput: React.FC<MuscleFeelInputProps> = ({
           </div>
         </div>
 
-        {/* Joint Harmony */}
+        {/* Joint Comfort */}
         <div>
           <span className="text-[11px] font-syne text-[#a39588] block mb-1 flex items-center gap-1">
-            <HeartPulse className="w-3 h-3 text-[#c86d51]" /> Joint Harmony
+            <HeartPulse className="w-3 h-3 text-[#c86d51]" /> Joint Comfort
           </span>
           <select
             value={value.jointComfort}
             onChange={(e) => setJointComfort(e.target.value as JointComfort)}
             className="w-full bg-[#100d0b] border border-[#2b241f] text-[#f7f3ee] text-xs font-semibold rounded-xl p-2 outline-none focus:ring-1 focus:ring-[#d97724]"
           >
-            <option value="great">🌿 Harmonious (0 Pain)</option>
+            <option value="great">🌿 Smooth & Pain-Free</option>
             <option value="minor_stiffness">🌾 Mild Stiffness</option>
             <option value="discomfort">🍂 Discomfort / Caution</option>
           </select>

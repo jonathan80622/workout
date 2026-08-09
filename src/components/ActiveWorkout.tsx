@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { Plus, Play, Pause, CheckCircle2, Share2, Trash2, Compass, Clock, Settings, Sparkles, Feather, Flame } from 'lucide-react';
 import { Workout, ExerciseLog, WorkoutSet, MachinePreset, WeightUnit, MuscleGroup } from '../types';
 import { SetRow } from './SetRow';
 import { MuscleFeelInput } from './MuscleFeelInput';
-import { calculateWorkoutVolume, calculateCompletedSets } from '../utils/formatters';
+import { calculateWorkoutVolume, calculateCompletedSets, calculateTotalDistance, calculateTotalRunningTime, calculateAveragePace } from '../utils/formatters';
 
 interface ActiveWorkoutProps {
   workout: Workout;
@@ -36,20 +36,30 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     let interval: NodeJS.Timeout | null = null;
     if (isTimerRunning) {
       interval = setInterval(() => {
-        setTimerSeconds((prev) => {
-          const next = prev + 1;
-          onUpdateWorkout({ ...workout, durationMinutes: Math.ceil(next / 60) });
-          return next;
-        });
+        setTimerSeconds((prev) => prev + 1);
       }, 1000);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isTimerRunning, workout]);
+  }, [isTimerRunning]);
+
+  const workoutRef = useRef(workout);
+  workoutRef.current = workout;
+
+  // Sync duration in minutes to workout when timer updates
+  useEffect(() => {
+    const minutes = Math.ceil(timerSeconds / 60);
+    if (minutes !== workoutRef.current.durationMinutes) {
+      onUpdateWorkout({ ...workoutRef.current, durationMinutes: minutes });
+    }
+  }, [timerSeconds, onUpdateWorkout]);
 
   const totalVolume = calculateWorkoutVolume(workout);
   const totalSets = calculateCompletedSets(workout);
+  const totalDistance = calculateTotalDistance(workout);
+  const totalRunningTime = calculateTotalRunningTime(workout);
+  const avgPace = calculateAveragePace(totalDistance, totalRunningTime);
 
   const handleTitleChange = (newTitle: string) => {
     onUpdateWorkout({ ...workout, title: newTitle });
@@ -186,7 +196,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
             type="text"
             value={workout.title}
             onChange={(e) => handleTitleChange(e.target.value)}
-            placeholder="Session Name (e.g. Grounding Lower Vessel Flow)"
+            placeholder="Workout Name (e.g. Leg Day & Quad Focus)"
             className="bg-transparent text-lg font-serif font-semibold text-[#f7f3ee] outline-none focus:border-b focus:border-[#d97724] w-full pr-2 placeholder-[#6b5e54]"
           />
 
@@ -206,9 +216,9 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         </div>
 
         {/* Live Metrics Row */}
-        <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
           <div className="bg-[#100d0b] p-2.5 rounded-2xl border border-[#2b241f] flex items-center justify-between">
-            <span className="text-[#a39588] font-syne text-[11px]">Somatic Load</span>
+            <span className="text-[#a39588] font-syne text-[11px]">Total Volume</span>
             <span className="font-bold text-[#e6a15c] text-sm">
               {totalVolume.toLocaleString()} {unit}
             </span>
@@ -216,6 +226,16 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           <div className="bg-[#100d0b] p-2.5 rounded-2xl border border-[#2b241f] flex items-center justify-between">
             <span className="text-[#a39588] font-syne text-[11px]">Completed Sets</span>
             <span className="font-bold text-[#849a88] text-sm">{totalSets} sets</span>
+          </div>
+          <div className="bg-[#100d0b] p-2.5 rounded-2xl border border-[#2b241f] flex items-center justify-between">
+            <span className="text-[#a39588] font-syne text-[11px]">Run Distance</span>
+            <span className="font-bold text-[#d97724] text-sm">{totalDistance > 0 ? `${totalDistance} mi` : '0.0 mi'}</span>
+          </div>
+          <div className="bg-[#100d0b] p-2.5 rounded-2xl border border-[#2b241f] flex items-center justify-between">
+            <span className="text-[#a39588] font-syne text-[11px]">Run Time / Pace</span>
+            <span className="font-bold text-[#e6a15c] text-sm">
+              {totalRunningTime > 0 ? `${totalRunningTime}m (${avgPace})` : '0m'}
+            </span>
           </div>
         </div>
       </div>
@@ -233,10 +253,16 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                 <span className="w-7 h-7 rounded-full bg-[#d97724]/20 text-[#e6a15c] border border-[#d97724]/30 font-mono font-bold text-xs flex items-center justify-center shrink-0">
                   {exIndex + 1}
                 </span>
-                <div>
-                  <h3 className="text-base font-serif font-bold text-[#f7f3ee]">
-                    {exercise.machineName}
-                  </h3>
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={exercise.machineName}
+                    onChange={(e) =>
+                      handleUpdateExercise({ ...exercise, machineName: e.target.value })
+                    }
+                    className="text-base font-serif font-bold text-[#f7f3ee] bg-transparent outline-none focus:border-b focus:border-[#d97724] w-full"
+                    placeholder="Machine Name..."
+                  />
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-[10px] font-syne font-semibold bg-[#211b18] text-[#c8b8a8] px-2.5 py-0.5 rounded-full border border-[#382f29]">
                       {exercise.category}
@@ -263,7 +289,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                 onChange={(e) =>
                   handleUpdateExercise({ ...exercise, seatSettings: e.target.value })
                 }
-                placeholder="Seat height, alignment notch (e.g. Seat #4, Pin #6)"
+                placeholder="座椅角度、高度與卡槽刻度 (例：座椅角度 #3, 刻度 Notch #2 / Seat #4, Pin #6)"
                 className="bg-transparent text-[#f7f3ee] placeholder-[#6b5e54] w-full outline-none"
               />
             </div>
@@ -284,6 +310,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                   set={set}
                   index={sIdx}
                   unit={unit}
+                  isCardio={exercise.category === 'Cardio & Running'}
                   onUpdate={(updatedSet) => {
                     const newSets = exercise.sets.map((s) => (s.id === updatedSet.id ? updatedSet : s));
                     handleUpdateExercise({ ...exercise, sets: newSets });
@@ -321,20 +348,20 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         className="w-full py-3.5 bg-[#181412] hover:bg-[#211b18] border border-dashed border-[#d97724]/50 hover:border-[#d97724] text-[#f5c999] font-syne font-bold text-xs rounded-2xl flex items-center justify-center gap-2 shadow-lg transition-all"
       >
         <Plus className="w-4 h-4 text-[#e6a15c]" />
-        Add Vessel or Exercise Machine
+        Add Exercise Machine
       </button>
 
       {/* Direct Trainer Note Box */}
       <div className="bg-[#181412]/90 border border-[#382f29] rounded-3xl p-4 space-y-2">
         <label className="text-xs font-serif italic font-bold text-[#f7f3ee] flex items-center gap-1.5">
           <Feather className="w-4 h-4 text-[#e6a15c]" />
-          Direct Reflection Note for Guide / PT (Included in PNG)
+          Direct Note for Personal Trainer / Coach (Included in PNG)
         </label>
         <textarea
           rows={2}
           value={workout.ptNotes || ''}
           onChange={(e) => handlePtNoteChange(e.target.value)}
-          placeholder="e.g. Guide Marcus, felt very grounded today on the leg press! Slow eccentrics felt smooth."
+          placeholder="e.g. Coach Marcus, felt very strong today on the leg press! Slow eccentrics felt smooth."
           className="w-full bg-[#100d0b] border border-[#2b241f] rounded-xl p-3 text-xs text-[#f7f3ee] placeholder-[#6b5e54] focus:outline-none focus:ring-1 focus:ring-[#d97724] resize-none"
         />
       </div>
@@ -347,7 +374,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
             className="flex-1 py-4 bg-gradient-to-r from-[#d97724] via-[#c86d51] to-[#e6a15c] hover:opacity-95 text-[#0c0a09] font-syne font-extrabold text-xs rounded-2xl flex items-center justify-center gap-2 shadow-2xl shadow-[#d97724]/20 transition-all scale-102"
           >
             <CheckCircle2 className="w-5 h-5 text-[#0c0a09]" />
-            Complete Session & Export to PT (PNG)
+            Complete Workout & Export to PT (PNG)
           </button>
           
           <button
@@ -366,7 +393,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           <div className="bg-[#181412] border border-[#382f29] rounded-3xl p-5 w-full max-w-md max-h-[85vh] overflow-y-auto space-y-4">
             <div className="flex items-center justify-between border-b border-[#2b241f] pb-3">
               <h3 className="text-base font-serif font-bold text-[#f7f3ee] flex items-center gap-2">
-                <Compass className="w-5 h-5 text-[#e6a15c]" /> Choose Vessel / Machine
+                <Compass className="w-5 h-5 text-[#e6a15c]" /> Select Exercise Machine
               </h3>
               <button
                 onClick={() => setIsAddMachineModalOpen(false)}
@@ -378,7 +405,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
 
             {/* Quick Presets List */}
             <div>
-              <span className="text-xs font-serif italic text-[#c8b8a8] block mb-2">Preset Sanctuary Machines</span>
+              <span className="text-xs font-serif italic text-[#c8b8a8] block mb-2">Preset Exercise Machines</span>
               <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
                 {machines.map((machine) => (
                   <button

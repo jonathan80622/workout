@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { toPng, toBlob } from 'html-to-image';
-import { Download, Copy, X, Check, Share2, Sparkles, MessageSquare } from 'lucide-react';
+import { Download, Copy, X, Check, Share2, Sparkles, MessageSquare, Calendar, Globe } from 'lucide-react';
 import { Workout, WeightUnit } from '../types';
 import { PTSummaryCard } from './PTSummaryCard';
+import { ScheduleCalendarModal } from './ScheduleCalendarModal';
 
 interface ExportPNGModalProps {
   workout: Workout;
@@ -17,13 +18,17 @@ export const ExportPNGModal: React.FC<ExportPNGModalProps> = ({
   isOpen,
   onClose
 }) => {
-  const [themeStyle, setThemeStyle] = useState<'othership-sanctuary' | 'somatic-sage' | 'aura-sunset' | 'ethereal-sand'>('othership-sanctuary');
+  const [themeStyle, setThemeStyle] = useState<'amber-warmth' | 'sage-green' | 'sunset-rose' | 'light-sand'>('amber-warmth');
+  const [language, setLanguage] = useState<'en' | 'zh'>('zh');
   const [customNote, setCustomNote] = useState<string>(workout.ptNotes || '');
   const [showSeatSettings, setShowSeatSettings] = useState<boolean>(true);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState<boolean>(false);
 
   if (!isOpen) return null;
+
+  const isZh = language === 'zh';
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -44,14 +49,14 @@ export const ExportPNGModal: React.FC<ExportPNGModalProps> = ({
       const link = document.createElement('a');
       const safeTitle = (workout.title || 'Workout').replace(/[^a-zA-Z0-9]/g, '_');
       const dateStr = new Date().toISOString().split('T')[0];
-      link.download = `Somatic_PT_Report_${safeTitle}_${dateStr}.png`;
+      link.download = `Workout_PT_Report_${safeTitle}_${language}_${dateStr}.png`;
       link.href = dataUrl;
       link.click();
 
-      showToast('✨ Somatic PNG Report Card exported successfully!');
+      showToast(isZh ? '✨ 訓練報告 PNG 圖片已成功匯出下載！' : '✨ Workout PNG Report Card exported successfully!');
     } catch (err) {
       console.error('Failed to export PNG:', err);
-      showToast('Failed to generate PNG image. Please try again.');
+      showToast(isZh ? '產生 PNG 圖片失敗，請重試。' : 'Failed to generate PNG image. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -68,7 +73,7 @@ export const ExportPNGModal: React.FC<ExportPNGModalProps> = ({
         await navigator.clipboard.write([
           new window.ClipboardItem({ 'image/png': blob })
         ]);
-        showToast('📋 PNG copied to clipboard! Ready to paste in your PT chat.');
+        showToast(isZh ? '📋 PNG 報告已複製至剪貼簿！可直接貼在教練對話框。' : '📋 PNG copied to clipboard! Ready to paste in your PT chat.');
       } else {
         handleDownloadPNG();
       }
@@ -98,10 +103,10 @@ export const ExportPNGModal: React.FC<ExportPNGModalProps> = ({
           </div>
           <div>
             <h3 className="text-lg font-serif font-semibold text-[#f7f3ee] flex items-center gap-2">
-              Export PT Report Card
+              {isZh ? '匯出 PT 教練訓練報告卡' : 'Export PT Report Card'}
             </h3>
             <p className="text-xs text-[#a39588] font-light">
-              High-resolution PNG formatted for iMessage, WhatsApp, or chat with your Personal Trainer / Guide.
+              {isZh ? '高畫質圖片卡片，專為傳送給個人教練 (PT) 或健身夥伴設計。' : 'High-resolution PNG formatted for iMessage, WhatsApp, or chat with your Personal Trainer / Coach.'}
             </p>
           </div>
         </div>
@@ -115,57 +120,91 @@ export const ExportPNGModal: React.FC<ExportPNGModalProps> = ({
         )}
 
         {/* Customization Options Bar */}
-        <div className="bg-[#100d0b] border border-[#2b241f] rounded-2xl p-3.5 mb-5 space-y-3 text-xs">
+        <div className="bg-[#100d0b] border border-[#2b241f] rounded-2xl p-3.5 mb-5 space-y-3.5 text-xs">
+          {/* 1-Click Language Toggle */}
+          <div className="flex items-center justify-between bg-[#1c1815] p-2.5 rounded-xl border border-[#382f29]">
+            <span className="font-serif italic text-[#e6a15c] flex items-center gap-1.5 font-semibold">
+              <Globe className="w-4 h-4 text-[#d97724]" />
+              {isZh ? '一鍵語言切換:' : 'One-Click Language:'}
+            </span>
+            <div className="flex items-center gap-1 bg-[#100d0b] p-1 rounded-lg border border-[#2b241f]">
+              <button
+                onClick={() => setLanguage('zh')}
+                className={`px-3 py-1 rounded-md text-xs font-syne font-bold transition-all ${
+                  language === 'zh'
+                    ? 'bg-[#d97724] text-[#0c0a09] shadow-md'
+                    : 'text-[#a39588] hover:text-[#f7f3ee]'
+                }`}
+              >
+                中文版 (ZH)
+              </button>
+              <button
+                onClick={() => setLanguage('en')}
+                className={`px-3 py-1 rounded-md text-xs font-syne font-bold transition-all ${
+                  language === 'en'
+                    ? 'bg-[#d97724] text-[#0c0a09] shadow-md'
+                    : 'text-[#a39588] hover:text-[#f7f3ee]'
+                }`}
+              >
+                English (EN)
+              </button>
+            </div>
+          </div>
+
           {/* Theme Selector */}
           <div className="space-y-1.5">
-            <span className="font-serif italic text-[#c8b8a8] block">Aesthetic Sanctuary Theme:</span>
+            <span className="font-serif italic text-[#c8b8a8] block">
+              {isZh ? '圖片視覺主題風格:' : 'Card Aesthetic Theme:'}
+            </span>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
               <button
-                onClick={() => setThemeStyle('othership-sanctuary')}
+                onClick={() => setThemeStyle('amber-warmth')}
                 className={`px-2.5 py-1.5 rounded-xl font-syne text-[11px] border transition-all ${
-                  themeStyle === 'othership-sanctuary'
+                  themeStyle === 'amber-warmth'
                     ? 'bg-[#d97724] text-[#0c0a09] border-[#e6a15c] font-bold shadow-md'
                     : 'bg-[#211b18] text-[#a39588] border-[#382f29]'
                 }`}
               >
-                🕯️ Sanctuary
+                🕯️ {isZh ? '溫暖琥珀' : 'Warm Amber'}
               </button>
               <button
-                onClick={() => setThemeStyle('somatic-sage')}
+                onClick={() => setThemeStyle('sage-green')}
                 className={`px-2.5 py-1.5 rounded-xl font-syne text-[11px] border transition-all ${
-                  themeStyle === 'somatic-sage'
+                  themeStyle === 'sage-green'
                     ? 'bg-[#849a88] text-[#0c0a09] border-[#a3b8a7] font-bold shadow-md'
                     : 'bg-[#211b18] text-[#a39588] border-[#382f29]'
                 }`}
               >
-                🌿 Sage
+                🌿 {isZh ? '鼠尾草綠' : 'Sage Green'}
               </button>
               <button
-                onClick={() => setThemeStyle('aura-sunset')}
+                onClick={() => setThemeStyle('sunset-rose')}
                 className={`px-2.5 py-1.5 rounded-xl font-syne text-[11px] border transition-all ${
-                  themeStyle === 'aura-sunset'
+                  themeStyle === 'sunset-rose'
                     ? 'bg-[#c08497] text-[#0c0a09] border-[#e2b3c2] font-bold shadow-md'
                     : 'bg-[#211b18] text-[#a39588] border-[#382f29]'
                 }`}
               >
-                🌅 Sunset
+                🌅 {isZh ? '日落晚霞' : 'Sunset'}
               </button>
               <button
-                onClick={() => setThemeStyle('ethereal-sand')}
+                onClick={() => setThemeStyle('light-sand')}
                 className={`px-2.5 py-1.5 rounded-xl font-syne text-[11px] border transition-all ${
-                  themeStyle === 'ethereal-sand'
+                  themeStyle === 'light-sand'
                     ? 'bg-[#f7f3ee] text-[#1c1815] border-[#d8ccbe] font-bold shadow-md'
                     : 'bg-[#211b18] text-[#a39588] border-[#382f29]'
                 }`}
               >
-                🪵 Sand Spa
+                🪵 {isZh ? '暖沙米色' : 'Warm Sand'}
               </button>
             </div>
           </div>
 
           {/* Toggle Seat Settings */}
           <div className="flex items-center justify-between pt-2 border-t border-[#2b241f]">
-            <span className="font-serif italic text-[#c8b8a8]">Include Machine Seat & Alignment Settings:</span>
+            <span className="font-serif italic text-[#c8b8a8]">
+              {isZh ? '顯示器材角度與座椅位置設定:' : 'Include Machine Seat & Alignment Settings:'}
+            </span>
             <input
               type="checkbox"
               checked={showSeatSettings}
@@ -178,13 +217,13 @@ export const ExportPNGModal: React.FC<ExportPNGModalProps> = ({
           <div className="pt-2 border-t border-[#2b241f] space-y-1">
             <label className="font-serif italic text-[#c8b8a8] flex items-center gap-1">
               <MessageSquare className="w-3.5 h-3.5 text-[#d97724]" />
-              Personal Reflection Note for Guide / PT:
+              {isZh ? '給教練 / PT 的自訂備忘留言:' : 'Personal Reflection Note for Trainer / PT:'}
             </label>
             <input
               type="text"
               value={customNote}
               onChange={(e) => setCustomNote(e.target.value)}
-              placeholder="e.g. Guide Marcus, leg press felt very grounded with slow eccentrics!"
+              placeholder={isZh ? "例：Marcus 教練，今天腿推感受度極佳，離心控制有特別放慢！" : "e.g. Coach Marcus, leg press felt very strong with controlled slow eccentrics!"}
               className="w-full bg-[#181412] border border-[#2b241f] rounded-xl px-3 py-2 text-xs text-[#f7f3ee] placeholder-[#6b5e54] focus:outline-none focus:ring-1 focus:ring-[#d97724]"
             />
           </div>
@@ -198,7 +237,32 @@ export const ExportPNGModal: React.FC<ExportPNGModalProps> = ({
             customPtNote={customNote}
             themeStyle={themeStyle}
             showSeatSettings={showSeatSettings}
+            language={language}
           />
+        </div>
+
+        {/* Save Next Session to Calendar Banner */}
+        <div className="bg-[#100d0b] border border-[#2b241f] rounded-2xl p-3 mb-4 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-xl bg-[#d97724]/20 text-[#e6a15c] border border-[#d97724]/30">
+              <Calendar className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-[10px] font-syne font-bold uppercase text-[#e6a15c] block">
+                {isZh ? '保持規律習慣' : 'Practice Consistency'}
+              </span>
+              <span className="text-xs font-serif font-semibold text-[#f7f3ee]">
+                {isZh ? '將下次訓練存入行事曆 (.ics)' : 'Save Next Session to Device Calendar'}
+              </span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setIsScheduleModalOpen(true)}
+            className="px-3 py-1.5 bg-[#211b18] hover:bg-[#2c2420] text-[#e6a15c] border border-[#d97724]/40 rounded-xl text-xs font-syne font-bold transition-all shrink-0"
+          >
+            {isZh ? '加入行事曆' : 'Schedule .ics'}
+          </button>
         </div>
 
         {/* Primary Action Buttons */}
@@ -211,11 +275,11 @@ export const ExportPNGModal: React.FC<ExportPNGModalProps> = ({
             {isGenerating ? (
               <span className="flex items-center gap-2">
                 <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                Generating PNG...
+                {isZh ? '生成圖片中...' : 'Generating PNG...'}
               </span>
             ) : (
               <>
-                <Download className="w-4 h-4" /> Save PNG Card
+                <Download className="w-4 h-4" /> {isZh ? '儲存 PNG 報告卡' : 'Save PNG Card'}
               </>
             )}
           </button>
@@ -225,11 +289,18 @@ export const ExportPNGModal: React.FC<ExportPNGModalProps> = ({
             disabled={isGenerating}
             className="w-full py-3.5 px-4 rounded-2xl bg-[#211b18] hover:bg-[#2c2420] text-[#f7f3ee] font-syne font-bold text-xs flex items-center justify-center gap-2 border border-[#382f29] transition-all disabled:opacity-50"
           >
-            <Copy className="w-4 h-4 text-[#e6a15c]" /> Copy to Chat
+            <Copy className="w-4 h-4 text-[#e6a15c]" /> {isZh ? '複製圖片至對話框' : 'Copy to Chat'}
           </button>
         </div>
+
+        <ScheduleCalendarModal
+          isOpen={isScheduleModalOpen}
+          onClose={() => setIsScheduleModalOpen(false)}
+          defaultTitle={`Next ${workout.title || 'Workout'}`}
+        />
       </div>
     </div>
   );
 };
+
 

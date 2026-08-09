@@ -3,13 +3,13 @@ import { Workout } from '../types';
 export const SAMPLE_WORKOUTS: Workout[] = [
   {
     id: 'w-sample-1',
-    title: 'Lower Vessel Grounding & Glute Flow',
+    title: 'Leg Day & Quad Focus',
     date: new Date(Date.now() - 86400000 * 1).toISOString(), // Yesterday
     durationMinutes: 52,
     unit: 'lbs',
     clientName: 'Jordan Vance',
-    ptName: 'Guide Marcus',
-    ptNotes: 'Hey Guide Marcus! Focused on slow, mindful eccentrics today. Leg press felt grounded with high mind-muscle connection in the VMO.',
+    ptName: 'Coach Marcus',
+    ptNotes: 'Hey Coach Marcus! Focused on slow, controlled eccentrics today. Leg press felt great with strong mind-muscle connection in the quads.',
     isCompleted: true,
     exercises: [
       {
@@ -28,8 +28,8 @@ export const SAMPLE_WORKOUTS: Workout[] = [
           sorenessLevel: 'mild',
           pumpQuality: 5,
           jointComfort: 'great',
-          notes: 'Deep quad activation (VMO) fired up intensely at 280 lbs. Zero joint strain. Both legs moved with fluid alignment.',
-          quickTags: ['👁️ Mind-Muscle Connection', '🕯️ Deep Somatic Release', '🌿 100% Pain Free & Grounded']
+          notes: 'Deep quad contraction fired up intensely at 280 lbs. Zero joint strain with solid foot placement.',
+          quickTags: ['👁️ Mind-Muscle Connection', '🛡️ Solid Knee Protection', '🌿 100% Pain Free']
         }
       },
       {
@@ -47,8 +47,8 @@ export const SAMPLE_WORKOUTS: Workout[] = [
           sorenessLevel: 'moderate',
           pumpQuality: 4,
           jointComfort: 'great',
-          notes: 'Hamstring contraction felt deep and satisfying at full extension. Great energy flow behind the knees.',
-          quickTags: ['🌊 Fluid Joint Harmony', '🪵 Sacred Slow Eccentrics']
+          notes: 'Hamstring contraction felt deep and controlled at full extension.',
+          quickTags: ['🌊 Smooth Joint Motion', '🪵 Controlled Tempo']
         }
       },
       {
@@ -66,21 +66,21 @@ export const SAMPLE_WORKOUTS: Workout[] = [
           sorenessLevel: 'none',
           pumpQuality: 4,
           jointComfort: 'great',
-          notes: '3-second pause at bottom stretch on every rep. Deep gastrocnemius warmth.',
-          quickTags: ['⚡ Peak Vitality / High Aura', '✨ Ethereal Muscle Sensation']
+          notes: '3-second pause at bottom stretch on every rep. Deep calf burn.',
+          quickTags: ['⚡ High Muscle Energy', '✨ Strong Peak Pump']
         }
       }
     ]
   },
   {
     id: 'w-sample-2',
-    title: 'Heart & Spine Somatic Alignment',
+    title: 'Upper Body Chest & Delts',
     date: new Date(Date.now() - 86400000 * 3).toISOString(), // 3 days ago
     durationMinutes: 48,
     unit: 'lbs',
     clientName: 'Jordan Vance',
-    ptName: 'Guide Marcus',
-    ptNotes: 'Switched flat bench to Seated Chest Press to open thoracic spine and keep shoulder capsule fully protected.',
+    ptName: 'Coach Marcus',
+    ptNotes: 'Used Seated Chest Press instead of flat bench to keep shoulder capsule safe and stable.',
     isCompleted: true,
     exercises: [
       {
@@ -99,8 +99,8 @@ export const SAMPLE_WORKOUTS: Workout[] = [
           sorenessLevel: 'mild',
           pumpQuality: 5,
           jointComfort: 'great',
-          notes: 'Adjusted seat height for optimal thoracic breath. Right shoulder capsule felt completely supported.',
-          quickTags: ['👁️ Mind-Muscle Connection', '🌿 100% Pain Free & Grounded', '🧘 Deep Breath & Core Anchor']
+          notes: 'Adjusted seat height for optimal chest drive. Right shoulder felt completely supported.',
+          quickTags: ['👁️ Mind-Muscle Connection', '🌿 100% Pain Free', '🧘 Solid Core Stability']
         }
       },
       {
@@ -118,8 +118,8 @@ export const SAMPLE_WORKOUTS: Workout[] = [
           sorenessLevel: 'none',
           pumpQuality: 5,
           jointComfort: 'great',
-          notes: 'Pure lateral deltoid activation without trap tension. Felt weight floating through space.',
-          quickTags: ['👁️ Mind-Muscle Connection', '🌊 Fluid Joint Harmony']
+          notes: 'Pure side delt activation without traps over-engaging.',
+          quickTags: ['👁️ Mind-Muscle Connection', '🌊 Smooth Motion']
         }
       },
       {
@@ -138,10 +138,43 @@ export const SAMPLE_WORKOUTS: Workout[] = [
           pumpQuality: 4,
           jointComfort: 'minor_stiffness',
           notes: 'Slight stiffness in left elbow resolved when spreading the rope handles wider at peak contraction.',
-          quickTags: ['🌾 Mild Stiffness', '⚡ Peak Vitality / High Aura']
+          quickTags: ['🌾 Mild Stiffness', '⚡ High Muscle Energy']
+        }
+      }
+    ]
+  },
+  {
+    id: 'w-sample-3',
+    title: 'Cardio & Treadmill Run',
+    date: new Date(Date.now() - 86400000 * 5).toISOString(), // 5 days ago
+    durationMinutes: 30,
+    unit: 'lbs',
+    clientName: 'Jordan Vance',
+    ptName: 'Coach Marcus',
+    ptNotes: 'Solid 3.2 mile treadmill run at 7:48/mi average pace. Heart rate stayed steady.',
+    isCompleted: true,
+    runningDistance: 3.2,
+    runningTimeMinutes: 25,
+    exercises: [
+      {
+        id: 'ex-7',
+        machineName: 'Treadmill Interval Run',
+        category: 'Cardio & Running',
+        seatSettings: 'Speed: 7.2 mph, Incline: 1.0%',
+        sets: [
+          { id: 's21', setNumber: 1, type: 'working', weight: 0, reps: 0, distance: 3.2, runningTimeMinutes: 25, completed: true, rpe: 8 }
+        ],
+        muscleFeeling: {
+          targetMuscles: ['Cardio & Running', 'Quads', 'Calves'],
+          sorenessLevel: 'none',
+          pumpQuality: 5,
+          jointComfort: 'great',
+          notes: 'Maintained smooth cadenced stride without ankle roll or joint strain.',
+          quickTags: ['🌿 100% Pain Free', '⚡ High Muscle Energy', '🧘 Solid Core Stability']
         }
       }
     ]
   }
 ];
+
 

@@ -11,6 +11,7 @@ import {
   saveUserProfile,
   UserProfile
 } from './utils/storage';
+import { loadScheduledSession, saveScheduledSession, ScheduledSession } from './utils/calendar';
 import { SAMPLE_WORKOUTS } from './data/sampleWorkouts';
 import { DEFAULT_MACHINES } from './data/defaultMachines';
 import { IOSHeader } from './components/IOSHeader';
@@ -21,8 +22,10 @@ import { MachineLibrary } from './components/MachineLibrary';
 import { AnalyticsView } from './components/AnalyticsView';
 import { ExportPNGModal } from './components/ExportPNGModal';
 import { ProfileModal } from './components/ProfileModal';
+import { ScheduleCalendarModal } from './components/ScheduleCalendarModal';
+import { NextSessionBanner } from './components/NextSessionBanner';
 import { PTSummaryCard } from './components/PTSummaryCard';
-import { Compass, Share2, Plus, Sparkles, Feather } from 'lucide-react';
+import { Compass, Share2, Plus, Sparkles, Feather, Calendar } from 'lucide-react';
 
 export default function App() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -31,11 +34,13 @@ export default function App() {
   const [profile, setProfile] = useState<UserProfile>(loadUserProfile());
   const [unit, setUnit] = useState<WeightUnit>('lbs');
   const [activeTab, setActiveTab] = useState<ActiveTab>('workout');
+  const [scheduledSession, setScheduledSession] = useState<ScheduledSession | null>(loadScheduledSession());
 
   // Modals state
   const [exportModalWorkout, setExportModalWorkout] = useState<Workout | null>(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState<boolean>(false);
 
   // Initialize data from localStorage
   useEffect(() => {
@@ -79,7 +84,7 @@ export default function App() {
   const handleStartNewWorkout = () => {
     const newWorkout: Workout = {
       id: 'w-' + Date.now(),
-      title: 'Grounding Lower Vessel Flow',
+      title: 'Leg Day & Quad Focus',
       date: new Date().toISOString(),
       durationMinutes: 0,
       unit: unit,
@@ -101,8 +106,8 @@ export default function App() {
             sorenessLevel: 'none',
             pumpQuality: 4,
             jointComfort: 'great',
-            notes: 'Felt deep grounded quad connection with zero joint tension.',
-            quickTags: ['👁️ Mind-Muscle Connection', '🛡️ Grounded Comfort']
+            notes: 'Felt strong quad contraction with zero joint tension.',
+            quickTags: ['👁️ Mind-Muscle Connection', '🛡️ Knee Protection']
           }
         }
       ],
@@ -195,7 +200,7 @@ export default function App() {
       // Start new workout with this machine
       const newWorkout: Workout = {
         id: 'w-' + Date.now(),
-        title: `${machine.category} Somatic Flow`,
+        title: `${machine.category} Workout`,
         date: new Date().toISOString(),
         durationMinutes: 0,
         unit: unit,
@@ -237,7 +242,7 @@ export default function App() {
       <div className="w-full max-w-md bg-[#0c0a09] min-h-screen relative flex flex-col border-x border-[#231b16] shadow-2xl">
         {/* iOS Glass Top Header */}
         <IOSHeader
-          title="Sanctuary Flow"
+          title={profile.appTitle || 'Workout Studio'}
           isTimerRunning={!!activeWorkout}
           timerSeconds={activeWorkout ? activeWorkout.durationMinutes * 60 : 0}
           unit={unit}
@@ -264,6 +269,17 @@ export default function App() {
               ) : (
                 /* No Active Session Dashboard view */
                 <div className="space-y-5 py-4 pb-28">
+                  {/* Scheduled Next Session Banner */}
+                  <NextSessionBanner
+                    scheduledSession={scheduledSession}
+                    onOpenScheduleModal={() => setIsScheduleModalOpen(true)}
+                    onClearSession={() => {
+                      saveScheduledSession(null);
+                      setScheduledSession(null);
+                    }}
+                    onStartSessionNow={handleStartNewWorkout}
+                  />
+
                   {/* Hero Start Workout Card */}
                   <div className="bg-gradient-to-br from-[#231b16] via-[#181412] to-[#100d0b] border border-[#382f29] rounded-3xl p-5 shadow-2xl space-y-4 relative overflow-hidden">
                     <div className="absolute -top-12 -right-12 w-32 h-32 bg-[#d97724]/10 rounded-full blur-2xl pointer-events-none" />
@@ -274,28 +290,28 @@ export default function App() {
                       </div>
                       <div>
                         <span className="text-[10px] font-syne font-bold uppercase text-[#e6a15c] tracking-wider block">
-                          Ready for Somatic Movement
+                          Ready for Training
                         </span>
-                        <h2 className="text-lg font-serif font-bold text-[#f7f3ee]">Begin New Flow</h2>
+                        <h2 className="text-lg font-serif font-bold text-[#f7f3ee]">Begin New Workout</h2>
                       </div>
                     </div>
 
                     <p className="text-xs text-[#a39588] font-light leading-relaxed">
-                      Log machine seat notches, weight-reps alignment, and somatic feel reflections to export a warm PNG report directly for your Guide.
+                      Log machine seat height, weights, reps, and muscle feel notes to export a warm, clean PNG report card for your Personal Trainer or Coach.
                     </p>
 
                     <button
                       onClick={handleStartNewWorkout}
                       className="w-full py-3.5 bg-gradient-to-r from-[#d97724] to-[#e6a15c] hover:opacity-95 text-[#0c0a09] font-syne font-extrabold text-xs rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-[#d97724]/20 transition-all scale-102"
                     >
-                      <Plus className="w-4 h-4 text-[#0c0a09]" /> Begin Empty Somatic Flow
+                      <Plus className="w-4 h-4 text-[#0c0a09]" /> Begin Empty Workout
                     </button>
                   </div>
 
                   {/* Quick Preset Workouts Launchers */}
                   <div className="space-y-2">
                     <h3 className="text-xs font-syne font-bold text-[#a39588] uppercase tracking-wider px-1">
-                      Curated Flow Rituals
+                      Preset Workout Routines
                     </h3>
 
                     <div className="grid grid-cols-1 gap-2">
@@ -310,7 +326,7 @@ export default function App() {
                               {sample.title}
                             </span>
                             <span className="text-[10px] text-[#8c7e72]">
-                              {sample.exercises.length} Vessels • Somatic Feedback Included
+                              {sample.exercises.length} Machines • Muscle Sensation Tracking
                             </span>
                           </div>
                           <span className="text-xs font-syne font-bold text-[#e6a15c] bg-[#d97724]/20 px-3 py-1 rounded-xl border border-[#d97724]/30 group-hover:bg-[#d97724] group-hover:text-[#0c0a09] transition-all">
@@ -342,10 +358,10 @@ export default function App() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-serif font-bold text-[#f7f3ee] flex items-center gap-2">
-                    <Feather className="w-5 h-5 text-[#e6a15c]" /> Guide Export Studio
+                    <Feather className="w-5 h-5 text-[#e6a15c]" /> PT Export Studio
                   </h2>
                   <p className="text-xs text-[#a39588] font-light">
-                    Preview your somatic session card & export a high-res PNG for your Guide
+                    Preview your workout card & export a high-res PNG for your Personal Trainer
                   </p>
                 </div>
 
@@ -411,6 +427,13 @@ export default function App() {
             setUnit(updatedProfile.preferredUnit);
           }}
           onResetData={handleResetData}
+        />
+
+        {/* Schedule Next Session Device Calendar Modal */}
+        <ScheduleCalendarModal
+          isOpen={isScheduleModalOpen}
+          onClose={() => setIsScheduleModalOpen(false)}
+          onSessionSaved={(session) => setScheduledSession(session)}
         />
       </div>
     </div>

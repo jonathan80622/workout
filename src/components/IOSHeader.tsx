@@ -47,12 +47,12 @@ export const IOSHeader: React.FC<IOSHeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-[#120f0d]/90 backdrop-blur-xl border-b border-[#2b241f] text-[#f7f3ee] select-none">
-      {/* Top Bar with Time & Sanctuary Status */}
+      {/* Top Bar with Time & App Title */}
       <div className="flex items-center justify-between px-5 pt-2 pb-1 text-[11px] text-[#a39588] font-medium tracking-wide">
         <span className="font-syne font-semibold text-[#c8b8a8]">{currentTime || '9:41'}</span>
         <div className="flex items-center gap-1.5 text-[#d97724] font-serif italic text-xs">
           <Sparkles className="w-3 h-3 text-[#e6a15c] animate-pulse" />
-          <span>Somatic Sanctuary</span>
+          <span>Workout & PT Studio</span>
         </div>
       </div>
 
@@ -66,12 +66,12 @@ export const IOSHeader: React.FC<IOSHeaderProps> = ({
           </div>
           <div>
             <h1 className="text-lg font-serif tracking-tight text-[#f7f3ee] font-semibold leading-tight">
-              {title || 'Somatic Vessel'}
+              {title || 'Workout Tracker'}
             </h1>
             <p className="text-[11px] text-[#a8998c] flex items-center gap-1.5 font-light">
-              <span>Member: <strong className="text-[#e8e0d5] font-medium">{clientName}</strong></span>
+              <span>Athlete: <strong className="text-[#e8e0d5] font-medium">{clientName}</strong></span>
               <span className="text-[#4a3f36]">•</span>
-              <span>Guide: <strong className="text-[#e6a15c] font-medium">{ptName}</strong></span>
+              <span>Coach/PT: <strong className="text-[#e6a15c] font-medium">{ptName}</strong></span>
             </p>
           </div>
         </div>
@@ -103,7 +103,7 @@ export const IOSHeader: React.FC<IOSHeaderProps> = ({
           <button
             onClick={onOpenProfileModal}
             className="p-2 rounded-full bg-[#1c1815] hover:bg-[#28221d] text-[#c8b8a8] hover:text-[#f7f3ee] transition-colors border border-[#382f29]"
-            title="Edit Guide & Client Settings"
+            title="Edit Coach & Client Settings"
           >
             <User className="w-4 h-4" />
           </button>
