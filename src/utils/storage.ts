@@ -109,7 +109,7 @@ export function saveActiveWorkout(workout: Workout | null): void {
 
 export function loadUserProfile(): UserProfile {
   const defaultProfile: UserProfile = {
-    clientName: 'Jordan Vance',
+    clientName: 'Jonathan',
     ptName: 'Coach Marcus',
     appTitle: 'Workout Studio',
     preferredUnit: 'lbs',

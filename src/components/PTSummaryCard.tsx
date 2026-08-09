@@ -23,6 +23,8 @@ interface PTSummaryCardProps {
   themeStyle?: 'amber-warmth' | 'sage-green' | 'sunset-rose' | 'light-sand';
   showSeatSettings?: boolean;
   language?: 'en' | 'zh';
+  customClientName?: string;
+  customPtName?: string;
 }
 
 const CATEGORY_MAP_ZH: Record<string, string> = {
@@ -45,7 +47,9 @@ export const PTSummaryCard: React.FC<PTSummaryCardProps> = ({
   customPtNote,
   themeStyle = 'amber-warmth',
   showSeatSettings = true,
-  language = 'zh'
+  language = 'zh',
+  customClientName,
+  customPtName
 }) => {
   const isZh = language === 'zh';
   const totalVolume = calculateWorkoutVolume(workout);
@@ -55,6 +59,14 @@ export const PTSummaryCard: React.FC<PTSummaryCardProps> = ({
   const totalDistance = calculateTotalDistance(workout);
   const totalRunningTime = calculateTotalRunningTime(workout);
   const avgPace = calculateAveragePace(totalDistance, totalRunningTime);
+
+  const displayClientName = customClientName !== undefined && customClientName.trim() !== ''
+    ? customClientName
+    : (workout.clientName || 'Athlete');
+
+  const displayPtName = customPtName !== undefined && customPtName.trim() !== ''
+    ? customPtName
+    : (workout.ptName || 'Coach');
 
   // Calculate Day of Week theme
   const dayTheme = getDayOfWeekTheme(workout.date);
@@ -160,10 +172,10 @@ export const PTSummaryCard: React.FC<PTSummaryCardProps> = ({
         <div className="flex items-center justify-between text-xs font-medium pt-2.5 mt-2.5 border-t border-white/15">
           <div className="flex items-center gap-1.5">
             <UserCheck className="w-3.5 h-3.5 text-white/90" />
-            <span>{isZh ? '學員' : 'Athlete'}: <strong className="font-serif font-bold text-white underline underline-offset-2">{workout.clientName || 'Jordan'}</strong></span>
+            <span>{isZh ? '學員' : 'Athlete'}: <strong className="font-serif font-bold text-white underline underline-offset-2">{displayClientName}</strong></span>
           </div>
           <div className="text-white/90">
-            <span>{isZh ? '教練 / PT' : 'Coach'}: <strong className="font-serif font-bold text-white">{workout.ptName || 'Coach Marcus'}</strong></span>
+            <span>{isZh ? '教練 / PT' : 'Coach'}: <strong className="font-serif font-bold text-white">{displayPtName}</strong></span>
           </div>
         </div>
       </div>

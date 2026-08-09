@@ -132,44 +132,50 @@ export const DAY_THEMES: Record<number, DayOfWeekTheme> = {
   }
 };
 
-export function getDayOfWeekTheme(dateString?: string): DayOfWeekTheme {
-  try {
-    const d = dateString ? new Date(dateString) : new Date();
-    const day = d.getDay();
-    return DAY_THEMES[day] || DAY_THEMES[0];
-  } catch {
-    return DAY_THEMES[0];
+export function parseDateSafely(dateInput?: string | Date): Date {
+  if (!dateInput) return new Date();
+  if (dateInput instanceof Date) {
+    return isNaN(dateInput.getTime()) ? new Date() : dateInput;
   }
+  const str = String(dateInput).trim();
+  if (!str) return new Date();
+
+  // If YYYY-MM-DD format, parse as local year, month, day to prevent UTC midnight offset shift
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const [y, m, d] = str.split('-').map(Number);
+    return new Date(y, m - 1, d, 12, 0, 0);
+  }
+
+  const parsed = new Date(str);
+  return isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
+export function getDayOfWeekTheme(dateString?: string): DayOfWeekTheme {
+  const d = parseDateSafely(dateString);
+  const day = d.getDay();
+  return DAY_THEMES[day] || DAY_THEMES[0];
 }
 
 export function formatDateEn(dateString?: string): string {
-  try {
-    const d = dateString ? new Date(dateString) : new Date();
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    }).format(d);
-  } catch {
-    return 'August 9, 2026';
-  }
+  const d = parseDateSafely(dateString);
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  }).format(d);
 }
 
 export function formatDateZh(dateString?: string): string {
-  try {
-    const d = dateString ? new Date(dateString) : new Date();
-    const year = d.getFullYear();
-    const month = d.getMonth() + 1;
-    const day = d.getDate();
-    return `${year} 年 ${month} 月 ${day} 日`;
-  } catch {
-    return '2026 年 8 月 9 日';
-  }
+  const d = parseDateSafely(dateString);
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  return `${year} 年 ${month} 月 ${day} 日`;
 }
 
 export function formatWorkoutDate(dateString: string): string {
   try {
-    const date = new Date(dateString);
+    const date = parseDateSafely(dateString);
     return new Intl.DateTimeFormat('en-US', {
       weekday: 'short',
       month: 'short',
@@ -185,7 +191,7 @@ export function formatWorkoutDate(dateString: string): string {
 
 export function formatShortDate(dateString: string): string {
   try {
-    const date = new Date(dateString);
+    const date = parseDateSafely(dateString);
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
       day: 'numeric'

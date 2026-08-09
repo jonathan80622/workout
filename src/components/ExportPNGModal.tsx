@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { toPng, toBlob } from 'html-to-image';
-import { Download, Copy, X, Check, Share2, Sparkles, MessageSquare, Calendar, Globe } from 'lucide-react';
+import { Download, Copy, X, Check, Share2, Sparkles, MessageSquare, Calendar, Globe, UserCheck } from 'lucide-react';
 import { Workout, WeightUnit } from '../types';
 import { PTSummaryCard } from './PTSummaryCard';
 import { ScheduleCalendarModal } from './ScheduleCalendarModal';
+import { loadUserProfile, saveUserProfile } from '../utils/storage';
 
 interface ExportPNGModalProps {
   workout: Workout;
@@ -25,6 +26,20 @@ export const ExportPNGModal: React.FC<ExportPNGModalProps> = ({
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState<boolean>(false);
+
+  const [clientName, setClientName] = useState<string>(() => {
+    if (workout.clientName && workout.clientName !== 'Jordan' && workout.clientName !== 'Jordan Vance') {
+      return workout.clientName;
+    }
+    const prof = loadUserProfile();
+    return prof.clientName && prof.clientName !== 'Jordan Vance' ? prof.clientName : 'Jonathan';
+  });
+
+  const [ptName, setPtName] = useState<string>(() => {
+    if (workout.ptName) return workout.ptName;
+    const prof = loadUserProfile();
+    return prof.ptName || 'Coach Marcus';
+  });
 
   if (!isOpen) return null;
 
@@ -200,6 +215,46 @@ export const ExportPNGModal: React.FC<ExportPNGModalProps> = ({
             </div>
           </div>
 
+          {/* Athlete Name & Coach Name Inputs */}
+          <div className="grid grid-cols-2 gap-2.5 pt-2.5 border-t border-[#2b241f]">
+            <div className="space-y-1">
+              <label className="font-serif italic text-[#c8b8a8] text-[11px] flex items-center gap-1">
+                <UserCheck className="w-3.5 h-3.5 text-[#d97724]" />
+                {isZh ? '學員姓名 (卡片顯示):' : 'Athlete Name:'}
+              </label>
+              <input
+                type="text"
+                value={clientName}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setClientName(val);
+                  const prof = loadUserProfile();
+                  saveUserProfile({ ...prof, clientName: val });
+                }}
+                placeholder={isZh ? "你的名字" : "Your name"}
+                className="w-full bg-[#181412] border border-[#2b241f] rounded-xl px-2.5 py-1.5 text-xs text-[#f7f3ee] placeholder-[#6b5e54] focus:outline-none focus:ring-1 focus:ring-[#d97724]"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="font-serif italic text-[#c8b8a8] text-[11px] flex items-center gap-1">
+                <UserCheck className="w-3.5 h-3.5 text-[#849a88]" />
+                {isZh ? '指導教練 (PT):' : 'Coach / PT:'}
+              </label>
+              <input
+                type="text"
+                value={ptName}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setPtName(val);
+                  const prof = loadUserProfile();
+                  saveUserProfile({ ...prof, ptName: val });
+                }}
+                placeholder={isZh ? "教練名字" : "Coach name"}
+                className="w-full bg-[#181412] border border-[#2b241f] rounded-xl px-2.5 py-1.5 text-xs text-[#f7f3ee] placeholder-[#6b5e54] focus:outline-none focus:ring-1 focus:ring-[#d97724]"
+              />
+            </div>
+          </div>
+
           {/* Toggle Seat Settings */}
           <div className="flex items-center justify-between pt-2 border-t border-[#2b241f]">
             <span className="font-serif italic text-[#c8b8a8]">
@@ -238,6 +293,8 @@ export const ExportPNGModal: React.FC<ExportPNGModalProps> = ({
             themeStyle={themeStyle}
             showSeatSettings={showSeatSettings}
             language={language}
+            customClientName={clientName}
+            customPtName={ptName}
           />
         </div>
 
