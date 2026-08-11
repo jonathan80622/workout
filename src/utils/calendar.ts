@@ -1,39 +1,8 @@
 export interface ScheduledSession {
+  id?: string;
   title: string;
-  dateIso: string; // ISO string representing target start time
-  durationMinutes: number;
+  scheduledDate: string; // ISO string representing target start time
   notes?: string;
-  createdAtIso: string;
-}
-
-const SCHEDULED_SESSION_KEY = 'ios_workout_tracker_next_session_v1';
-
-export function loadScheduledSession(): ScheduledSession | null {
-  try {
-    const raw = localStorage.getItem(SCHEDULED_SESSION_KEY);
-    if (!raw) return null;
-    const session: ScheduledSession = JSON.parse(raw);
-    // If date is in the past, return null
-    if (new Date(session.dateIso).getTime() < Date.now() - 3600 * 1000) {
-      return null;
-    }
-    return session;
-  } catch (err) {
-    console.error('Failed to load scheduled session:', err);
-    return null;
-  }
-}
-
-export function saveScheduledSession(session: ScheduledSession | null): void {
-  try {
-    if (session) {
-      localStorage.setItem(SCHEDULED_SESSION_KEY, JSON.stringify(session));
-    } else {
-      localStorage.removeItem(SCHEDULED_SESSION_KEY);
-    }
-  } catch (err) {
-    console.error('Failed to save scheduled session:', err);
-  }
 }
 
 /**

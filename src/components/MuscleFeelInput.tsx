@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { Activity, Flame, HeartPulse, Sparkles, Heart } from 'lucide-react';
 import { MuscleFeeling, MuscleGroup, SorenessLevel, JointComfort } from '../types';

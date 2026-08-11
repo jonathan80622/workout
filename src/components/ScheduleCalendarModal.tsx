@@ -1,6 +1,8 @@
+'use client';
+
 import React, { useState } from 'react';
-import { Calendar, Clock, Check, Download, ExternalLink, X, Sparkles, Feather, Bell } from 'lucide-react';
-import { downloadICSFile, getGoogleCalendarUrl, saveScheduledSession, ScheduledSession, formatFriendlyDateTime } from '../utils/calendar';
+import { Calendar, Check, Download, ExternalLink, X, Sparkles, Feather, Bell } from 'lucide-react';
+import { downloadICSFile, getGoogleCalendarUrl, ScheduledSession, formatFriendlyDateTime } from '../utils/calendar';
 
 interface ScheduleCalendarModalProps {
   isOpen: boolean;
@@ -43,13 +45,10 @@ export const ScheduleCalendarModal: React.FC<ScheduleCalendarModalProps> = ({
     const startDate = getConstructedStartDate();
     const session: ScheduledSession = {
       title: sessionTitle || 'Workout Session',
-      dateIso: startDate.toISOString(),
-      durationMinutes,
+      scheduledDate: startDate.toISOString(),
       notes: intentionNote,
-      createdAtIso: new Date().toISOString()
     };
 
-    saveScheduledSession(session);
     if (onSessionSaved) onSessionSaved(session);
 
     // Download .ics file for iOS Calendar / macOS / Android / Windows
@@ -70,13 +69,10 @@ export const ScheduleCalendarModal: React.FC<ScheduleCalendarModalProps> = ({
     const startDate = getConstructedStartDate();
     const session: ScheduledSession = {
       title: sessionTitle || 'Workout Session',
-      dateIso: startDate.toISOString(),
-      durationMinutes,
+      scheduledDate: startDate.toISOString(),
       notes: intentionNote,
-      createdAtIso: new Date().toISOString()
     };
 
-    saveScheduledSession(session);
     if (onSessionSaved) onSessionSaved(session);
 
     const googleUrl = getGoogleCalendarUrl({
@@ -97,13 +93,10 @@ export const ScheduleCalendarModal: React.FC<ScheduleCalendarModalProps> = ({
     const startDate = getConstructedStartDate();
     const session: ScheduledSession = {
       title: sessionTitle || 'Workout Session',
-      dateIso: startDate.toISOString(),
-      durationMinutes,
+      scheduledDate: startDate.toISOString(),
       notes: intentionNote,
-      createdAtIso: new Date().toISOString()
     };
 
-    saveScheduledSession(session);
     if (onSessionSaved) onSessionSaved(session);
 
     setToastMessage('✨ Next workout saved!');

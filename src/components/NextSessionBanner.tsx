@@ -1,6 +1,8 @@
+'use client';
+
 import React from 'react';
-import { Calendar, Clock, Download, ExternalLink, Sparkles, Feather, ArrowRight, X } from 'lucide-react';
-import { ScheduledSession, formatFriendlyDateTime, downloadICSFile, getGoogleCalendarUrl, saveScheduledSession } from '../utils/calendar';
+import { Calendar, Clock, Download, ArrowRight, X } from 'lucide-react';
+import { ScheduledSession, formatFriendlyDateTime, downloadICSFile, getGoogleCalendarUrl } from '../utils/calendar';
 
 interface NextSessionBannerProps {
   scheduledSession: ScheduledSession | null;
@@ -42,7 +44,7 @@ export const NextSessionBanner: React.FC<NextSessionBannerProps> = ({
     );
   }
 
-  const sessionDate = new Date(scheduledSession.dateIso);
+  const sessionDate = new Date(scheduledSession.scheduledDate);
   const isToday = new Date().toDateString() === sessionDate.toDateString();
 
   const handleDownloadICS = () => {
@@ -50,18 +52,8 @@ export const NextSessionBanner: React.FC<NextSessionBannerProps> = ({
       title: `🏋️ ${scheduledSession.title}`,
       description: `Workout Session Intention:\n"${scheduledSession.notes || ''}"\n\nExported from Workout Tracker.`,
       startDate: sessionDate,
-      durationMinutes: scheduledSession.durationMinutes || 45
+      durationMinutes: 45
     });
-  };
-
-  const handleGoogleCalendar = () => {
-    const url = getGoogleCalendarUrl({
-      title: `🏋️ ${scheduledSession.title}`,
-      description: `Workout Session Intention:\n"${scheduledSession.notes || ''}"\n\nExported from Workout Tracker.`,
-      startDate: sessionDate,
-      durationMinutes: scheduledSession.durationMinutes || 45
-    });
-    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -108,9 +100,6 @@ export const NextSessionBanner: React.FC<NextSessionBannerProps> = ({
             {formatFriendlyDateTime(sessionDate)}
           </span>
         </div>
-        <span className="text-[11px] text-[#849a88] font-sans font-semibold">
-          {scheduledSession.durationMinutes} mins
-        </span>
       </div>
 
       {/* Note if present */}

@@ -1,10 +1,11 @@
+'use client';
+
 import React, { useState } from 'react';
 import { toPng, toBlob } from 'html-to-image';
-import { Download, Copy, Check, Share2, Calendar, Globe, UserCheck, MessageSquare, Sparkles } from 'lucide-react';
+import { Download, Copy, Check, Calendar, Globe, UserCheck, MessageSquare } from 'lucide-react';
 import { Workout, WeightUnit } from '../types';
 import { PTSummaryCard } from './PTSummaryCard';
 import { ScheduleCalendarModal } from './ScheduleCalendarModal';
-import { loadUserProfile, saveUserProfile } from '../utils/storage';
 
 interface PTSummaryStudioProps {
   workout: Workout;
@@ -25,18 +26,8 @@ export const PTSummaryStudio: React.FC<PTSummaryStudioProps> = ({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState<boolean>(false);
 
-  const [clientName, setClientName] = useState<string>(() => {
-    if (workout.clientName) return workout.clientName;
-    const prof = loadUserProfile();
-    return prof.clientName || '';
-  });
-
-  const [ptName, setPtName] = useState<string>(() => {
-    if (workout.ptName) return workout.ptName;
-    const prof = loadUserProfile();
-    return prof.ptName || '';
-  });
-
+  const [clientName, setClientName] = useState<string>(workout.clientName || '');
+  const [ptName, setPtName] = useState<string>(workout.ptName || '');
   const [cardDate, setCardDate] = useState<string>(workout.date || new Date().toISOString());
 
   const isZh = language === 'zh';
@@ -197,12 +188,7 @@ export const PTSummaryStudio: React.FC<PTSummaryStudioProps> = ({
             <input
               type="text"
               value={clientName}
-              onChange={(e) => {
-                const val = e.target.value;
-                setClientName(val);
-                const prof = loadUserProfile();
-                saveUserProfile({ ...prof, clientName: val });
-              }}
+              onChange={(e) => setClientName(e.target.value)}
               placeholder={isZh ? "你的名字" : "Your name"}
               className="w-full bg-[#181412] border border-[#2b241f] rounded-xl px-2.5 py-1.5 text-xs text-[#f7f3ee] placeholder-[#6b5e54] focus:outline-none focus:ring-1 focus:ring-[#d97724]"
             />
@@ -215,12 +201,7 @@ export const PTSummaryStudio: React.FC<PTSummaryStudioProps> = ({
             <input
               type="text"
               value={ptName}
-              onChange={(e) => {
-                const val = e.target.value;
-                setPtName(val);
-                const prof = loadUserProfile();
-                saveUserProfile({ ...prof, ptName: val });
-              }}
+              onChange={(e) => setPtName(e.target.value)}
               placeholder={isZh ? "教練名字" : "Coach name"}
               className="w-full bg-[#181412] border border-[#2b241f] rounded-xl px-2.5 py-1.5 text-xs text-[#f7f3ee] placeholder-[#6b5e54] focus:outline-none focus:ring-1 focus:ring-[#d97724]"
             />

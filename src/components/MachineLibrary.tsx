@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { Compass, Plus, Search, Settings, Trash2, Edit2, Check, Sparkles } from 'lucide-react';
 import { MachinePreset, MuscleGroup } from '../types';

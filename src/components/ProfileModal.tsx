@@ -1,5 +1,8 @@
+'use client';
+
 import React, { useState } from 'react';
-import { Compass, X, Check, RefreshCw, Feather } from 'lucide-react';
+import { Compass, X, Check, RefreshCw, LogIn, LogOut, User as UserIcon } from 'lucide-react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 import { UserProfile } from '../utils/storage';
 
 interface ProfileModalProps {
@@ -17,7 +20,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   onSaveProfile,
   onResetData
 }) => {
-  const [clientName, setClientName] = useState<string>(profile.clientName);
+  const { data: session } = useSession();
+  const [clientName, setClientName] = useState<string>(profile.clientName || session?.user?.name || '');
   const [ptName, setPtName] = useState<string>(profile.ptName);
   const [appTitle, setAppTitle] = useState<string>(profile.appTitle || 'Workout Studio');
   const [unit, setUnit] = useState<'lbs' | 'kg'>(profile.preferredUnit);
@@ -27,8 +31,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const handleSave = () => {
     onSaveProfile({
       ...profile,
-      clientName: clientName.trim() || 'Jordan',
-      ptName: ptName.trim() || 'Coach',
+      clientName: clientName.trim(),
+      ptName: ptName.trim(),
       appTitle: appTitle.trim() || 'Workout Studio',
       preferredUnit: unit
     });
@@ -45,6 +49,51 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           <button onClick={onClose} className="text-[#8c7e72] hover:text-[#f7f3ee]">
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Google OAuth Auth Section */}
+        <div className="p-3 bg-[#100d0b] border border-[#2b241f] rounded-2xl space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="font-syne font-semibold text-xs text-[#e6a15c] flex items-center gap-1.5">
+              <UserIcon className="w-4 h-4 text-[#d97724]" /> Google Account
+            </span>
+            {session ? (
+              <span className="text-[10px] bg-[#849a88]/20 text-[#a3b8a7] px-2 py-0.5 rounded-full border border-[#849a88]/40">
+                Connected
+              </span>
+            ) : (
+              <span className="text-[10px] bg-[#382f29] text-[#8c7e72] px-2 py-0.5 rounded-full">
+                Not signed in
+              </span>
+            )}
+          </div>
+
+          {session ? (
+            <div className="flex items-center justify-between pt-1">
+              <div className="text-xs text-[#f7f3ee] truncate max-w-[200px]">
+                <p className="font-medium truncate">{session.user?.name || 'Athlete'}</p>
+                <p className="text-[10px] text-[#8c7e72] truncate">{session.user?.email}</p>
+              </div>
+              <button
+                onClick={() => signOut()}
+                className="px-2.5 py-1 bg-[#211b18] hover:bg-[#2b241f] border border-[#382f29] text-[#c86d51] text-xs font-syne font-bold rounded-xl flex items-center gap-1"
+              >
+                <LogOut className="w-3.5 h-3.5" /> Sign Out
+              </button>
+            </div>
+          ) : (
+            <div className="pt-1 flex items-center justify-between">
+              <p className="text-[11px] text-[#a39588]">
+                Sign in with Google to sync workouts to Prisma Postgres database.
+              </p>
+              <button
+                onClick={() => signIn('google')}
+                className="px-3 py-1.5 bg-[#d97724] hover:bg-[#e6a15c] text-[#0c0a09] text-xs font-syne font-bold rounded-xl flex items-center gap-1 shadow-md shrink-0"
+              >
+                <LogIn className="w-3.5 h-3.5" /> Google Sign In
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="space-y-3 text-xs">
@@ -120,7 +169,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           <div className="pt-3 border-t border-[#2b241f]">
             <button
               onClick={() => {
-                if (window.confirm('Reset all sample workouts and restore defaults?')) {
+                if (window.confirm('Reset sample workouts and restore database defaults?')) {
                   onResetData();
                   onClose();
                 }
@@ -142,4 +191,3 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     </div>
   );
 };
-

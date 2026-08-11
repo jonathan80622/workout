@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { Flame, History, Share2, Compass, Sparkles } from 'lucide-react';
 import { ActiveTab } from '../types';
@@ -81,4 +83,3 @@ export const IOSTabBar: React.FC<IOSTabBarProps> = ({
     </nav>
   );
 };
-

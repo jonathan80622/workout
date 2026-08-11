@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { Compass, TrendingUp, Activity, Sparkles, Feather } from 'lucide-react';
 import { Workout, WeightUnit } from '../types';

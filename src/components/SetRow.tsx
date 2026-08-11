@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { Check, Trash2, Plus, Minus, Footprints, Clock } from 'lucide-react';
 import { WorkoutSet, SetType, WeightUnit } from '../types';

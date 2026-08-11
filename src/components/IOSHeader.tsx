@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Timer, User, Compass } from 'lucide-react';
 import { WeightUnit } from '../types';
@@ -69,9 +71,9 @@ export const IOSHeader: React.FC<IOSHeaderProps> = ({
               {title || 'Workout Tracker'}
             </h1>
             <p className="text-[11px] text-[#a8998c] flex items-center gap-1.5 font-light">
-              <span>Athlete: <strong className="text-[#e8e0d5] font-medium">{clientName}</strong></span>
+              <span>Athlete: <strong className="text-[#e8e0d5] font-medium">{clientName || 'Me'}</strong></span>
               <span className="text-[#4a3f36]">•</span>
-              <span>Coach/PT: <strong className="text-[#e6a15c] font-medium">{ptName}</strong></span>
+              <span>Coach/PT: <strong className="text-[#e6a15c] font-medium">{ptName || 'Coach'}</strong></span>
             </p>
           </div>
         </div>
@@ -112,4 +114,3 @@ export const IOSHeader: React.FC<IOSHeaderProps> = ({
     </header>
   );
 };
-

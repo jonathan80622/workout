@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { Plus, Play, Pause, CheckCircle2, Share2, Trash2, Compass, Clock, Settings, Sparkles, Feather, Flame, Calendar } from 'lucide-react';

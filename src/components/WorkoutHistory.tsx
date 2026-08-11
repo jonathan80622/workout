@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { Calendar, Clock, Share2, Search, Trash2, Repeat, Compass, Activity, Flame, ChevronRight, Feather, Edit2, Check } from 'lucide-react';
 import { Workout, WeightUnit } from '../types';

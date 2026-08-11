@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { Compass, Calendar, Clock, Award, Activity, Flame, HeartPulse, UserCheck, Sparkles, Feather, Sun, Globe } from 'lucide-react';
 import { Workout, WeightUnit } from '../types';
