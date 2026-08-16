@@ -18,8 +18,6 @@ interface ActiveWorkoutProps {
   onOpenExportModal: (workout: Workout) => void;
   onDiscardWorkout: () => void;
   driveAccessToken: string | null;
-  videos: import('../types').WorkoutVideo[];
-  onVideoUploaded: (video: import('../types').WorkoutVideo) => void;
 }
 
 export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
@@ -30,9 +28,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   onFinishWorkout,
   onOpenExportModal,
   onDiscardWorkout,
-  driveAccessToken,
-  videos,
-  onVideoUploaded
+  driveAccessToken
 }) => {
   const [isTimerRunning, setIsTimerRunning] = useState<boolean>(true);
   const [timerSeconds, setTimerSeconds] = useState<number>(workout.durationMinutes ? workout.durationMinutes * 60 : 0);
@@ -146,6 +142,17 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     onUpdateWorkout({
       ...workout,
       exercises: workout.exercises.map((ex) => (ex.id === updatedEx.id ? updatedEx : ex))
+    });
+  };
+
+  const handleExerciseVideoUploaded = (exerciseId: string, video: import('../types').WorkoutVideo) => {
+    onUpdateWorkout({
+      ...workout,
+      exercises: workout.exercises.map((exercise) =>
+        exercise.id === exerciseId
+          ? { ...exercise, videos: [video, ...(exercise.videos || [])] }
+          : exercise
+      ),
     });
   };
 
@@ -276,13 +283,6 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         </div>
       </div>
 
-      <WorkoutVideoRecorder
-        workout={workout}
-        accessToken={driveAccessToken}
-        videos={videos}
-        onVideoUploaded={onVideoUploaded}
-      />
-
       {/* Exercises List */}
       <div className="space-y-4">
         {workout.exercises.map((exercise, exIndex) => (
@@ -380,6 +380,14 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
               onChange={(updatedFeeling) =>
                 handleUpdateExercise({ ...exercise, muscleFeeling: updatedFeeling })
               }
+            />
+
+            <WorkoutVideoRecorder
+              workout={workout}
+              exercise={exercise}
+              accessToken={driveAccessToken}
+              videos={exercise.videos || []}
+              onVideoUploaded={(video) => handleExerciseVideoUploaded(exercise.id, video)}
             />
           </div>
         ))}

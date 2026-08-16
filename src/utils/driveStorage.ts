@@ -182,17 +182,19 @@ export async function getDriveSyncTarget(accessToken: string): Promise<DriveSync
 export async function uploadWorkoutVideo(params: {
   accessToken: string;
   workout: Workout;
+  exercise: import('../types').ExerciseLog;
   file: File;
   durationSeconds: number;
 }): Promise<WorkoutVideo> {
-  const { accessToken, workout, file, durationSeconds } = params;
-  const folderId = await getOrCreateWorkoutVideoFolder(accessToken, workout);
+  const { accessToken, workout, exercise, file, durationSeconds } = params;
+  const folderId = await getOrCreateExerciseVideoFolder(accessToken, workout, exercise);
   const createdAt = new Date().toISOString();
   const extension = getFileExtension(file);
   const workoutDate = getDatePart(workout.date);
   const titleSlug = slugify(workout.title || 'workout');
-  const videoNumber = (workout.videos?.length || 0) + 1;
-  const name = `${workoutDate}_${titleSlug}_video-${String(videoNumber).padStart(2, '0')}.${extension}`;
+  const exerciseSlug = slugify(exercise.machineName || 'exercise');
+  const videoNumber = (exercise.videos?.length || 0) + 1;
+  const name = `${workoutDate}_${titleSlug}_${exerciseSlug}_video-${String(videoNumber).padStart(2, '0')}.${extension}`;
 
   const session = await fetch(`${DRIVE_UPLOAD_API}/files?uploadType=resumable&fields=id,webViewLink,name,mimeType`, {
     method: 'POST',
@@ -244,6 +246,7 @@ export async function uploadWorkoutVideo(params: {
   return {
     id: `video-${Date.now()}`,
     workoutId: workout.id,
+    exerciseId: exercise.id,
     driveFileId: uploadedFile.id,
     createdAt,
     durationSeconds,
@@ -258,13 +261,25 @@ function normalizeAppState(value: Partial<WorkoutAppState>): WorkoutAppState {
   const legacyVideos = Array.isArray(value.videos) ? value.videos : [];
   const workouts = Array.isArray(value.workouts) ? value.workouts : defaults.workouts;
   const normalizedWorkouts = workouts.map((workout) => {
-    const workoutVideos = Array.isArray(workout.videos) ? workout.videos : [];
-    const migratedVideos = legacyVideos.filter(
-      (video) => video.workoutId === workout.id && !workoutVideos.some((existing) => existing.id === video.id)
-    );
+    const workoutLevelVideos = Array.isArray((workout as Workout & { videos?: WorkoutVideo[] }).videos)
+      ? (workout as Workout & { videos?: WorkoutVideo[] }).videos || []
+      : [];
+    const exerciseFallbackId = workout.exercises[0]?.id || '';
+    const videosForWorkout = [...legacyVideos, ...workoutLevelVideos].filter((video) => video.workoutId === workout.id);
     return {
       ...workout,
-      videos: [...workoutVideos, ...migratedVideos],
+      exercises: workout.exercises.map((exercise) => {
+        const exerciseVideos = Array.isArray(exercise.videos) ? exercise.videos : [];
+        const migratedVideos = videosForWorkout.filter((video) => {
+          const targetExerciseId = video.exerciseId || exerciseFallbackId;
+          return targetExerciseId === exercise.id && !exerciseVideos.some((existing) => existing.id === video.id);
+        });
+
+        return {
+          ...exercise,
+          videos: [...exerciseVideos, ...migratedVideos.map((video) => ({ ...video, exerciseId: exercise.id }))],
+        };
+      }),
     };
   });
 
@@ -339,10 +354,20 @@ async function getOrCreateVideoFolder(accessToken: string): Promise<string> {
   return getOrCreateChildFolder(accessToken, rootFolderId, VIDEO_FOLDER_NAME, 'video');
 }
 
-async function getOrCreateWorkoutVideoFolder(accessToken: string, workout: Workout): Promise<string> {
+async function getOrCreateExerciseVideoFolder(
+  accessToken: string,
+  workout: Workout,
+  exercise: import('../types').ExerciseLog
+): Promise<string> {
   const videoFolderId = await getOrCreateVideoFolder(accessToken);
   const dateFolderId = await getOrCreateChildFolder(accessToken, videoFolderId, getDatePart(workout.date), 'video date');
-  return getOrCreateChildFolder(accessToken, dateFolderId, slugify(workout.title || 'workout'), 'workout video');
+  const workoutFolderId = await getOrCreateChildFolder(
+    accessToken,
+    dateFolderId,
+    slugify(workout.title || 'workout'),
+    'workout video'
+  );
+  return getOrCreateChildFolder(accessToken, workoutFolderId, slugify(exercise.machineName || 'exercise'), 'exercise video');
 }
 
 async function getOrCreateChildFolder(

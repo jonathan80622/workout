@@ -2,11 +2,12 @@
 
 import React, { useRef, useState } from 'react';
 import { PlayCircle, UploadCloud, Video } from 'lucide-react';
-import { Workout, WorkoutVideo } from '../types';
+import { ExerciseLog, Workout, WorkoutVideo } from '../types';
 import { uploadWorkoutVideo } from '../utils/driveStorage';
 
 interface WorkoutVideoRecorderProps {
   workout: Workout;
+  exercise: ExerciseLog;
   accessToken: string | null;
   videos: WorkoutVideo[];
   onVideoUploaded: (video: WorkoutVideo) => void;
@@ -14,6 +15,7 @@ interface WorkoutVideoRecorderProps {
 
 export const WorkoutVideoRecorder: React.FC<WorkoutVideoRecorderProps> = ({
   workout,
+  exercise,
   accessToken,
   videos,
   onVideoUploaded,
@@ -41,7 +43,7 @@ export const WorkoutVideoRecorder: React.FC<WorkoutVideoRecorderProps> = ({
       setStatus('Reading video details...');
       const durationSeconds = await getVideoDurationSeconds(file);
       setStatus('Uploading to Drive...');
-      const video = await uploadWorkoutVideo({ accessToken, workout, file, durationSeconds });
+      const video = await uploadWorkoutVideo({ accessToken, workout, exercise, file, durationSeconds });
       onVideoUploaded(video);
       setStatus('Saved to Drive.');
     } catch (error) {
@@ -52,11 +54,11 @@ export const WorkoutVideoRecorder: React.FC<WorkoutVideoRecorderProps> = ({
   };
 
   return (
-    <div className="bg-[#181412]/90 border border-[#382f29] rounded-3xl p-4 space-y-3">
+    <div className="bg-[#100d0b] border border-[#2b241f] rounded-2xl p-3 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Video className="w-4 h-4 text-[#e6a15c]" />
-          <span className="text-xs font-serif italic font-bold text-[#f7f3ee]">Workout Videos</span>
+          <span className="text-xs font-serif italic font-bold text-[#f7f3ee]">Exercise Video</span>
         </div>
         <span className="text-[10px] text-[#8c7e72]">{videos.length} saved</span>
       </div>
@@ -74,12 +76,12 @@ export const WorkoutVideoRecorder: React.FC<WorkoutVideoRecorderProps> = ({
           type="button"
           onClick={openVideoPicker}
           disabled={isUploading}
-          className="flex-1 py-3 rounded-2xl text-xs font-syne font-bold flex items-center justify-center gap-2 bg-[#211b18] text-[#e6a15c] border border-[#382f29] disabled:opacity-50"
+          className="flex-1 py-2.5 rounded-xl text-xs font-syne font-bold flex items-center justify-center gap-2 bg-[#211b18] text-[#e6a15c] border border-[#382f29] disabled:opacity-50"
         >
           <UploadCloud className="w-4 h-4" />
           {isUploading ? 'Uploading Video...' : 'Upload Video from Album'}
         </button>
-        <div className="px-3 py-3 rounded-2xl bg-[#100d0b] border border-[#2b241f] text-[#8c7e72]">
+        <div className="px-3 py-2.5 rounded-xl bg-[#181412] border border-[#382f29] text-[#8c7e72]">
           <Video className="w-4 h-4" />
         </div>
       </div>
@@ -89,7 +91,7 @@ export const WorkoutVideoRecorder: React.FC<WorkoutVideoRecorderProps> = ({
       {videos.length > 0 && (
         <div className="space-y-3">
           {videos.slice(0, 3).map((video) => (
-            <div key={video.id} className="bg-[#100d0b] border border-[#2b241f] rounded-2xl overflow-hidden">
+            <div key={video.id} className="bg-[#181412] border border-[#382f29] rounded-2xl overflow-hidden">
               <iframe
                 src={`https://drive.google.com/file/d/${video.driveFileId}/preview`}
                 allow="autoplay; fullscreen"

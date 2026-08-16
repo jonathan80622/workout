@@ -97,7 +97,6 @@ export const PTPortal: React.FC = () => {
           </div>
         ) : (
           completedWorkouts.map((workout) => {
-            const workoutVideos = workout.videos || [];
             return (
               <section key={workout.id} className="bg-[#181412] border border-[#382f29] rounded-3xl p-4 space-y-4">
                 <div>
@@ -113,48 +112,52 @@ export const PTPortal: React.FC = () => {
                 )}
 
                 <div className="space-y-2">
-                  {workout.exercises.map((exercise) => (
-                    <div key={exercise.id} className="bg-[#100d0b] border border-[#2b241f] rounded-2xl p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <h3 className="text-sm font-bold">{exercise.machineName}</h3>
-                        <span className="text-[10px] text-[#e6a15c]">{exercise.category}</span>
-                      </div>
-                      <p className="text-xs text-[#a39588] mt-1">
-                        {exercise.sets.filter((set) => set.completed).length} completed sets
-                      </p>
-                      {exercise.muscleFeeling?.notes && (
-                        <p className="text-xs text-[#c8b8a8] mt-2">{exercise.muscleFeeling.notes}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {workoutVideos.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="text-xs font-syne font-bold text-[#e6a15c] uppercase tracking-wider">Videos</h3>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {workoutVideos.map((video) => (
-                        <div key={video.id} className="bg-[#100d0b] border border-[#2b241f] rounded-2xl overflow-hidden">
-                          <iframe
-                            src={`https://drive.google.com/file/d/${video.driveFileId}/preview`}
-                            allow="autoplay"
-                            className="w-full aspect-video border-0"
-                            title={video.name || video.id}
-                          />
-                          <a
-                            href={video.webViewLink || `https://drive.google.com/file/d/${video.driveFileId}/view`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center gap-2 p-3 text-xs text-[#c8b8a8]"
-                          >
-                            <PlayCircle className="w-4 h-4 text-[#e6a15c]" />
-                            {video.name || `Video ${new Date(video.createdAt).toLocaleDateString()}`}
-                          </a>
+                  {workout.exercises.map((exercise) => {
+                    const exerciseVideos = exercise.videos || [];
+                    return (
+                      <div key={exercise.id} className="bg-[#100d0b] border border-[#2b241f] rounded-2xl p-3 space-y-3">
+                        <div>
+                          <div className="flex items-center justify-between gap-3">
+                            <h3 className="text-sm font-bold">{exercise.machineName}</h3>
+                            <span className="text-[10px] text-[#e6a15c]">{exercise.category}</span>
+                          </div>
+                          <p className="text-xs text-[#a39588] mt-1">
+                            {exercise.sets.filter((set) => set.completed).length} completed sets
+                          </p>
+                          {exercise.muscleFeeling?.notes && (
+                            <p className="text-xs text-[#c8b8a8] mt-2">{exercise.muscleFeeling.notes}</p>
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+
+                        {exerciseVideos.length > 0 && (
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            {exerciseVideos.map((video) => (
+                              <div key={video.id} className="bg-[#181412] border border-[#382f29] rounded-2xl overflow-hidden">
+                                <iframe
+                                  src={`https://drive.google.com/file/d/${video.driveFileId}/preview`}
+                                  allow="autoplay; fullscreen"
+                                  className="w-full aspect-video border-0"
+                                  title={video.name || video.id}
+                                />
+                                <a
+                                  href={video.webViewLink || `https://drive.google.com/file/d/${video.driveFileId}/view`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="flex items-center gap-2 p-3 text-xs text-[#c8b8a8]"
+                                >
+                                  <PlayCircle className="w-4 h-4 text-[#e6a15c] shrink-0" />
+                                  <span className="truncate">
+                                    {video.name || `Video ${new Date(video.createdAt).toLocaleDateString()}`}
+                                  </span>
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </section>
             );
           })

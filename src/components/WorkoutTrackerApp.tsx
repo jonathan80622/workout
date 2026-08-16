@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Workout, MachinePreset, ActiveTab, WeightUnit, WorkoutAppState, WorkoutVideo } from '@/src/types';
+import { Workout, MachinePreset, ActiveTab, WeightUnit, WorkoutAppState } from '@/src/types';
 import { UserProfile } from '@/src/utils/storage';
 import { ScheduledSession } from '@/src/utils/calendar';
 import { IOSHeader } from './IOSHeader';
@@ -344,16 +344,6 @@ export function WorkoutTrackerApp({
     setSyncStatus('Drive disconnected. Changes stay in this browser.');
   };
 
-  const handleVideoUploaded = (video: WorkoutVideo) => {
-    setActiveWorkout((prev) => {
-      if (!prev || prev.id !== video.workoutId) return prev;
-      return {
-        ...prev,
-        videos: [video, ...(prev.videos || [])],
-      };
-    });
-  };
-
   const handleUpdateWorkoutTitle = (workoutId: string, newTitle: string) => {
     setWorkouts((prev) =>
       prev.map((w) => {
@@ -415,8 +405,6 @@ export function WorkoutTrackerApp({
                 onOpenExportModal={handleOpenExportForWorkout}
                 onDiscardWorkout={handleDiscardActiveWorkout}
                 driveAccessToken={driveConnection.accessToken}
-                videos={activeWorkout.videos || []}
-                onVideoUploaded={handleVideoUploaded}
               />
             ) : (
               <div className="bg-[#181412] border border-[#382f29] rounded-3xl p-6 text-center space-y-4 shadow-xl">

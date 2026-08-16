@@ -51,6 +51,7 @@ export interface ExerciseLog {
   notes?: string;
   distance?: number; // Total distance for cardio exercise
   runningTimeMinutes?: number; // Total running time for exercise
+  videos?: WorkoutVideo[];
 }
 
 export interface Workout {
@@ -68,12 +69,12 @@ export interface Workout {
   ptName?: string; // e.g. "Trainer Coach Sarah"
   clientName?: string; // User name e.g. "Alex"
   isCompleted: boolean;
-  videos?: WorkoutVideo[];
 }
 
 export interface WorkoutVideo {
   id: string;
   workoutId: string;
+  exerciseId: string;
   driveFileId: string;
   createdAt: string;
   durationSeconds: number;
@@ -94,7 +95,7 @@ export interface WorkoutAppState {
   machines: MachinePreset[];
   workouts: Workout[];
   scheduledSession: import('./utils/calendar').ScheduledSession | null;
-  videos?: WorkoutVideo[]; // Legacy top-level video list, migrated into Workout.videos on load.
+  videos?: WorkoutVideo[]; // Legacy top-level video list, migrated into ExerciseLog.videos on load.
 }
 
 export interface MachinePreset {
