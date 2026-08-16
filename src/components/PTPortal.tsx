@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { Lock, PlayCircle, RefreshCw } from 'lucide-react';
-import { WorkoutAppState, WorkoutVideo } from '../types';
+import { WorkoutAppState } from '../types';
 import { formatWorkoutDate } from '../utils/formatters';
 
 export const PTPortal: React.FC = () => {
@@ -15,14 +15,6 @@ export const PTPortal: React.FC = () => {
     if (typeof window === 'undefined') return '';
     return new URLSearchParams(window.location.search).get('dataFileId') || process.env.NEXT_PUBLIC_WORKOUT_DATA_FILE_ID || '';
   }, []);
-
-  const videosByWorkout = useMemo(() => {
-    const map = new Map<string, WorkoutVideo[]>();
-    for (const video of state?.videos || []) {
-      map.set(video.workoutId, [...(map.get(video.workoutId) || []), video]);
-    }
-    return map;
-  }, [state]);
 
   const loadPortal = async () => {
     if (!dataFileId) {
@@ -105,7 +97,7 @@ export const PTPortal: React.FC = () => {
           </div>
         ) : (
           completedWorkouts.map((workout) => {
-            const workoutVideos = videosByWorkout.get(workout.id) || [];
+            const workoutVideos = workout.videos || [];
             return (
               <section key={workout.id} className="bg-[#181412] border border-[#382f29] rounded-3xl p-4 space-y-4">
                 <div>

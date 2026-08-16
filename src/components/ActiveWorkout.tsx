@@ -277,7 +277,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       </div>
 
       <WorkoutVideoRecorder
-        workoutId={workout.id}
+        workout={workout}
         accessToken={driveAccessToken}
         videos={videos}
         onVideoUploaded={onVideoUploaded}

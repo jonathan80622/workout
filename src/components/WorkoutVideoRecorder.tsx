@@ -1,88 +1,53 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { Camera, Square, UploadCloud, Video } from 'lucide-react';
-import { WorkoutVideo } from '../types';
+import { PlayCircle, UploadCloud, Video } from 'lucide-react';
+import { Workout, WorkoutVideo } from '../types';
 import { uploadWorkoutVideo } from '../utils/driveStorage';
 
 interface WorkoutVideoRecorderProps {
-  workoutId: string;
+  workout: Workout;
   accessToken: string | null;
   videos: WorkoutVideo[];
   onVideoUploaded: (video: WorkoutVideo) => void;
 }
 
 export const WorkoutVideoRecorder: React.FC<WorkoutVideoRecorderProps> = ({
-  workoutId,
+  workout,
   accessToken,
   videos,
   onVideoUploaded,
 }) => {
-  const [isRecording, setIsRecording] = useState(false);
   const [status, setStatus] = useState<string>('');
-  const [startedAt, setStartedAt] = useState<number>(0);
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const streamRef = useRef<MediaStream | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const canRecord = typeof window !== 'undefined' && Boolean(navigator.mediaDevices?.getUserMedia) && typeof MediaRecorder !== 'undefined';
-
-  const startRecording = async () => {
+  const openVideoPicker = () => {
     if (!accessToken) {
-      setStatus('Connect Google Drive before recording.');
+      setStatus('Connect Google Drive before uploading a video.');
       return;
     }
 
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
-        audio: true,
-      });
-      const mimeType = MediaRecorder.isTypeSupported('video/mp4;codecs=h264,aac')
-        ? 'video/mp4;codecs=h264,aac'
-        : 'video/webm;codecs=vp8,opus';
-
-      chunksRef.current = [];
-      streamRef.current = stream;
-      const recorder = new MediaRecorder(stream, { mimeType });
-      recorderRef.current = recorder;
-
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) chunksRef.current.push(event.data);
-      };
-      recorder.onstop = () => {
-        stream.getTracks().forEach((track) => track.stop());
-        void uploadRecording(mimeType);
-      };
-
-      recorder.start(1000);
-      setStartedAt(Date.now());
-      setIsRecording(true);
-      setStatus('Recording...');
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Unable to start camera.');
-    }
+    inputRef.current?.click();
   };
 
-  const stopRecording = () => {
-    recorderRef.current?.stop();
-    setIsRecording(false);
-    setStatus('Preparing upload...');
-  };
-
-  const uploadRecording = async (mimeType: string) => {
-    if (!accessToken) return;
-
-    const blob = new Blob(chunksRef.current, { type: mimeType });
-    const durationSeconds = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
+  const handleVideoSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || !accessToken) return;
 
     try {
+      setIsUploading(true);
+      setStatus('Reading video details...');
+      const durationSeconds = await getVideoDurationSeconds(file);
       setStatus('Uploading to Drive...');
-      const video = await uploadWorkoutVideo({ accessToken, workoutId, blob, durationSeconds });
+      const video = await uploadWorkoutVideo({ accessToken, workout, file, durationSeconds });
       onVideoUploaded(video);
       setStatus('Saved to Drive.');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Upload failed.');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -96,42 +61,80 @@ export const WorkoutVideoRecorder: React.FC<WorkoutVideoRecorderProps> = ({
         <span className="text-[10px] text-[#8c7e72]">{videos.length} saved</span>
       </div>
 
+      <input
+        ref={inputRef}
+        type="file"
+        accept="video/*"
+        onChange={handleVideoSelected}
+        className="hidden"
+      />
+
       <div className="flex gap-2">
         <button
           type="button"
-          onClick={isRecording ? stopRecording : startRecording}
-          disabled={!canRecord}
-          className={`flex-1 py-3 rounded-2xl text-xs font-syne font-bold flex items-center justify-center gap-2 ${
-            isRecording
-              ? 'bg-[#c86d51] text-[#0c0a09]'
-              : 'bg-[#211b18] text-[#e6a15c] border border-[#382f29]'
-          } disabled:opacity-50`}
+          onClick={openVideoPicker}
+          disabled={isUploading}
+          className="flex-1 py-3 rounded-2xl text-xs font-syne font-bold flex items-center justify-center gap-2 bg-[#211b18] text-[#e6a15c] border border-[#382f29] disabled:opacity-50"
         >
-          {isRecording ? <Square className="w-4 h-4" /> : <Camera className="w-4 h-4" />}
-          {isRecording ? 'Stop Recording' : 'Start Recording'}
+          <UploadCloud className="w-4 h-4" />
+          {isUploading ? 'Uploading Video...' : 'Upload Video from Album'}
         </button>
         <div className="px-3 py-3 rounded-2xl bg-[#100d0b] border border-[#2b241f] text-[#8c7e72]">
-          <UploadCloud className="w-4 h-4" />
+          <Video className="w-4 h-4" />
         </div>
       </div>
 
       {status && <p className="text-[11px] text-[#a39588]">{status}</p>}
 
       {videos.length > 0 && (
-        <div className="space-y-1.5">
+        <div className="space-y-3">
           {videos.slice(0, 3).map((video) => (
-            <a
-              key={video.id}
-              href={video.webViewLink || `https://drive.google.com/file/d/${video.driveFileId}/view`}
-              target="_blank"
-              rel="noreferrer"
-              className="block bg-[#100d0b] border border-[#2b241f] rounded-2xl px-3 py-2 text-[11px] text-[#c8b8a8] truncate"
-            >
-              {video.name || `Video ${new Date(video.createdAt).toLocaleDateString()}`} · {video.durationSeconds}s
-            </a>
+            <div key={video.id} className="bg-[#100d0b] border border-[#2b241f] rounded-2xl overflow-hidden">
+              <iframe
+                src={`https://drive.google.com/file/d/${video.driveFileId}/preview`}
+                allow="autoplay; fullscreen"
+                className="w-full aspect-video border-0 bg-black"
+                title={video.name || video.id}
+              />
+              <a
+                href={video.webViewLink || `https://drive.google.com/file/d/${video.driveFileId}/view`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 px-3 py-2 text-[11px] text-[#c8b8a8] min-w-0"
+              >
+                <PlayCircle className="w-4 h-4 text-[#e6a15c] shrink-0" />
+                <span className="truncate">
+                  {video.name || `Video ${new Date(video.createdAt).toLocaleDateString()}`} · {formatDuration(video.durationSeconds)}
+                </span>
+              </a>
+            </div>
           ))}
         </div>
       )}
     </div>
   );
 };
+
+function getVideoDurationSeconds(file: File): Promise<number> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    video.onloadedmetadata = () => {
+      URL.revokeObjectURL(url);
+      resolve(Number.isFinite(video.duration) ? Math.max(1, Math.round(video.duration)) : 0);
+    };
+    video.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(0);
+    };
+    video.src = url;
+  });
+}
+
+function formatDuration(seconds: number): string {
+  if (!seconds) return 'duration pending';
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return `${minutes}:${remainder.toString().padStart(2, '0')}`;
+}

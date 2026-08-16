@@ -69,7 +69,6 @@ export function createDefaultAppState(): WorkoutAppState {
     machines: DEFAULT_MACHINES,
     workouts: SAMPLE_WORKOUTS,
     scheduledSession: null,
-    videos: [],
   };
 }
 
@@ -182,27 +181,30 @@ export async function getDriveSyncTarget(accessToken: string): Promise<DriveSync
 
 export async function uploadWorkoutVideo(params: {
   accessToken: string;
-  workoutId: string;
-  blob: Blob;
+  workout: Workout;
+  file: File;
   durationSeconds: number;
 }): Promise<WorkoutVideo> {
-  const { accessToken, workoutId, blob, durationSeconds } = params;
-  const folderId = await getOrCreateVideoFolder(accessToken);
+  const { accessToken, workout, file, durationSeconds } = params;
+  const folderId = await getOrCreateWorkoutVideoFolder(accessToken, workout);
   const createdAt = new Date().toISOString();
-  const extension = blob.type.includes('mp4') ? 'mp4' : 'webm';
-  const name = `workout-${workoutId}-${createdAt.replace(/[:.]/g, '-')}.${extension}`;
+  const extension = getFileExtension(file);
+  const workoutDate = getDatePart(workout.date);
+  const titleSlug = slugify(workout.title || 'workout');
+  const videoNumber = (workout.videos?.length || 0) + 1;
+  const name = `${workoutDate}_${titleSlug}_video-${String(videoNumber).padStart(2, '0')}.${extension}`;
 
   const session = await fetch(`${DRIVE_UPLOAD_API}/files?uploadType=resumable&fields=id,webViewLink,name,mimeType`, {
     method: 'POST',
     headers: {
       ...authHeaders(accessToken),
       'Content-Type': 'application/json; charset=UTF-8',
-      'X-Upload-Content-Type': blob.type || 'application/octet-stream',
-      'X-Upload-Content-Length': String(blob.size),
+      'X-Upload-Content-Type': file.type || 'application/octet-stream',
+      'X-Upload-Content-Length': String(file.size),
     },
     body: JSON.stringify({
       name,
-      mimeType: blob.type || 'application/octet-stream',
+      mimeType: file.type || 'application/octet-stream',
       parents: [folderId],
     }),
   });
@@ -213,14 +215,14 @@ export async function uploadWorkoutVideo(params: {
   let offset = 0;
   let uploadedFile: { id: string; webViewLink?: string; name?: string; mimeType?: string } | null = null;
 
-  while (offset < blob.size) {
-    const end = Math.min(offset + CHUNK_SIZE, blob.size) - 1;
-    const chunk = blob.slice(offset, end + 1, blob.type);
+  while (offset < file.size) {
+    const end = Math.min(offset + CHUNK_SIZE, file.size) - 1;
+    const chunk = file.slice(offset, end + 1, file.type);
     const response = await fetch(uploadUrl, {
       method: 'PUT',
       headers: {
         'Content-Length': String(chunk.size),
-        'Content-Range': `bytes ${offset}-${end}/${blob.size}`,
+        'Content-Range': `bytes ${offset}-${end}/${file.size}`,
       },
       body: chunk,
     });
@@ -233,7 +235,7 @@ export async function uploadWorkoutVideo(params: {
 
     if (!response.ok) throw new Error(await driveError(response, 'Drive video upload failed.'));
     uploadedFile = await response.json();
-    offset = blob.size;
+    offset = file.size;
   }
 
   if (!uploadedFile?.id) throw new Error('Drive upload completed without a file id.');
@@ -241,11 +243,11 @@ export async function uploadWorkoutVideo(params: {
 
   return {
     id: `video-${Date.now()}`,
-    workoutId,
+    workoutId: workout.id,
     driveFileId: uploadedFile.id,
     createdAt,
     durationSeconds,
-    mimeType: uploadedFile.mimeType || blob.type || 'application/octet-stream',
+    mimeType: uploadedFile.mimeType || file.type || 'application/octet-stream',
     name: uploadedFile.name || name,
     webViewLink: uploadedFile.webViewLink,
   };
@@ -253,13 +255,25 @@ export async function uploadWorkoutVideo(params: {
 
 function normalizeAppState(value: Partial<WorkoutAppState>): WorkoutAppState {
   const defaults = createDefaultAppState();
+  const legacyVideos = Array.isArray(value.videos) ? value.videos : [];
+  const workouts = Array.isArray(value.workouts) ? value.workouts : defaults.workouts;
+  const normalizedWorkouts = workouts.map((workout) => {
+    const workoutVideos = Array.isArray(workout.videos) ? workout.videos : [];
+    const migratedVideos = legacyVideos.filter(
+      (video) => video.workoutId === workout.id && !workoutVideos.some((existing) => existing.id === video.id)
+    );
+    return {
+      ...workout,
+      videos: [...workoutVideos, ...migratedVideos],
+    };
+  });
+
   return {
     version: 1,
     profile: { ...defaults.profile, ...(value.profile || {}) },
     machines: Array.isArray(value.machines) && value.machines.length > 0 ? value.machines : defaults.machines,
-    workouts: Array.isArray(value.workouts) ? value.workouts : defaults.workouts,
+    workouts: normalizedWorkouts,
     scheduledSession: (value.scheduledSession || null) as ScheduledSession | null,
-    videos: Array.isArray(value.videos) ? value.videos : [],
   };
 }
 
@@ -322,13 +336,28 @@ async function getOrCreateRootFolder(accessToken: string): Promise<string> {
 
 async function getOrCreateVideoFolder(accessToken: string): Promise<string> {
   const rootFolderId = await getOrCreateRootFolder(accessToken);
+  return getOrCreateChildFolder(accessToken, rootFolderId, VIDEO_FOLDER_NAME, 'video');
+}
+
+async function getOrCreateWorkoutVideoFolder(accessToken: string, workout: Workout): Promise<string> {
+  const videoFolderId = await getOrCreateVideoFolder(accessToken);
+  const dateFolderId = await getOrCreateChildFolder(accessToken, videoFolderId, getDatePart(workout.date), 'video date');
+  return getOrCreateChildFolder(accessToken, dateFolderId, slugify(workout.title || 'workout'), 'workout video');
+}
+
+async function getOrCreateChildFolder(
+  accessToken: string,
+  parentFolderId: string,
+  name: string,
+  label: string
+): Promise<string> {
   const q = encodeURIComponent(
-    `name='${VIDEO_FOLDER_NAME}' and '${rootFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`
+    `name='${escapeDriveQueryValue(name)}' and '${parentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`
   );
   const existing = await fetch(`${DRIVE_API}/files?q=${q}&fields=files(id,name)`, {
     headers: authHeaders(accessToken),
   });
-  if (!existing.ok) throw new Error(await driveError(existing, 'Unable to search Drive video folder.'));
+  if (!existing.ok) throw new Error(await driveError(existing, `Unable to search Drive ${label} folder.`));
   const data = await existing.json();
   if (data.files?.[0]?.id) return data.files[0].id;
 
@@ -339,14 +368,41 @@ async function getOrCreateVideoFolder(accessToken: string): Promise<string> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      name: VIDEO_FOLDER_NAME,
+      name,
       mimeType: 'application/vnd.google-apps.folder',
-      parents: [rootFolderId],
+      parents: [parentFolderId],
     }),
   });
-  if (!created.ok) throw new Error(await driveError(created, 'Unable to create Drive video folder.'));
+  if (!created.ok) throw new Error(await driveError(created, `Unable to create Drive ${label} folder.`));
   const folder = await created.json();
   return folder.id;
+}
+
+function getDatePart(dateIso: string): string {
+  return dateIso ? dateIso.split('T')[0] : new Date().toISOString().split('T')[0];
+}
+
+function getFileExtension(file: File): string {
+  const nameExtension = file.name.split('.').pop()?.toLowerCase();
+  if (nameExtension && /^[a-z0-9]+$/.test(nameExtension)) return nameExtension;
+  if (file.type.includes('mp4')) return 'mp4';
+  if (file.type.includes('quicktime')) return 'mov';
+  if (file.type.includes('webm')) return 'webm';
+  return 'video';
+}
+
+function slugify(value: string): string {
+  const slug = value
+    .toLowerCase()
+    .trim()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || 'workout';
+}
+
+function escapeDriveQueryValue(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
 async function ensureAnyoneWithLinkReader(accessToken: string, fileId: string): Promise<void> {

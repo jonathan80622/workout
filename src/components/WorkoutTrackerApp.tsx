@@ -36,7 +36,6 @@ interface WorkoutTrackerAppProps {
   initialActiveWorkout: Workout | null;
   initialMachines: MachinePreset[];
   initialScheduledSession: ScheduledSession | null;
-  initialVideos: WorkoutVideo[];
 }
 
 export function WorkoutTrackerApp({
@@ -45,7 +44,6 @@ export function WorkoutTrackerApp({
   initialActiveWorkout,
   initialMachines,
   initialScheduledSession,
-  initialVideos,
 }: WorkoutTrackerAppProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('workout');
   const [profile, setProfile] = useState<UserProfile>(initialProfile);
@@ -53,7 +51,6 @@ export function WorkoutTrackerApp({
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(initialActiveWorkout);
   const [machines, setMachines] = useState<MachinePreset[]>(initialMachines);
   const [scheduledSession, setScheduledSession] = useState<ScheduledSession | null>(initialScheduledSession);
-  const [videos, setVideos] = useState<WorkoutVideo[]>(initialVideos);
   const [driveConnection, setDriveConnection] = useState<DriveConnection>({
     isConfigured: false,
     isConnected: false,
@@ -75,9 +72,8 @@ export function WorkoutTrackerApp({
       machines,
       workouts: combineWorkouts(workouts, activeWorkout),
       scheduledSession,
-      videos,
     }),
-    [activeWorkout, machines, profile, scheduledSession, videos, workouts]
+    [activeWorkout, machines, profile, scheduledSession, workouts]
   );
 
   useEffect(() => {
@@ -123,7 +119,6 @@ export function WorkoutTrackerApp({
     setActiveWorkout(split.activeWorkout);
     setMachines(state.machines);
     setScheduledSession(state.scheduledSession);
-    setVideos(state.videos);
   };
 
   const handleUnitToggle = () => {
@@ -154,7 +149,6 @@ export function WorkoutTrackerApp({
 
   const handleDeleteWorkout = (workoutId: string) => {
     setWorkouts((prev) => prev.filter((w) => w.id !== workoutId));
-    setVideos((prev) => prev.filter((video) => video.workoutId !== workoutId));
   };
 
   const handleRepeatWorkout = (workout: Workout) => {
@@ -351,7 +345,13 @@ export function WorkoutTrackerApp({
   };
 
   const handleVideoUploaded = (video: WorkoutVideo) => {
-    setVideos((prev) => [video, ...prev]);
+    setActiveWorkout((prev) => {
+      if (!prev || prev.id !== video.workoutId) return prev;
+      return {
+        ...prev,
+        videos: [video, ...(prev.videos || [])],
+      };
+    });
   };
 
   const handleUpdateWorkoutTitle = (workoutId: string, newTitle: string) => {
@@ -415,7 +415,7 @@ export function WorkoutTrackerApp({
                 onOpenExportModal={handleOpenExportForWorkout}
                 onDiscardWorkout={handleDiscardActiveWorkout}
                 driveAccessToken={driveConnection.accessToken}
-                videos={videos.filter((video) => video.workoutId === activeWorkout.id)}
+                videos={activeWorkout.videos || []}
                 onVideoUploaded={handleVideoUploaded}
               />
             ) : (

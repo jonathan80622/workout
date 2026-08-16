@@ -12,7 +12,6 @@ export default function HomePage() {
       initialActiveWorkout={data.activeWorkout}
       initialMachines={state.machines}
       initialScheduledSession={state.scheduledSession}
-      initialVideos={state.videos}
     />
   );
 }

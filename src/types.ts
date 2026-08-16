@@ -68,6 +68,7 @@ export interface Workout {
   ptName?: string; // e.g. "Trainer Coach Sarah"
   clientName?: string; // User name e.g. "Alex"
   isCompleted: boolean;
+  videos?: WorkoutVideo[];
 }
 
 export interface WorkoutVideo {
@@ -93,7 +94,7 @@ export interface WorkoutAppState {
   machines: MachinePreset[];
   workouts: Workout[];
   scheduledSession: import('./utils/calendar').ScheduledSession | null;
-  videos: WorkoutVideo[];
+  videos?: WorkoutVideo[]; // Legacy top-level video list, migrated into Workout.videos on load.
 }
 
 export interface MachinePreset {
