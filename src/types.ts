@@ -70,6 +70,32 @@ export interface Workout {
   isCompleted: boolean;
 }
 
+export interface WorkoutVideo {
+  id: string;
+  workoutId: string;
+  driveFileId: string;
+  createdAt: string;
+  durationSeconds: number;
+  mimeType: string;
+  name?: string;
+  webViewLink?: string;
+}
+
+export interface WorkoutAppState {
+  version: 1;
+  profile: {
+    clientName: string;
+    ptName: string;
+    appTitle?: string;
+    preferredUnit: WeightUnit;
+    themeColor: 'ios-blue' | 'ios-emerald' | 'ios-purple' | 'ios-orange';
+  };
+  machines: MachinePreset[];
+  workouts: Workout[];
+  scheduledSession: import('./utils/calendar').ScheduledSession | null;
+  videos: WorkoutVideo[];
+}
+
 export interface MachinePreset {
   id: string;
   name: string;

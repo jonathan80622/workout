@@ -6,6 +6,7 @@ import { Plus, Play, Pause, CheckCircle2, Share2, Trash2, Compass, Clock, Settin
 import { Workout, ExerciseLog, WorkoutSet, MachinePreset, WeightUnit, MuscleGroup } from '../types';
 import { SetRow } from './SetRow';
 import { MuscleFeelInput } from './MuscleFeelInput';
+import { WorkoutVideoRecorder } from './WorkoutVideoRecorder';
 import { calculateWorkoutVolume, calculateCompletedSets, calculateTotalDistance, calculateTotalRunningTime, calculateAveragePace } from '../utils/formatters';
 
 interface ActiveWorkoutProps {
@@ -16,6 +17,9 @@ interface ActiveWorkoutProps {
   onFinishWorkout: (completedWorkout: Workout) => void;
   onOpenExportModal: (workout: Workout) => void;
   onDiscardWorkout: () => void;
+  driveAccessToken: string | null;
+  videos: import('../types').WorkoutVideo[];
+  onVideoUploaded: (video: import('../types').WorkoutVideo) => void;
 }
 
 export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
@@ -25,7 +29,10 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   onUpdateWorkout,
   onFinishWorkout,
   onOpenExportModal,
-  onDiscardWorkout
+  onDiscardWorkout,
+  driveAccessToken,
+  videos,
+  onVideoUploaded
 }) => {
   const [isTimerRunning, setIsTimerRunning] = useState<boolean>(true);
   const [timerSeconds, setTimerSeconds] = useState<number>(workout.durationMinutes ? workout.durationMinutes * 60 : 0);
@@ -269,6 +276,13 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         </div>
       </div>
 
+      <WorkoutVideoRecorder
+        workoutId={workout.id}
+        accessToken={driveAccessToken}
+        videos={videos}
+        onVideoUploaded={onVideoUploaded}
+      />
+
       {/* Exercises List */}
       <div className="space-y-4">
         {workout.exercises.map((exercise, exIndex) => (
@@ -496,4 +510,3 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     </div>
   );
 };
-

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { SessionProvider } from 'next-auth/react';
 
 export const metadata: Metadata = {
   title: 'Workout Tracker & PT Report Studio',
@@ -23,9 +22,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-[#0c0a09] text-[#f7f3ee] antialiased" suppressHydrationWarning>
-        <SessionProvider>
-          {children}
-        </SessionProvider>
+        {children}
       </body>
     </html>
   );

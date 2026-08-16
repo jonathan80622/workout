@@ -1,18 +1,18 @@
-import { getAppData } from './actions';
 import { WorkoutTrackerApp } from '@/src/components/WorkoutTrackerApp';
+import { createDefaultAppState, splitWorkouts } from '@/src/utils/driveStorage';
 
-export const dynamic = 'force-dynamic';
-
-export default async function HomePage() {
-  const data = await getAppData();
+export default function HomePage() {
+  const state = createDefaultAppState();
+  const data = splitWorkouts(state.workouts);
 
   return (
     <WorkoutTrackerApp
-      initialProfile={data.profile}
-      initialWorkouts={data.workouts}
+      initialProfile={state.profile}
+      initialWorkouts={data.completedWorkouts}
       initialActiveWorkout={data.activeWorkout}
-      initialMachines={data.machines}
-      initialScheduledSession={data.scheduledSession}
+      initialMachines={state.machines}
+      initialScheduledSession={state.scheduledSession}
+      initialVideos={state.videos}
     />
   );
 }

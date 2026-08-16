@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Workout, MachinePreset, ActiveTab, WeightUnit } from '@/src/types';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Workout, MachinePreset, ActiveTab, WeightUnit, WorkoutAppState, WorkoutVideo } from '@/src/types';
 import { UserProfile } from '@/src/utils/storage';
 import { ScheduledSession } from '@/src/utils/calendar';
 import { IOSHeader } from './IOSHeader';
@@ -16,13 +16,19 @@ import { ProfileModal } from './ProfileModal';
 import { ScheduleCalendarModal } from './ScheduleCalendarModal';
 import { NextSessionBanner } from './NextSessionBanner';
 import {
-  saveUserProfile as saveUserProfileServer,
-  saveWorkout as saveWorkoutServer,
-  deleteWorkout as deleteWorkoutServer,
-  saveMachinePresets as saveMachinePresetsServer,
-  saveScheduledSession as saveScheduledSessionServer,
-  getAppData,
-} from '@/app/actions';
+  combineWorkouts,
+  connectGoogleDrive,
+  createDefaultAppState,
+  disconnectGoogleDrive,
+  DriveConnection,
+  getDriveConnection,
+  getDriveSyncTarget,
+  loadStateFromDrive,
+  readLocalState,
+  saveLocalState,
+  saveStateToDrive,
+  splitWorkouts,
+} from '@/src/utils/driveStorage';
 
 interface WorkoutTrackerAppProps {
   initialProfile: UserProfile;
@@ -30,6 +36,7 @@ interface WorkoutTrackerAppProps {
   initialActiveWorkout: Workout | null;
   initialMachines: MachinePreset[];
   initialScheduledSession: ScheduledSession | null;
+  initialVideos: WorkoutVideo[];
 }
 
 export function WorkoutTrackerApp({
@@ -38,6 +45,7 @@ export function WorkoutTrackerApp({
   initialActiveWorkout,
   initialMachines,
   initialScheduledSession,
+  initialVideos,
 }: WorkoutTrackerAppProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('workout');
   const [profile, setProfile] = useState<UserProfile>(initialProfile);
@@ -45,6 +53,14 @@ export function WorkoutTrackerApp({
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(initialActiveWorkout);
   const [machines, setMachines] = useState<MachinePreset[]>(initialMachines);
   const [scheduledSession, setScheduledSession] = useState<ScheduledSession | null>(initialScheduledSession);
+  const [videos, setVideos] = useState<WorkoutVideo[]>(initialVideos);
+  const [driveConnection, setDriveConnection] = useState<DriveConnection>({
+    isConfigured: false,
+    isConnected: false,
+    accessToken: null,
+  });
+  const [syncStatus, setSyncStatus] = useState<string>('Local starter data loaded.');
+  const [portalUrl, setPortalUrl] = useState<string>('');
 
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [exportWorkout, setExportWorkout] = useState<Workout | null>(null);
@@ -52,43 +68,93 @@ export function WorkoutTrackerApp({
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState<boolean>(false);
 
   const unit: WeightUnit = profile.preferredUnit || 'lbs';
+  const appState: WorkoutAppState = useMemo(
+    () => ({
+      version: 1,
+      profile,
+      machines,
+      workouts: combineWorkouts(workouts, activeWorkout),
+      scheduledSession,
+      videos,
+    }),
+    [activeWorkout, machines, profile, scheduledSession, videos, workouts]
+  );
+
+  useEffect(() => {
+    const connection = getDriveConnection();
+    setDriveConnection(connection);
+    const localState = readLocalState();
+    applyLoadedState(localState);
+    setSyncStatus(connection.isConnected ? 'Drive token restored for this session.' : 'Saved locally until Drive is connected.');
+
+    if (connection.accessToken) {
+      loadStateFromDrive(connection.accessToken)
+        .then((state) => {
+          applyLoadedState(state);
+          setSyncStatus('Loaded from Google Drive.');
+        })
+        .catch((error) => setSyncStatus(error instanceof Error ? error.message : 'Drive load failed.'));
+      getDriveSyncTarget(connection.accessToken)
+        .then((target) => setPortalUrl(target.portalUrl))
+        .catch(() => undefined);
+    }
+  }, []);
+
+  useEffect(() => {
+    saveLocalState(appState);
+  }, [appState]);
+
+  useEffect(() => {
+    if (!driveConnection.accessToken) return;
+
+    const timer = window.setTimeout(() => {
+      saveStateToDrive(driveConnection.accessToken!, appState)
+        .then(() => setSyncStatus('Synced to Google Drive.'))
+        .catch((error) => setSyncStatus(error instanceof Error ? error.message : 'Drive sync failed.'));
+    }, 900);
+
+    return () => window.clearTimeout(timer);
+  }, [appState, driveConnection.accessToken]);
+
+  const applyLoadedState = (state: WorkoutAppState) => {
+    const split = splitWorkouts(state.workouts);
+    setProfile(state.profile);
+    setWorkouts(split.completedWorkouts);
+    setActiveWorkout(split.activeWorkout);
+    setMachines(state.machines);
+    setScheduledSession(state.scheduledSession);
+    setVideos(state.videos);
+  };
 
   const handleUnitToggle = () => {
     const nextUnit: 'lbs' | 'kg' = unit === 'lbs' ? 'kg' : 'lbs';
     const updated: UserProfile = { ...profile, preferredUnit: nextUnit };
     setProfile(updated);
-    saveUserProfileServer(updated);
   };
 
   const handleSaveProfile = (newProfile: UserProfile) => {
     setProfile(newProfile);
-    saveUserProfileServer(newProfile);
   };
 
   const handleUpdateActiveWorkout = (updated: Workout) => {
     setActiveWorkout(updated);
-    saveWorkoutServer(updated);
   };
 
   const handleFinishWorkout = (completedWorkout: Workout) => {
     const finished = { ...completedWorkout, isCompleted: true };
     setActiveWorkout(null);
     setWorkouts((prev) => [finished, ...prev]);
-    saveWorkoutServer(finished);
     setActiveTab('pt-export');
     setExportWorkout(finished);
   };
 
   const handleDiscardActiveWorkout = () => {
-    if (activeWorkout) {
-      deleteWorkoutServer(activeWorkout.id);
-    }
     setActiveWorkout(null);
   };
 
   const handleDeleteWorkout = (workoutId: string) => {
     setWorkouts((prev) => prev.filter((w) => w.id !== workoutId));
-    deleteWorkoutServer(workoutId);
+    setVideos((prev) => prev.filter((video) => video.workoutId !== workoutId));
   };
 
   const handleRepeatWorkout = (workout: Workout) => {
@@ -128,7 +194,6 @@ export function WorkoutTrackerApp({
     };
 
     setActiveWorkout(newActive);
-    saveWorkoutServer(newActive);
     setActiveTab('workout');
   };
 
@@ -151,7 +216,6 @@ export function WorkoutTrackerApp({
       exercises: [],
     };
     setActiveWorkout(newActive);
-    saveWorkoutServer(newActive);
   };
 
   const handleStartScheduledNow = () => {
@@ -169,25 +233,20 @@ export function WorkoutTrackerApp({
       exercises: [],
     };
     setActiveWorkout(newActive);
-    saveWorkoutServer(newActive);
     setScheduledSession(null);
-    saveScheduledSessionServer(null);
     setActiveTab('workout');
   };
 
   const handleSaveScheduledSession = (session: ScheduledSession) => {
     setScheduledSession(session);
-    saveScheduledSessionServer(session);
   };
 
   const handleClearScheduledSession = () => {
     setScheduledSession(null);
-    saveScheduledSessionServer(null);
   };
 
   const handleSaveMachines = (updatedMachines: MachinePreset[]) => {
     setMachines(updatedMachines);
-    saveMachinePresetsServer(updatedMachines);
   };
 
   const handleSelectMachineToLog = (machine: MachinePreset) => {
@@ -221,7 +280,6 @@ export function WorkoutTrackerApp({
         exercises: [...activeWorkout.exercises, newExercise],
       };
       setActiveWorkout(updated);
-      saveWorkoutServer(updated);
     } else {
       const newWorkout: Workout = {
         id: `w-${Date.now()}`,
@@ -261,18 +319,39 @@ export function WorkoutTrackerApp({
         ],
       };
       setActiveWorkout(newWorkout);
-      saveWorkoutServer(newWorkout);
     }
     setActiveTab('workout');
   };
 
-  const handleResetData = async () => {
-    const data = await getAppData();
-    setProfile(data.profile);
-    setWorkouts(data.workouts);
-    setActiveWorkout(data.activeWorkout);
-    setMachines(data.machines);
-    setScheduledSession(data.scheduledSession);
+  const handleResetData = () => {
+    applyLoadedState(createDefaultAppState());
+    setSyncStatus('Starter data restored.');
+  };
+
+  const handleConnectDrive = async () => {
+    try {
+      setSyncStatus('Opening Google authorization...');
+      const connection = await connectGoogleDrive();
+      setDriveConnection(connection);
+      const loaded = await loadStateFromDrive(connection.accessToken!);
+      applyLoadedState(loaded);
+      const target = await getDriveSyncTarget(connection.accessToken!);
+      setPortalUrl(target.portalUrl);
+      setSyncStatus('Connected and loaded from Google Drive.');
+    } catch (error) {
+      setSyncStatus(error instanceof Error ? error.message : 'Unable to connect Google Drive.');
+    }
+  };
+
+  const handleDisconnectDrive = () => {
+    disconnectGoogleDrive();
+    setDriveConnection(getDriveConnection());
+    setPortalUrl('');
+    setSyncStatus('Drive disconnected. Changes stay in this browser.');
+  };
+
+  const handleVideoUploaded = (video: WorkoutVideo) => {
+    setVideos((prev) => [video, ...prev]);
   };
 
   const handleUpdateWorkoutTitle = (workoutId: string, newTitle: string) => {
@@ -280,7 +359,6 @@ export function WorkoutTrackerApp({
       prev.map((w) => {
         if (w.id === workoutId) {
           const updated = { ...w, title: newTitle };
-          saveWorkoutServer(updated);
           return updated;
         }
         return w;
@@ -293,7 +371,6 @@ export function WorkoutTrackerApp({
       prev.map((w) => {
         if (w.id === workoutId) {
           const updated = { ...w, date: newDateIso };
-          saveWorkoutServer(updated);
           return updated;
         }
         return w;
@@ -337,6 +414,9 @@ export function WorkoutTrackerApp({
                 onFinishWorkout={handleFinishWorkout}
                 onOpenExportModal={handleOpenExportForWorkout}
                 onDiscardWorkout={handleDiscardActiveWorkout}
+                driveAccessToken={driveConnection.accessToken}
+                videos={videos.filter((video) => video.workoutId === activeWorkout.id)}
+                onVideoUploaded={handleVideoUploaded}
               />
             ) : (
               <div className="bg-[#181412] border border-[#382f29] rounded-3xl p-6 text-center space-y-4 shadow-xl">
@@ -424,6 +504,11 @@ export function WorkoutTrackerApp({
         onClose={() => setIsProfileModalOpen(false)}
         onSaveProfile={handleSaveProfile}
         onResetData={handleResetData}
+        driveConnection={driveConnection}
+        onConnectDrive={handleConnectDrive}
+        onDisconnectDrive={handleDisconnectDrive}
+        syncStatus={syncStatus}
+        portalUrl={portalUrl}
       />
 
       <ScheduleCalendarModal
