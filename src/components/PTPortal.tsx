@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Lock, Maximize2, MessageSquareText, Minimize2, RefreshCw, X } from 'lucide-react';
+import { CheckCircle2, Circle, Dumbbell, Lock, Maximize2, MessageSquareText, Minimize2, RefreshCw, X } from 'lucide-react';
 import { WorkoutAppState, WorkoutVideo } from '../types';
 import { formatWorkoutDate } from '../utils/formatters';
 
@@ -137,6 +137,9 @@ export const PTPortal: React.FC = () => {
   }
 
   const completedWorkouts = state.workouts.filter((workout) => workout.isCompleted);
+  const todayKey = getTodayKey();
+  const todayWarmups = state.warmupCheckins?.[todayKey] || {};
+  const warmupsDone = state.trainingPlan.warmupMoves.filter((move) => todayWarmups[move.id]).length;
 
   return (
     <main className="min-h-screen bg-[#0c0a09] text-[#f7f3ee] px-4 py-5">
@@ -146,6 +149,55 @@ export const PTPortal: React.FC = () => {
           <h1 className="text-2xl font-serif font-bold">{state.profile.clientName || 'Athlete'} Training Log</h1>
           {state.profile.ptName && <p className="text-sm text-[#a39588]">For {state.profile.ptName}</p>}
         </header>
+
+        <section className="grid gap-4 lg:grid-cols-[320px_1fr]">
+          <div className="bg-[#181412] border border-[#382f29] rounded-3xl p-4 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs text-[#e6a15c] font-syne font-bold uppercase tracking-wider">Today Warmup</p>
+                <h2 className="text-2xl font-serif font-bold">{warmupsDone}/{state.trainingPlan.warmupMoves.length}</h2>
+              </div>
+              <CheckCircle2 className="w-6 h-6 text-[#849a88]" />
+            </div>
+            <div className="space-y-2">
+              {state.trainingPlan.warmupMoves.map((move) => {
+                const isChecked = !!todayWarmups[move.id];
+                return (
+                  <div key={move.id} className="flex items-center gap-2 text-xs text-[#c8b8a8]">
+                    {isChecked ? (
+                      <CheckCircle2 className="w-4 h-4 text-[#849a88]" />
+                    ) : (
+                      <Circle className="w-4 h-4 text-[#6b5e54]" />
+                    )}
+                    <span className="flex-1">{move.name}</span>
+                    <span className="font-mono text-[#8c7e72]">{move.target}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="bg-[#181412] border border-[#382f29] rounded-3xl p-4 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs text-[#e6a15c] font-syne font-bold uppercase tracking-wider">Training Plan</p>
+                <h2 className="text-2xl font-serif font-bold">{state.trainingPlan.title}</h2>
+              </div>
+              <Dumbbell className="w-6 h-6 text-[#e6a15c]" />
+            </div>
+            <div className="grid gap-2 md:grid-cols-2">
+              {state.trainingPlan.blocks.map((block) => (
+                <div key={block.id} className="bg-[#100d0b] border border-[#2b241f] rounded-2xl p-3">
+                  <h3 className="text-sm font-bold text-[#f7f3ee]">{block.title}</h3>
+                  <p className="text-[10px] text-[#8c7e72]">{block.subtitle}</p>
+                  <p className="mt-2 text-xs text-[#c8b8a8]">
+                    {block.exercises.map((exercise) => exercise.name).join(' · ')}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
         {completedWorkouts.length === 0 ? (
           <div className="bg-[#181412] border border-[#382f29] rounded-3xl p-6 text-sm text-[#a39588]">
@@ -345,3 +397,8 @@ export const PTPortal: React.FC = () => {
     </main>
   );
 };
+
+function getTodayKey() {
+  const today = new Date();
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+}

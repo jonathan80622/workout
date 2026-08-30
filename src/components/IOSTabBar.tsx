@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Flame, History, Compass, Sparkles } from 'lucide-react';
+import { Dumbbell, Flame, History, Compass, Scale, Sparkles } from 'lucide-react';
 import { ActiveTab } from '../types';
 
 interface IOSTabBarProps {
@@ -23,9 +23,19 @@ export const IOSTabBar: React.FC<IOSTabBarProps> = ({
       badge: hasActiveWorkout ? 'Active' : undefined
     },
     {
+      id: 'plan' as ActiveTab,
+      label: 'Plan',
+      icon: Dumbbell
+    },
+    {
       id: 'history' as ActiveTab,
       label: 'History',
       icon: History
+    },
+    {
+      id: 'weight' as ActiveTab,
+      label: 'Weight',
+      icon: Scale
     },
     {
       id: 'machines' as ActiveTab,
@@ -50,7 +60,7 @@ export const IOSTabBar: React.FC<IOSTabBarProps> = ({
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`relative flex flex-col items-center justify-center py-1.5 px-3 rounded-full transition-all duration-300 ${
+              className={`relative flex flex-col items-center justify-center py-1.5 px-2 rounded-full transition-all duration-300 ${
                 isActive
                   ? 'text-[#f5c999] font-semibold scale-105'
                   : 'text-[#8c7e72] hover:text-[#e8e0d5]'

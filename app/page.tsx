@@ -12,6 +12,8 @@ export default function HomePage() {
       initialActiveWorkout={data.activeWorkout}
       initialMachines={state.machines}
       initialScheduledSession={state.scheduledSession}
+      initialTrainingPlan={state.trainingPlan}
+      initialWarmupCheckins={state.warmupCheckins}
     />
   );
 }

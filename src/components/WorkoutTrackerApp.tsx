@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Workout, MachinePreset, ActiveTab, WeightUnit, WorkoutAppState } from '@/src/types';
+import { Workout, MachinePreset, ActiveTab, WeightUnit, WorkoutAppState, TrainingPlan, WarmupCheckins } from '@/src/types';
 import { UserProfile } from '@/src/utils/storage';
 import { ScheduledSession } from '@/src/utils/calendar';
 import { IOSHeader } from './IOSHeader';
@@ -10,6 +10,8 @@ import { ActiveWorkout } from './ActiveWorkout';
 import { WorkoutHistory } from './WorkoutHistory';
 import { MachineLibrary } from './MachineLibrary';
 import { AnalyticsView } from './AnalyticsView';
+import { TrainingPlanView } from './TrainingPlanView';
+import WeightTrackingPage from '@/app/weight-tracking/page';
 import { ProfileModal } from './ProfileModal';
 import { ScheduleCalendarModal } from './ScheduleCalendarModal';
 import { NextSessionBanner } from './NextSessionBanner';
@@ -34,6 +36,9 @@ interface WorkoutTrackerAppProps {
   initialActiveWorkout: Workout | null;
   initialMachines: MachinePreset[];
   initialScheduledSession: ScheduledSession | null;
+  initialTrainingPlan?: TrainingPlan;
+  initialWarmupCheckins?: WarmupCheckins;
+  initialTab?: ActiveTab;
 }
 
 export function WorkoutTrackerApp({
@@ -42,12 +47,17 @@ export function WorkoutTrackerApp({
   initialActiveWorkout,
   initialMachines,
   initialScheduledSession,
+  initialTrainingPlan,
+  initialWarmupCheckins,
+  initialTab = 'workout',
 }: WorkoutTrackerAppProps) {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('workout');
+  const [activeTab, setActiveTab] = useState<ActiveTab>(initialTab);
   const [profile, setProfile] = useState<UserProfile>(initialProfile);
   const [workouts, setWorkouts] = useState<Workout[]>(initialWorkouts);
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(initialActiveWorkout);
   const [machines, setMachines] = useState<MachinePreset[]>(initialMachines);
+  const [trainingPlan, setTrainingPlan] = useState<TrainingPlan>(initialTrainingPlan || createDefaultAppState().trainingPlan);
+  const [warmupCheckins, setWarmupCheckins] = useState<WarmupCheckins>(initialWarmupCheckins || {});
   const [scheduledSession, setScheduledSession] = useState<ScheduledSession | null>(initialScheduledSession);
   const [driveConnection, setDriveConnection] = useState<DriveConnection>({
     isConfigured: false,
@@ -67,9 +77,11 @@ export function WorkoutTrackerApp({
       profile,
       machines,
       workouts: combineWorkouts(workouts, activeWorkout),
+      trainingPlan,
+      warmupCheckins,
       scheduledSession,
     }),
-    [activeWorkout, machines, profile, scheduledSession, workouts]
+    [activeWorkout, machines, profile, scheduledSession, trainingPlan, warmupCheckins, workouts]
   );
 
   useEffect(() => {
@@ -114,6 +126,8 @@ export function WorkoutTrackerApp({
     setWorkouts(split.completedWorkouts);
     setActiveWorkout(split.activeWorkout);
     setMachines(state.machines);
+    setTrainingPlan(state.trainingPlan);
+    setWarmupCheckins(state.warmupCheckins);
     setScheduledSession(state.scheduledSession);
   };
 
@@ -429,7 +443,16 @@ export function WorkoutTrackerApp({
             </div>
           )}
 
-          {/* Tab 2: History */}
+          {/* Tab 2: Training Plan */}
+          {activeTab === 'plan' && (
+            <TrainingPlanView
+              trainingPlan={trainingPlan}
+              warmupCheckins={warmupCheckins}
+              onWarmupCheckinsChange={setWarmupCheckins}
+            />
+          )}
+
+          {/* Tab 3: History */}
           {activeTab === 'history' && (
             <WorkoutHistory
               workouts={workouts}
@@ -442,7 +465,14 @@ export function WorkoutTrackerApp({
             />
           )}
 
-          {/* Tab 3: Machines */}
+          {/* Tab 4: Weight */}
+          {activeTab === 'weight' && (
+            <div className="-mx-4 -my-3">
+              <WeightTrackingPage />
+            </div>
+          )}
+
+          {/* Tab 5: Machines */}
           {activeTab === 'machines' && (
             <MachineLibrary
               machines={machines}
@@ -451,7 +481,7 @@ export function WorkoutTrackerApp({
             />
           )}
 
-          {/* Tab 4: Analytics */}
+          {/* Tab 6: Analytics */}
           {activeTab === 'analytics' && (
             <AnalyticsView workouts={workouts} unit={unit} />
           )}

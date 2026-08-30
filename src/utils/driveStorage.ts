@@ -1,4 +1,5 @@
 import { DEFAULT_MACHINES } from '../data/defaultMachines';
+import { DEFAULT_TRAINING_PLAN } from '../data/defaultTrainingPlan';
 import { SAMPLE_WORKOUTS } from '../data/sampleWorkouts';
 import { Workout, WorkoutAppState, WorkoutVideo } from '../types';
 import { ScheduledSession } from './calendar';
@@ -68,6 +69,8 @@ export function createDefaultAppState(): WorkoutAppState {
     },
     machines: DEFAULT_MACHINES,
     workouts: SAMPLE_WORKOUTS,
+    trainingPlan: DEFAULT_TRAINING_PLAN,
+    warmupCheckins: {},
     scheduledSession: null,
   };
 }
@@ -256,7 +259,7 @@ export async function uploadWorkoutVideo(params: {
   };
 }
 
-function normalizeAppState(value: Partial<WorkoutAppState>): WorkoutAppState {
+export function normalizeAppState(value: Partial<WorkoutAppState>): WorkoutAppState {
   const defaults = createDefaultAppState();
   const legacyVideos = Array.isArray(value.videos) ? value.videos : [];
   const workouts = Array.isArray(value.workouts) ? value.workouts : defaults.workouts;
@@ -288,8 +291,46 @@ function normalizeAppState(value: Partial<WorkoutAppState>): WorkoutAppState {
     profile: { ...defaults.profile, ...(value.profile || {}) },
     machines: Array.isArray(value.machines) && value.machines.length > 0 ? value.machines : defaults.machines,
     workouts: normalizedWorkouts,
+    trainingPlan: normalizeTrainingPlan(value.trainingPlan, defaults.trainingPlan),
+    warmupCheckins: normalizeWarmupCheckins(value.warmupCheckins),
     scheduledSession: (value.scheduledSession || null) as ScheduledSession | null,
   };
+}
+
+function normalizeTrainingPlan(
+  value: Partial<WorkoutAppState['trainingPlan']> | undefined,
+  fallback: WorkoutAppState['trainingPlan']
+): WorkoutAppState['trainingPlan'] {
+  if (!value || !Array.isArray(value.blocks) || !Array.isArray(value.warmupMoves)) return fallback;
+
+  return {
+    version: 1,
+    title: typeof value.title === 'string' && value.title.trim() ? value.title : fallback.title,
+    blocks: value.blocks.length > 0 ? value.blocks : fallback.blocks,
+    warmupMoves: value.warmupMoves.length > 0 ? value.warmupMoves : fallback.warmupMoves,
+  };
+}
+
+function normalizeWarmupCheckins(value: unknown): WorkoutAppState['warmupCheckins'] {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+
+  const checkins: WorkoutAppState['warmupCheckins'] = {};
+
+  Object.entries(value as Record<string, unknown>).forEach(([dateKey, moves]) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey) || !moves || typeof moves !== 'object' || Array.isArray(moves)) {
+      return;
+    }
+
+    const dayCheckins: Record<string, boolean> = {};
+    Object.entries(moves as Record<string, unknown>).forEach(([moveId, checked]) => {
+      if (typeof checked === 'boolean') {
+        dayCheckins[moveId] = checked;
+      }
+    });
+    checkins[dateKey] = dayCheckins;
+  });
+
+  return checkins;
 }
 
 async function findDataFile(accessToken: string): Promise<string | null> {

@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Minus, Plus, Scale, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
-
-type WeightEntry = {
-  id: string;
-  date: string;
-  weight: number;
-};
+import { ChevronLeft, ChevronRight, Plus, Scale, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
+import { BodyWeightEntry, BodyWeightStore, WeightUnit } from '@/src/types';
+import {
+  createBodyWeightEntry,
+  formatBodyWeight,
+  parseBodyWeightStore,
+  serializeBodyWeightStore,
+  weightFromKg,
+} from '@/src/utils/bodyWeight';
 
 type RangeKey = '1W' | '1M' | '3M' | '6M' | '1Y' | 'All';
 
@@ -22,19 +24,24 @@ const rangeOptions: { key: RangeKey; days: number | null }[] = [
 
 const storageKey = 'workout-recorder-weight-entries';
 
-const seedEntries = (): WeightEntry[] => {
+const seedStore = (): BodyWeightStore => {
   const today = new Date();
-  const values = [187.8, 187.1, 186.9, 186.2, 185.7, 185.4, 184.9, 184.5, 184.1, 183.8, 183.2, 182.9];
+  const valuesLbs = [187.8, 187.1, 186.9, 186.2, 185.7, 185.4, 184.9, 184.5, 184.1, 183.8, 183.2, 182.9];
 
-  return values.map((weight, index) => {
-    const date = new Date(today);
-    date.setDate(today.getDate() - (values.length - index - 1) * 7);
-    return {
-      id: `seed-${index}`,
-      date: toDateInputValue(date),
-      weight,
-    };
-  });
+  return {
+    version: 1,
+    displayUnit: 'lbs',
+    entries: valuesLbs.map((value, index) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() - (valuesLbs.length - index - 1) * 7);
+      return createBodyWeightEntry({
+        id: `seed-${index}`,
+        date: toDateInputValue(date),
+        value,
+        unit: 'lbs',
+      });
+    }),
+  };
 };
 
 const toDateInputValue = (date: Date) =>
@@ -44,38 +51,29 @@ const formatDate = (date: string) =>
   new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' }).format(new Date(`${date}T12:00:00`));
 
 export default function WeightTrackingPage() {
-  const [entries, setEntries] = useState<WeightEntry[]>([]);
+  const [store, setStore] = useState<BodyWeightStore>({ version: 1, displayUnit: 'lbs', entries: [] });
   const [selectedRange, setSelectedRange] = useState<RangeKey>('3M');
   const [zoomLevel, setZoomLevel] = useState(1);
   const [panOffset, setPanOffset] = useState(0);
   const [date, setDate] = useState(() => toDateInputValue(new Date()));
   const [weight, setWeight] = useState('');
-  const dragStartRef = useRef<{ x: number; panOffset: number } | null>(null);
+  const dragStartRef = useRef<{ x: number } | null>(null);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(storageKey);
-    if (!stored) {
-      const seeded = seedEntries();
-      setEntries(seeded);
-      window.localStorage.setItem(storageKey, JSON.stringify(seeded));
-      return;
-    }
-
-    try {
-      setEntries(JSON.parse(stored));
-    } catch {
-      setEntries([]);
-    }
+    const parsed = parseBodyWeightStore(window.localStorage.getItem(storageKey));
+    const nextStore = parsed || seedStore();
+    setStore(nextStore);
+    window.localStorage.setItem(storageKey, serializeBodyWeightStore(nextStore));
   }, []);
 
   useEffect(() => {
-    if (entries.length === 0) return;
-    window.localStorage.setItem(storageKey, JSON.stringify(entries));
-  }, [entries]);
+    window.localStorage.setItem(storageKey, serializeBodyWeightStore(store));
+  }, [store]);
 
+  const displayUnit = store.displayUnit;
   const sortedEntries = useMemo(
-    () => [...entries].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
-    [entries]
+    () => [...store.entries].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+    [store.entries]
   );
 
   const rangeDays = rangeOptions.find((option) => option.key === selectedRange)?.days ?? null;
@@ -103,35 +101,46 @@ export default function WeightTrackingPage() {
 
   const latest = sortedEntries[sortedEntries.length - 1];
   const earliestInWindow = windowedEntries[0];
-  const change = latest && sortedEntries.length > 1 ? latest.weight - sortedEntries[0].weight : 0;
-  const average =
+  const latestInWindow = windowedEntries[windowedEntries.length - 1];
+  const first = sortedEntries[0];
+  const changeKg = latest && first ? latest.weightKg - first.weightKg : 0;
+  const averageKg =
     windowedEntries.length > 0
-      ? windowedEntries.reduce((sum, entry) => sum + entry.weight, 0) / windowedEntries.length
+      ? windowedEntries.reduce((sum, entry) => sum + entry.weightKg, 0) / windowedEntries.length
       : 0;
 
   const addEntry = () => {
     const parsedWeight = Number(weight);
     if (!date || !Number.isFinite(parsedWeight) || parsedWeight <= 0) return;
 
-    const nextEntry = {
+    const nextEntry = createBodyWeightEntry({
       id: `weight-${Date.now()}`,
       date,
-      weight: Math.round(parsedWeight * 10) / 10,
-    };
+      value: parsedWeight,
+      unit: displayUnit,
+    });
 
-    setEntries((current) => [
-      ...current.filter((entry) => entry.date !== date),
-      nextEntry,
-    ]);
+    setStore((current) => ({
+      ...current,
+      entries: [...current.entries.filter((entry) => entry.date !== date), nextEntry],
+    }));
     setWeight('');
   };
 
   const deleteEntry = (entryId: string) => {
-    setEntries((current) => current.filter((entry) => entry.id !== entryId));
+    setStore((current) => ({
+      ...current,
+      entries: current.entries.filter((entry) => entry.id !== entryId),
+    }));
+  };
+
+  const setDisplayUnit = (unit: WeightUnit) => {
+    setStore((current) => ({ ...current, displayUnit: unit }));
   };
 
   const visibleCount = Math.max(2, Math.ceil(filteredEntries.length / zoomLevel));
   const canPan = filteredEntries.length > visibleCount;
+  const change = weightFromKg(changeKg, displayUnit);
 
   return (
     <main className="min-h-screen bg-[#0c0a09] text-[#f7f3ee] px-4 py-6">
@@ -142,7 +151,7 @@ export default function WeightTrackingPage() {
               <p className="font-syne text-xs font-bold uppercase tracking-wider text-[#e6a15c]">Body Metrics</p>
               <h1 className="mt-1 font-serif text-4xl font-bold text-[#f7f3ee]">Weight</h1>
               <p className="mt-2 max-w-2xl text-sm text-[#a39588]">
-                Log weigh-ins and zoom into recent trends without leaving the workout app.
+                Stored canonically in kilograms, displayed in your chosen unit.
               </p>
             </div>
 
@@ -151,7 +160,7 @@ export default function WeightTrackingPage() {
                 <div>
                   <p className="font-syne text-[10px] font-bold uppercase tracking-wider text-[#8c7e72]">Latest</p>
                   <p className="font-mono text-3xl font-bold text-[#e6a15c]">
-                    {latest ? latest.weight.toFixed(1) : '--'} lb
+                    {latest ? formatBodyWeight(latest.weightKg, displayUnit) : '--'}
                   </p>
                   {latest && <p className="text-xs text-[#a39588]">{formatDate(latest.date)}</p>}
                 </div>
@@ -163,9 +172,25 @@ export default function WeightTrackingPage() {
 
         <section className="grid gap-4 lg:grid-cols-[320px_1fr]">
           <aside className="h-fit rounded-2xl border border-[#382f29] bg-[#181412] p-4 space-y-4 lg:sticky lg:top-5">
-            <div>
-              <p className="font-syne text-[10px] font-bold uppercase tracking-wider text-[#e6a15c]">Add weigh-in</p>
-              <h2 className="font-serif text-2xl font-bold">Today</h2>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-syne text-[10px] font-bold uppercase tracking-wider text-[#e6a15c]">Add weigh-in</p>
+                <h2 className="font-serif text-2xl font-bold">Today</h2>
+              </div>
+              <div className="flex rounded-xl border border-[#382f29] bg-[#100d0b] p-1">
+                {(['lbs', 'kg'] as WeightUnit[]).map((unit) => (
+                  <button
+                    key={unit}
+                    type="button"
+                    onClick={() => setDisplayUnit(unit)}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-bold ${
+                      displayUnit === unit ? 'bg-[#d97724] text-[#0c0a09]' : 'text-[#a39588] hover:text-[#f7f3ee]'
+                    }`}
+                  >
+                    {unit}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="grid gap-2">
@@ -180,7 +205,7 @@ export default function WeightTrackingPage() {
               </label>
 
               <label className="space-y-1">
-                <span className="text-xs font-bold text-[#c8b8a8]">Weight</span>
+                <span className="text-xs font-bold text-[#c8b8a8]">Weight ({displayUnit})</span>
                 <input
                   type="number"
                   inputMode="decimal"
@@ -191,7 +216,7 @@ export default function WeightTrackingPage() {
                   onKeyDown={(event) => {
                     if (event.key === 'Enter') addEntry();
                   }}
-                  placeholder="182.4"
+                  placeholder={displayUnit === 'lbs' ? '182.4' : '82.7'}
                   className="w-full rounded-xl border border-[#382f29] bg-[#100d0b] px-3 py-2 text-sm text-[#f7f3ee] placeholder-[#6b5e54] outline-none focus:ring-1 focus:ring-[#d97724]"
                 />
               </label>
@@ -207,8 +232,8 @@ export default function WeightTrackingPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-2 border-t border-[#2b241f] pt-4">
-              <Stat label="Window avg" value={average ? `${average.toFixed(1)} lb` : '--'} />
-              <Stat label="Total change" value={`${change >= 0 ? '+' : ''}${change.toFixed(1)} lb`} />
+              <Stat label="Window avg" value={averageKg ? formatBodyWeight(averageKg, displayUnit) : '--'} />
+              <Stat label="Total change" value={`${change >= 0 ? '+' : ''}${change.toFixed(1)} ${displayUnit}`} />
             </div>
           </aside>
 
@@ -286,6 +311,7 @@ export default function WeightTrackingPage() {
 
               <WeightChart
                 entries={windowedEntries}
+                displayUnit={displayUnit}
                 onDrag={(direction) => {
                   if (!canPan) return;
                   setPanOffset((current) => {
@@ -298,9 +324,11 @@ export default function WeightTrackingPage() {
 
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-[#8c7e72]">
                 <span>
-                  {earliestInWindow && latest ? `${formatDate(earliestInWindow.date)} to ${formatDate(windowedEntries[windowedEntries.length - 1].date)}` : 'No entries yet'}
+                  {earliestInWindow && latestInWindow
+                    ? `${formatDate(earliestInWindow.date)} to ${formatDate(latestInWindow.date)}`
+                    : 'No entries yet'}
                 </span>
-                <span>{zoomLevel.toFixed(1)}x zoom</span>
+                <span>{zoomLevel.toFixed(1)}x zoom · {displayUnit}</span>
               </div>
             </section>
 
@@ -313,8 +341,15 @@ export default function WeightTrackingPage() {
               <div className="divide-y divide-[#2b241f]">
                 {[...sortedEntries].reverse().slice(0, 10).map((entry) => (
                   <div key={entry.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-3 py-2">
-                    <span className="text-sm text-[#c8b8a8]">{formatDate(entry.date)}</span>
-                    <span className="font-mono text-sm font-bold text-[#f7f3ee]">{entry.weight.toFixed(1)} lb</span>
+                    <div>
+                      <p className="text-sm text-[#c8b8a8]">{formatDate(entry.date)}</p>
+                      <p className="text-[10px] text-[#8c7e72]">
+                        Entered as {entry.sourceValue.toFixed(1)} {entry.sourceUnit}
+                      </p>
+                    </div>
+                    <span className="font-mono text-sm font-bold text-[#f7f3ee]">
+                      {formatBodyWeight(entry.weightKg, displayUnit)}
+                    </span>
                     <button
                       type="button"
                       onClick={() => deleteEntry(entry.id)}
@@ -345,17 +380,19 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 function WeightChart({
   entries,
+  displayUnit,
   onDrag,
   dragStartRef,
 }: {
-  entries: WeightEntry[];
+  entries: BodyWeightEntry[];
+  displayUnit: WeightUnit;
   onDrag: (direction: 'left' | 'right') => void;
-  dragStartRef: React.MutableRefObject<{ x: number; panOffset: number } | null>;
+  dragStartRef: React.MutableRefObject<{ x: number } | null>;
 }) {
   const width = 760;
   const height = 330;
   const padding = { top: 28, right: 24, bottom: 44, left: 52 };
-  const weights = entries.map((entry) => entry.weight);
+  const weights = entries.map((entry) => weightFromKg(entry.weightKg, displayUnit));
   const min = weights.length ? Math.min(...weights) : 0;
   const max = weights.length ? Math.max(...weights) : 0;
   const buffer = Math.max(1, (max - min) * 0.25);
@@ -365,9 +402,10 @@ function WeightChart({
   const plotHeight = height - padding.top - padding.bottom;
 
   const points = entries.map((entry, index) => {
+    const displayWeight = weightFromKg(entry.weightKg, displayUnit);
     const x = padding.left + (entries.length === 1 ? plotWidth / 2 : (index / (entries.length - 1)) * plotWidth);
-    const y = padding.top + ((yMax - entry.weight) / Math.max(1, yMax - yMin)) * plotHeight;
-    return { ...entry, x, y };
+    const y = padding.top + ((yMax - displayWeight) / Math.max(1, yMax - yMin)) * plotHeight;
+    return { ...entry, displayWeight, x, y };
   });
 
   const linePath = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
@@ -381,7 +419,7 @@ function WeightChart({
     <div
       className="mt-4 touch-pan-y"
       onPointerDown={(event) => {
-        dragStartRef.current = { x: event.clientX, panOffset: 0 };
+        dragStartRef.current = { x: event.clientX };
       }}
       onPointerUp={(event) => {
         if (!dragStartRef.current) return;
@@ -425,7 +463,7 @@ function WeightChart({
                   {formatDate(point.date)}
                 </text>
                 <text x={point.x} y={point.y - 12} textAnchor="middle" fill="#f7f3ee" fontSize="12" fontWeight="700">
-                  {point.weight.toFixed(1)}
+                  {point.displayWeight.toFixed(1)}
                 </text>
               </>
             )}

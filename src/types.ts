@@ -85,6 +85,52 @@ export interface WorkoutVideo {
   webViewLink?: string;
 }
 
+export interface BodyWeightEntry {
+  schemaVersion: 1;
+  id: string;
+  date: string; // YYYY-MM-DD, local weigh-in date
+  weightKg: number; // Canonical storage unit for all body weight math.
+  sourceValue: number; // The value as originally entered.
+  sourceUnit: WeightUnit;
+}
+
+export interface BodyWeightStore {
+  version: 1;
+  displayUnit: WeightUnit;
+  entries: BodyWeightEntry[];
+}
+
+export interface TrainingPlanExercise {
+  id: string;
+  name: string;
+  sets: string;
+  reps: string;
+  rest: string;
+}
+
+export interface TrainingPlanBlock {
+  id: string;
+  title: string;
+  subtitle: string;
+  accent: string;
+  exercises: TrainingPlanExercise[];
+}
+
+export interface WarmupMove {
+  id: string;
+  name: string;
+  target: string;
+}
+
+export interface TrainingPlan {
+  version: 1;
+  title: string;
+  blocks: TrainingPlanBlock[];
+  warmupMoves: WarmupMove[];
+}
+
+export type WarmupCheckins = Record<string, Record<string, boolean>>;
+
 export interface WorkoutAppState {
   version: 1;
   profile: {
@@ -96,6 +142,8 @@ export interface WorkoutAppState {
   };
   machines: MachinePreset[];
   workouts: Workout[];
+  trainingPlan: TrainingPlan;
+  warmupCheckins: WarmupCheckins;
   scheduledSession: import('./utils/calendar').ScheduledSession | null;
   videos?: WorkoutVideo[]; // Legacy top-level video list, migrated into ExerciseLog.videos on load.
 }
@@ -109,4 +157,4 @@ export interface MachinePreset {
   targetDescription: string;
 }
 
-export type ActiveTab = 'workout' | 'history' | 'machines' | 'analytics';
+export type ActiveTab = 'workout' | 'plan' | 'history' | 'weight' | 'machines' | 'analytics';

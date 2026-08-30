@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { normalizeAppState } from '@/src/utils/driveStorage';
 
 const DRIVE_DOWNLOAD_URL = 'https://drive.google.com/uc?export=download&id=';
 
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Drive data file did not contain valid JSON.' }, { status: 502 });
   }
 
-  return NextResponse.json(state, {
+  return NextResponse.json(normalizeAppState(state), {
     headers: {
       'Cache-Control': 'no-store',
     },
