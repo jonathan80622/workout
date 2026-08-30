@@ -29,6 +29,39 @@
   background: radial-gradient(circle, rgba(132, 154, 136, 0.15) 0%, rgba(12, 10, 9, 0) 70%);
 }
 
+.workout-app-shell.drive-dead {
+  background:
+    linear-gradient(145deg, rgba(88, 88, 88, 0.14), rgba(12, 12, 12, 0.98)),
+    #0c0c0c;
+  border-color: #4a4a4a;
+}
+
+.workout-app-shell.drive-dead .drive-theme-content {
+  filter: grayscale(1) saturate(0.04) contrast(0.82) brightness(0.78);
+}
+
+.workout-app-shell.drive-dead::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(210, 210, 210, 0.06), transparent 24%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.025) 0,
+      rgba(255, 255, 255, 0.025) 1px,
+      transparent 1px,
+      transparent 5px
+    );
+  mix-blend-mode: screen;
+  opacity: 0.55;
+}
+
+.workout-app-shell.drive-connected .drive-theme-content {
+  filter: none;
+}
+
 /* Custom smooth scrollbar for mobile view */
 ::-webkit-scrollbar {
   width: 5px;

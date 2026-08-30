@@ -358,114 +358,130 @@ export function WorkoutTrackerApp({
     );
   };
 
+  const isDriveConnected = driveConnection.isConnected && Boolean(driveConnection.accessToken);
+
   return (
-    <div className="min-h-screen bg-[#0c0a09] text-[#f7f3ee] flex flex-col max-w-md mx-auto shadow-2xl relative border-x border-[#2b241f]">
-      <IOSHeader
-        title={profile.appTitle || 'Workout Studio'}
-        isTimerRunning={!!activeWorkout}
-        timerSeconds={0}
-        unit={unit}
-        onUnitToggle={handleUnitToggle}
-        clientName={profile.clientName}
-        ptName={profile.ptName}
-        onOpenProfileModal={() => setIsProfileModalOpen(true)}
-      />
+    <div
+      className={`workout-app-shell ${
+        isDriveConnected ? 'drive-connected' : 'drive-dead'
+      } min-h-screen bg-[#0c0a09] text-[#f7f3ee] flex flex-col max-w-md mx-auto shadow-2xl relative border-x border-[#2b241f]`}
+    >
+      <div className="drive-theme-content flex min-h-screen flex-col">
+        <IOSHeader
+          title={profile.appTitle || 'Workout Studio'}
+          isTimerRunning={!!activeWorkout}
+          timerSeconds={0}
+          unit={unit}
+          onUnitToggle={handleUnitToggle}
+          clientName={profile.clientName}
+          ptName={profile.ptName}
+          onOpenProfileModal={() => setIsProfileModalOpen(true)}
+        />
 
-      <main className="flex-1 px-4 pt-3 pb-24 overflow-y-auto space-y-4">
-        {/* Tab 1: Workout */}
-        {activeTab === 'workout' && (
-          <div className="space-y-4">
-            <NextSessionBanner
-              scheduledSession={scheduledSession}
-              onOpenScheduleModal={() => setIsScheduleModalOpen(true)}
-              onClearSession={handleClearScheduledSession}
-              onStartSessionNow={handleStartScheduledNow}
-            />
-
-            {activeWorkout ? (
-              <ActiveWorkout
-                workout={activeWorkout}
-                unit={unit}
-                machines={machines}
-                onUpdateWorkout={handleUpdateActiveWorkout}
-                onFinishWorkout={handleFinishWorkout}
-                onDiscardWorkout={handleDiscardActiveWorkout}
-                driveAccessToken={driveConnection.accessToken}
-              />
-            ) : (
-              <div className="bg-[#181412] border border-[#382f29] rounded-3xl p-6 text-center space-y-4 shadow-xl">
-                <div className="w-14 h-14 rounded-full bg-[#d97724]/20 border border-[#d97724]/40 flex items-center justify-center mx-auto text-[#e6a15c]">
-                  <span className="text-2xl">🏋️</span>
-                </div>
-                <div>
-                  <h3 className="text-lg font-serif font-bold text-[#f7f3ee]">No Active Session</h3>
-                  <p className="text-xs text-[#a39588] font-light max-w-xs mx-auto mt-1">
-                    Start a workout from scratch, pick from machine library, or repeat a past training session.
-                  </p>
-                </div>
-                <button
-                  onClick={handleStartNewWorkoutFromScratch}
-                  className="w-full py-3.5 bg-gradient-to-r from-[#d97724] via-[#c86d51] to-[#e6a15c] text-[#0c0a09] font-syne font-bold text-xs rounded-2xl shadow-lg shadow-[#d97724]/20 transition-all hover:opacity-95"
-                >
-                  + Start New Workout Session
-                </button>
-              </div>
-            )}
+        {!isDriveConnected && (
+          <div className="border-b border-[#545454] bg-[#1a1a1a] px-4 py-2 text-center">
+            <p className="font-syne text-[10px] font-bold uppercase tracking-wider text-[#c7c7c7]">
+              Drive disconnected · local-only mode
+            </p>
           </div>
         )}
 
-        {/* Tab 2: History */}
-        {activeTab === 'history' && (
-          <WorkoutHistory
-            workouts={workouts}
-            unit={unit}
-            onDeleteWorkout={handleDeleteWorkout}
-            onRepeatWorkout={handleRepeatWorkout}
-            onStartNewWorkout={handleStartNewWorkoutFromScratch}
-            onUpdateWorkoutTitle={handleUpdateWorkoutTitle}
-            onUpdateWorkoutDate={handleUpdateWorkoutDate}
-          />
-        )}
+        <main className="flex-1 px-4 pt-3 pb-24 overflow-y-auto space-y-4">
+          {/* Tab 1: Workout */}
+          {activeTab === 'workout' && (
+            <div className="space-y-4">
+              <NextSessionBanner
+                scheduledSession={scheduledSession}
+                onOpenScheduleModal={() => setIsScheduleModalOpen(true)}
+                onClearSession={handleClearScheduledSession}
+                onStartSessionNow={handleStartScheduledNow}
+              />
 
-        {/* Tab 3: Machines */}
-        {activeTab === 'machines' && (
-          <MachineLibrary
-            machines={machines}
-            onUpdateMachines={handleSaveMachines}
-            onSelectMachineToLog={handleSelectMachineToLog}
-          />
-        )}
+              {activeWorkout ? (
+                <ActiveWorkout
+                  workout={activeWorkout}
+                  unit={unit}
+                  machines={machines}
+                  onUpdateWorkout={handleUpdateActiveWorkout}
+                  onFinishWorkout={handleFinishWorkout}
+                  onDiscardWorkout={handleDiscardActiveWorkout}
+                  driveAccessToken={driveConnection.accessToken}
+                />
+              ) : (
+                <div className="bg-[#181412] border border-[#382f29] rounded-3xl p-6 text-center space-y-4 shadow-xl">
+                  <div className="w-14 h-14 rounded-full bg-[#d97724]/20 border border-[#d97724]/40 flex items-center justify-center mx-auto text-[#e6a15c]">
+                    <span className="text-2xl">🏋️</span>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-serif font-bold text-[#f7f3ee]">No Active Session</h3>
+                    <p className="text-xs text-[#a39588] font-light max-w-xs mx-auto mt-1">
+                      Start a workout from scratch, pick from machine library, or repeat a past training session.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleStartNewWorkoutFromScratch}
+                    className="w-full py-3.5 bg-gradient-to-r from-[#d97724] via-[#c86d51] to-[#e6a15c] text-[#0c0a09] font-syne font-bold text-xs rounded-2xl shadow-lg shadow-[#d97724]/20 transition-all hover:opacity-95"
+                  >
+                    + Start New Workout Session
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
-        {/* Tab 4: Analytics */}
-        {activeTab === 'analytics' && (
-          <AnalyticsView workouts={workouts} unit={unit} />
-        )}
-      </main>
+          {/* Tab 2: History */}
+          {activeTab === 'history' && (
+            <WorkoutHistory
+              workouts={workouts}
+              unit={unit}
+              onDeleteWorkout={handleDeleteWorkout}
+              onRepeatWorkout={handleRepeatWorkout}
+              onStartNewWorkout={handleStartNewWorkoutFromScratch}
+              onUpdateWorkoutTitle={handleUpdateWorkoutTitle}
+              onUpdateWorkoutDate={handleUpdateWorkoutDate}
+            />
+          )}
 
-      <IOSTabBar
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        hasActiveWorkout={!!activeWorkout}
-      />
+          {/* Tab 3: Machines */}
+          {activeTab === 'machines' && (
+            <MachineLibrary
+              machines={machines}
+              onUpdateMachines={handleSaveMachines}
+              onSelectMachineToLog={handleSelectMachineToLog}
+            />
+          )}
 
-      <ProfileModal
-        profile={profile}
-        isOpen={isProfileModalOpen}
-        onClose={() => setIsProfileModalOpen(false)}
-        onSaveProfile={handleSaveProfile}
-        onResetData={handleResetData}
-        driveConnection={driveConnection}
-        onConnectDrive={handleConnectDrive}
-        onDisconnectDrive={handleDisconnectDrive}
-        syncStatus={syncStatus}
-        portalUrl={portalUrl}
-      />
+          {/* Tab 4: Analytics */}
+          {activeTab === 'analytics' && (
+            <AnalyticsView workouts={workouts} unit={unit} />
+          )}
+        </main>
 
-      <ScheduleCalendarModal
-        isOpen={isScheduleModalOpen}
-        onClose={() => setIsScheduleModalOpen(false)}
-        onSessionSaved={handleSaveScheduledSession}
-      />
+        <IOSTabBar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          hasActiveWorkout={!!activeWorkout}
+        />
+
+        <ProfileModal
+          profile={profile}
+          isOpen={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
+          onSaveProfile={handleSaveProfile}
+          onResetData={handleResetData}
+          driveConnection={driveConnection}
+          onConnectDrive={handleConnectDrive}
+          onDisconnectDrive={handleDisconnectDrive}
+          syncStatus={syncStatus}
+          portalUrl={portalUrl}
+        />
+
+        <ScheduleCalendarModal
+          isOpen={isScheduleModalOpen}
+          onClose={() => setIsScheduleModalOpen(false)}
+          onSessionSaved={handleSaveScheduledSession}
+        />
+      </div>
     </div>
   );
 }
