@@ -1,7 +1,7 @@
 import { DEFAULT_MACHINES } from '../data/defaultMachines';
 import { DEFAULT_TRAINING_PLAN } from '../data/defaultTrainingPlan';
 import { SAMPLE_WORKOUTS } from '../data/sampleWorkouts';
-import { Workout, WorkoutAppState, WorkoutVideo } from '../types';
+import { ExerciseLog, SetType, WeightUnit, Workout, WorkoutAppState, WorkoutSet, WorkoutVideo } from '../types';
 import { ScheduledSession } from './calendar';
 import { UserProfile } from './storage';
 
@@ -262,15 +262,17 @@ export function normalizeAppState(value: Partial<WorkoutAppState>): WorkoutAppSt
   const defaults = createDefaultAppState();
   const legacyVideos = Array.isArray(value.videos) ? value.videos : [];
   const workouts = Array.isArray(value.workouts) ? value.workouts : defaults.workouts;
-  const normalizedWorkouts = workouts.map((workout) => {
+  const normalizedWorkouts = workouts.flatMap((workout) => {
+    const normalizedWorkout = normalizeWorkout(workout);
+    if (!normalizedWorkout) return [];
     const workoutLevelVideos = Array.isArray((workout as Workout & { videos?: WorkoutVideo[] }).videos)
       ? (workout as Workout & { videos?: WorkoutVideo[] }).videos || []
       : [];
-    const exerciseFallbackId = workout.exercises[0]?.id || '';
-    const videosForWorkout = [...legacyVideos, ...workoutLevelVideos].filter((video) => video.workoutId === workout.id);
-    return {
-      ...workout,
-      exercises: workout.exercises.map((exercise) => {
+    const exerciseFallbackId = normalizedWorkout.exercises[0]?.id || '';
+    const videosForWorkout = [...legacyVideos, ...workoutLevelVideos].filter((video) => video.workoutId === normalizedWorkout.id);
+    return [{
+      ...normalizedWorkout,
+      exercises: normalizedWorkout.exercises.map((exercise) => {
         const exerciseVideos = Array.isArray(exercise.videos) ? exercise.videos : [];
         const migratedVideos = videosForWorkout.filter((video) => {
           const targetExerciseId = video.exerciseId || exerciseFallbackId;
@@ -282,7 +284,7 @@ export function normalizeAppState(value: Partial<WorkoutAppState>): WorkoutAppSt
           videos: [...exerciseVideos, ...migratedVideos.map((video) => ({ ...video, exerciseId: exercise.id }))],
         };
       }),
-    };
+    }];
   });
 
   return {
@@ -294,6 +296,82 @@ export function normalizeAppState(value: Partial<WorkoutAppState>): WorkoutAppSt
     warmupCheckins: normalizeWarmupCheckins(value.warmupCheckins),
     scheduledSession: (value.scheduledSession || null) as ScheduledSession | null,
   };
+}
+
+function normalizeWorkout(value: unknown): Workout | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+
+  const workout = value as Partial<Workout>;
+  if (
+    typeof workout.id !== 'string' ||
+    typeof workout.title !== 'string' ||
+    typeof workout.date !== 'string' ||
+    typeof workout.durationMinutes !== 'number' ||
+    typeof workout.isCompleted !== 'boolean' ||
+    !isWeightUnit(workout.unit) ||
+    !Array.isArray(workout.exercises)
+  ) {
+    return null;
+  }
+
+  const exercises = workout.exercises.map(normalizeExercise).filter(Boolean);
+  if (exercises.length !== workout.exercises.length) return null;
+
+  return {
+    ...workout,
+    unit: workout.unit,
+    exercises,
+  } as Workout;
+}
+
+function normalizeExercise(value: unknown): ExerciseLog | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+
+  const exercise = value as Partial<ExerciseLog>;
+  if (
+    typeof exercise.id !== 'string' ||
+    typeof exercise.machineName !== 'string' ||
+    typeof exercise.category !== 'string' ||
+    !Array.isArray(exercise.sets) ||
+    !exercise.muscleFeeling
+  ) {
+    return null;
+  }
+
+  const sets = exercise.sets.map(normalizeSet).filter(Boolean);
+  if (sets.length !== exercise.sets.length) return null;
+
+  return {
+    ...exercise,
+    sets,
+  } as ExerciseLog;
+}
+
+function normalizeSet(value: unknown): WorkoutSet | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+
+  const set = value as Partial<WorkoutSet>;
+  if (
+    typeof set.id !== 'string' ||
+    typeof set.setNumber !== 'number' ||
+    !isSetType(set.type) ||
+    typeof set.weight !== 'number' ||
+    !isWeightUnit(set.weightUnit) ||
+    typeof set.reps !== 'number' ||
+    typeof set.completed !== 'boolean'
+  ) {
+    return null;
+  }
+
+  return set as WorkoutSet;
+}
+
+function isWeightUnit(value: unknown): value is WeightUnit {
+  return value === 'lbs' || value === 'kg';
+}
+
+function isSetType(value: unknown): value is SetType {
+  return value === 'warmup' || value === 'working' || value === 'drop' || value === 'failure';
 }
 
 function normalizeTrainingPlan(

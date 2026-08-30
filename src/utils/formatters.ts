@@ -4,11 +4,11 @@ export function calculateWorkoutVolume(workout: Workout): number {
   return workout.exercises.reduce((accEx, ex) => {
     const exVolume = ex.sets.reduce((accSet, set) => {
       if (set.completed && set.weight > 0 && set.reps > 0) {
-        return accSet + (set.weight * set.reps);
+        return accSet + (convertWeight(set.weight, set.weightUnit, 'lbs') * set.reps);
       }
       return accSet;
     }, 0);
-    return accEx + exVolume;
+    return accEx + Math.round(exVolume);
   }, 0);
 }
 
@@ -24,15 +24,16 @@ export function calculateCompletedReps(workout: Workout): number {
   }, 0);
 }
 
-export function getHeaviestSet(workout: Workout): { weight: number; reps: number; machineName: string } | null {
-  let maxWeight = 0;
-  let best: { weight: number; reps: number; machineName: string } | null = null;
+export function getHeaviestSet(workout: Workout): { weight: number; unit: WeightUnit; reps: number; machineName: string } | null {
+  let maxWeightLbs = 0;
+  let best: { weight: number; unit: WeightUnit; reps: number; machineName: string } | null = null;
 
   workout.exercises.forEach(ex => {
     ex.sets.forEach(set => {
-      if (set.completed && set.weight > maxWeight) {
-        maxWeight = set.weight;
-        best = { weight: set.weight, reps: set.reps, machineName: ex.machineName };
+      const weightLbs = convertWeight(set.weight, set.weightUnit, 'lbs');
+      if (set.completed && weightLbs > maxWeightLbs) {
+        maxWeightLbs = weightLbs;
+        best = { weight: set.weight, unit: set.weightUnit, reps: set.reps, machineName: ex.machineName };
       }
     });
   });
@@ -299,4 +300,3 @@ export function translateSeatSettings(seatSettings?: string, isZh: boolean = tru
 
   return translated;
 }
-

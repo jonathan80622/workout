@@ -2,12 +2,12 @@
 
 import React, { useState } from 'react';
 import { Check, Trash2, Plus, Minus, Footprints, Clock } from 'lucide-react';
-import { WorkoutSet, SetType, WeightUnit } from '../types';
+import { WorkoutSet, SetType } from '../types';
+import { convertWeight } from '../utils/formatters';
 
 interface SetRowProps {
   set: WorkoutSet;
   index: number;
-  unit: WeightUnit;
   isCardio?: boolean;
   onUpdate: (updatedSet: WorkoutSet) => void;
   onDelete: () => void;
@@ -16,7 +16,6 @@ interface SetRowProps {
 export const SetRow: React.FC<SetRowProps> = ({
   set,
   index,
-  unit,
   isCardio = false,
   onUpdate,
   onDelete
@@ -30,6 +29,15 @@ export const SetRow: React.FC<SetRowProps> = ({
   const handleWeightChange = (delta: number) => {
     const next = Math.max(0, set.weight + delta);
     onUpdate({ ...set, weight: next });
+  };
+
+  const handleWeightUnitToggle = () => {
+    const nextUnit = set.weightUnit === 'lbs' ? 'kg' : 'lbs';
+    onUpdate({
+      ...set,
+      weight: convertWeight(set.weight, set.weightUnit, nextUnit),
+      weightUnit: nextUnit,
+    });
   };
 
   const handleRepsChange = (delta: number) => {
@@ -176,7 +184,14 @@ export const SetRow: React.FC<SetRowProps> = ({
                   onChange={(e) => onUpdate({ ...set, weight: parseFloat(e.target.value) || 0 })}
                   className="w-14 text-center bg-transparent text-[#f7f3ee] font-mono font-bold text-sm outline-none"
                 />
-                <span className="text-[10px] text-[#8c7e72] font-medium">{unit}</span>
+                <button
+                  type="button"
+                  onClick={handleWeightUnitToggle}
+                  className="rounded-md border border-[#382f29] px-1.5 py-0.5 text-[10px] font-bold text-[#e6a15c] hover:border-[#d97724]/50"
+                  title="Convert this set load"
+                >
+                  {set.weightUnit}
+                </button>
               </div>
               <button
                 type="button"
@@ -269,4 +284,3 @@ export const SetRow: React.FC<SetRowProps> = ({
     </div>
   );
 };
-

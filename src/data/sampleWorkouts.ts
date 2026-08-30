@@ -18,10 +18,10 @@ export const SAMPLE_WORKOUTS: Workout[] = [
         category: 'Quads',
         seatSettings: 'Seat Angle: 3, Backrest Notch 2',
         sets: [
-          { id: 's1', setNumber: 1, type: 'warmup', weight: 140, reps: 15, completed: true, rpe: 6 },
-          { id: 's2', setNumber: 2, type: 'working', weight: 220, reps: 12, completed: true, rpe: 8 },
-          { id: 's3', setNumber: 3, type: 'working', weight: 260, reps: 10, completed: true, rpe: 8.5 },
-          { id: 's4', setNumber: 4, type: 'working', weight: 280, reps: 8, completed: true, rpe: 9 },
+          { id: 's1', setNumber: 1, type: 'warmup', weight: 140, weightUnit: 'lbs', reps: 15, completed: true, rpe: 6 },
+          { id: 's2', setNumber: 2, type: 'working', weight: 220, weightUnit: 'lbs', reps: 12, completed: true, rpe: 8 },
+          { id: 's3', setNumber: 3, type: 'working', weight: 260, weightUnit: 'lbs', reps: 10, completed: true, rpe: 8.5 },
+          { id: 's4', setNumber: 4, type: 'working', weight: 280, weightUnit: 'lbs', reps: 8, completed: true, rpe: 9 },
         ],
         muscleFeeling: {
           targetMuscles: ['Quads', 'Glutes'],
@@ -38,9 +38,9 @@ export const SAMPLE_WORKOUTS: Workout[] = [
         category: 'Hamstrings',
         seatSettings: 'Thigh Pad: Lock 3',
         sets: [
-          { id: 's5', setNumber: 1, type: 'warmup', weight: 80, reps: 12, completed: true, rpe: 6 },
-          { id: 's6', setNumber: 2, type: 'working', weight: 115, reps: 10, completed: true, rpe: 8 },
-          { id: 's7', setNumber: 3, type: 'working', weight: 125, reps: 10, completed: true, rpe: 9 },
+          { id: 's5', setNumber: 1, type: 'warmup', weight: 80, weightUnit: 'lbs', reps: 12, completed: true, rpe: 6 },
+          { id: 's6', setNumber: 2, type: 'working', weight: 115, weightUnit: 'lbs', reps: 10, completed: true, rpe: 8 },
+          { id: 's7', setNumber: 3, type: 'working', weight: 125, weightUnit: 'lbs', reps: 10, completed: true, rpe: 9 },
         ],
         muscleFeeling: {
           targetMuscles: ['Hamstrings'],
@@ -57,9 +57,9 @@ export const SAMPLE_WORKOUTS: Workout[] = [
         category: 'Calves',
         seatSettings: 'Shoulder Pad: #5',
         sets: [
-          { id: 's8', setNumber: 1, type: 'working', weight: 130, reps: 15, completed: true, rpe: 7.5 },
-          { id: 's9', setNumber: 2, type: 'working', weight: 150, reps: 12, completed: true, rpe: 8.5 },
-          { id: 's10', setNumber: 3, type: 'drop', weight: 100, reps: 15, completed: true, rpe: 9.5 }
+          { id: 's8', setNumber: 1, type: 'working', weight: 130, weightUnit: 'lbs', reps: 15, completed: true, rpe: 7.5 },
+          { id: 's9', setNumber: 2, type: 'working', weight: 150, weightUnit: 'lbs', reps: 12, completed: true, rpe: 8.5 },
+          { id: 's10', setNumber: 3, type: 'drop', weight: 100, weightUnit: 'lbs', reps: 15, completed: true, rpe: 9.5 }
         ],
         muscleFeeling: {
           targetMuscles: ['Calves'],
@@ -89,10 +89,10 @@ export const SAMPLE_WORKOUTS: Workout[] = [
         category: 'Chest',
         seatSettings: 'Seat Height #5, Pin #6',
         sets: [
-          { id: 's11', setNumber: 1, type: 'warmup', weight: 90, reps: 15, completed: true, rpe: 5 },
-          { id: 's12', setNumber: 2, type: 'working', weight: 140, reps: 10, completed: true, rpe: 7.5 },
-          { id: 's13', setNumber: 3, type: 'working', weight: 160, reps: 10, completed: true, rpe: 8.5 },
-          { id: 's14', setNumber: 4, type: 'failure', weight: 175, reps: 7, completed: true, rpe: 10 }
+          { id: 's11', setNumber: 1, type: 'warmup', weight: 90, weightUnit: 'lbs', reps: 15, completed: true, rpe: 5 },
+          { id: 's12', setNumber: 2, type: 'working', weight: 140, weightUnit: 'lbs', reps: 10, completed: true, rpe: 7.5 },
+          { id: 's13', setNumber: 3, type: 'working', weight: 160, weightUnit: 'lbs', reps: 10, completed: true, rpe: 8.5 },
+          { id: 's14', setNumber: 4, type: 'failure', weight: 175, weightUnit: 'lbs', reps: 7, completed: true, rpe: 10 }
         ],
         muscleFeeling: {
           targetMuscles: ['Chest', 'Triceps'],
@@ -109,9 +109,9 @@ export const SAMPLE_WORKOUTS: Workout[] = [
         category: 'Shoulders',
         seatSettings: 'Low Pulley, Single Handle',
         sets: [
-          { id: 's15', setNumber: 1, type: 'working', weight: 15, reps: 15, completed: true, rpe: 7 },
-          { id: 's16', setNumber: 2, type: 'working', weight: 20, reps: 12, completed: true, rpe: 8.5 },
-          { id: 's17', setNumber: 3, type: 'working', weight: 20, reps: 11, completed: true, rpe: 9 }
+          { id: 's15', setNumber: 1, type: 'working', weight: 15, weightUnit: 'lbs', reps: 15, completed: true, rpe: 7 },
+          { id: 's16', setNumber: 2, type: 'working', weight: 20, weightUnit: 'lbs', reps: 12, completed: true, rpe: 8.5 },
+          { id: 's17', setNumber: 3, type: 'working', weight: 20, weightUnit: 'lbs', reps: 11, completed: true, rpe: 9 }
         ],
         muscleFeeling: {
           targetMuscles: ['Shoulders'],
@@ -128,9 +128,9 @@ export const SAMPLE_WORKOUTS: Workout[] = [
         category: 'Triceps',
         seatSettings: 'High Pulley',
         sets: [
-          { id: 's18', setNumber: 1, type: 'working', weight: 45, reps: 12, completed: true, rpe: 8 },
-          { id: 's19', setNumber: 2, type: 'working', weight: 55, reps: 10, completed: true, rpe: 8.5 },
-          { id: 's20', setNumber: 3, type: 'drop', weight: 35, reps: 14, completed: true, rpe: 9.5 }
+          { id: 's18', setNumber: 1, type: 'working', weight: 45, weightUnit: 'lbs', reps: 12, completed: true, rpe: 8 },
+          { id: 's19', setNumber: 2, type: 'working', weight: 55, weightUnit: 'lbs', reps: 10, completed: true, rpe: 8.5 },
+          { id: 's20', setNumber: 3, type: 'drop', weight: 35, weightUnit: 'lbs', reps: 14, completed: true, rpe: 9.5 }
         ],
         muscleFeeling: {
           targetMuscles: ['Triceps'],
@@ -162,7 +162,7 @@ export const SAMPLE_WORKOUTS: Workout[] = [
         category: 'Cardio & Running',
         seatSettings: 'Speed: 7.2 mph, Incline: 1.0%',
         sets: [
-          { id: 's21', setNumber: 1, type: 'working', weight: 0, reps: 0, distance: 3.2, runningTimeMinutes: 25, completed: true, rpe: 8 }
+          { id: 's21', setNumber: 1, type: 'working', weight: 0, weightUnit: 'lbs', reps: 0, distance: 3.2, runningTimeMinutes: 25, completed: true, rpe: 8 }
         ],
         muscleFeeling: {
           targetMuscles: ['Cardio & Running', 'Quads', 'Calves'],
@@ -176,5 +176,4 @@ export const SAMPLE_WORKOUTS: Workout[] = [
     ]
   }
 ];
-
 

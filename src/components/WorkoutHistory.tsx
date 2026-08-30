@@ -197,7 +197,7 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                     <div className={`grid ${dist > 0 ? 'grid-cols-4' : 'grid-cols-3'} gap-2 text-xs font-mono`}>
                       <div className="bg-[#100d0b] p-2 rounded-2xl border border-[#2b241f] text-center">
                         <span className="text-[9px] text-[#8c7e72] font-syne uppercase font-semibold block">Volume</span>
-                        <span className="font-bold text-[#e6a15c]">{volume.toLocaleString()} {workout.unit}</span>
+                        <span className="font-bold text-[#e6a15c]">{volume.toLocaleString()} lb-vol</span>
                       </div>
                       <div className="bg-[#100d0b] p-2 rounded-2xl border border-[#2b241f] text-center">
                         <span className="text-[9px] text-[#8c7e72] font-syne uppercase font-semibold block">Sets</span>

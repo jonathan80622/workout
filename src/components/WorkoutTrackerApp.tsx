@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Workout, MachinePreset, ActiveTab, WeightUnit, WorkoutAppState, TrainingPlan, WarmupCheckins } from '@/src/types';
+import { Workout, MachinePreset, ActiveTab, WorkoutAppState, TrainingPlan, WarmupCheckins } from '@/src/types';
 import { UserProfile } from '@/src/utils/storage';
 import { ScheduledSession } from '@/src/utils/calendar';
 import { IOSHeader } from './IOSHeader';
@@ -28,7 +28,6 @@ import {
   saveStateToDrive,
   splitWorkouts,
 } from '@/src/utils/driveStorage';
-import { convertWeight } from '@/src/utils/formatters';
 
 interface WorkoutTrackerAppProps {
   initialProfile: UserProfile;
@@ -138,23 +137,6 @@ export function WorkoutTrackerApp({
     setActiveWorkout(updated);
   };
 
-  const handleToggleActiveWorkoutUnit = () => {
-    if (!activeWorkout) return;
-
-    const nextUnit: WeightUnit = activeWorkout.unit === 'lbs' ? 'kg' : 'lbs';
-    setActiveWorkout({
-      ...activeWorkout,
-      unit: nextUnit,
-      exercises: activeWorkout.exercises.map((exercise) => ({
-        ...exercise,
-        sets: exercise.sets.map((set) => ({
-          ...set,
-          weight: convertWeight(set.weight, activeWorkout.unit, nextUnit),
-        })),
-      })),
-    });
-  };
-
   const handleFinishWorkout = (completedWorkout: Workout) => {
     const finished = { ...completedWorkout, isCompleted: true };
     setActiveWorkout(null);
@@ -191,6 +173,7 @@ export function WorkoutTrackerApp({
           setNumber: s.setNumber,
           type: s.type,
           weight: s.weight,
+          weightUnit: s.weightUnit,
           reps: s.reps,
           completed: false,
           rpe: s.rpe,
@@ -269,7 +252,8 @@ export function WorkoutTrackerApp({
             id: `s-${Date.now()}-1`,
             setNumber: 1,
             type: 'working' as const,
-            weight: activeWorkout.unit === 'lbs' ? 100 : 45,
+            weight: 100,
+            weightUnit: 'lbs' as const,
             reps: 10,
             completed: false,
           },
@@ -311,6 +295,7 @@ export function WorkoutTrackerApp({
                 setNumber: 1,
                 type: 'working' as const,
                 weight: 100,
+                weightUnit: 'lbs' as const,
                 reps: 10,
                 completed: false,
               },
@@ -424,7 +409,6 @@ export function WorkoutTrackerApp({
                   workout={activeWorkout}
                   machines={machines}
                   onUpdateWorkout={handleUpdateActiveWorkout}
-                  onToggleWorkoutUnit={handleToggleActiveWorkoutUnit}
                   onFinishWorkout={handleFinishWorkout}
                   onDiscardWorkout={handleDiscardActiveWorkout}
                   driveAccessToken={driveConnection.accessToken}

@@ -25,6 +25,7 @@ export interface WorkoutSet {
   setNumber: number;
   type: SetType;
   weight: number;
+  weightUnit: WeightUnit;
   reps: number;
   completed: boolean;
   rpe?: number; // Rate of Perceived Exertion (1-10)
@@ -62,7 +63,7 @@ export interface Workout {
   startTime?: string;
   endTime?: string;
   durationMinutes: number;
-  unit: WeightUnit;
+  unit: WeightUnit; // Legacy workout-level default only. Set weightUnit is authoritative.
   exercises: ExerciseLog[];
   runningDistance?: number; // Total running distance in miles/km
   runningTimeMinutes?: number; // Total running time in minutes

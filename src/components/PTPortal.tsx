@@ -308,7 +308,7 @@ export const PTPortal: React.FC = () => {
                                         ? set.distance
                                           ? `${set.distance} mi`
                                           : '-'
-                                        : set.weight}
+                                        : `${set.weight} ${set.weightUnit}`}
                                     </span>
                                     <span className="font-mono">
                                       {exercise.category === 'Cardio & Running'

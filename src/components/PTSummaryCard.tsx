@@ -209,7 +209,7 @@ export const PTSummaryCard: React.FC<PTSummaryCardProps> = ({
               {isZh ? '總容量' : 'Total Volume'}
             </span>
             <span className="text-base font-bold font-mono text-[#e6a15c]">
-              {totalVolume.toLocaleString()} <span className="text-xs font-normal">{unitText}</span>
+              {totalVolume.toLocaleString()} <span className="text-xs font-normal">lb-vol</span>
             </span>
           </div>
           <div className="bg-black/15 p-2.5 rounded-2xl border border-black/10 text-center">
@@ -261,7 +261,7 @@ export const PTSummaryCard: React.FC<PTSummaryCardProps> = ({
               {isZh ? '最佳重量突破' : 'Peak Load Highlight'}
             </span>
             <span className="font-mono font-bold text-[#f5c999]">
-              {heaviest.machineName}: {heaviest.weight} {unitText} × {heaviest.reps} {isZh ? '次' : 'reps'}
+              {heaviest.machineName}: {heaviest.weight} {heaviest.unit} × {heaviest.reps} {isZh ? '次' : 'reps'}
             </span>
           </div>
         )}
@@ -334,7 +334,7 @@ export const PTSummaryCard: React.FC<PTSummaryCardProps> = ({
                           </>
                         ) : (
                           <>
-                            <span className="font-bold">{s.weight} <span className="text-[10px] opacity-60">{unitText}</span></span>
+                            <span className="font-bold">{s.weight} <span className="text-[10px] opacity-60">{s.weightUnit}</span></span>
                             <span className="opacity-40">×</span>
                             <span className="font-bold text-[#849a88]">{s.reps} <span className="text-[10px] opacity-60">{isZh ? '次' : 'reps'}</span></span>
                           </>
@@ -412,5 +412,4 @@ export const PTSummaryCard: React.FC<PTSummaryCardProps> = ({
     </div>
   );
 };
-
 
