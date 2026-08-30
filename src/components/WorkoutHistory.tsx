@@ -2,12 +2,11 @@
 
 import React, { useState } from 'react';
 import { Calendar, Search, Trash2, Repeat, Compass, Activity, Edit2, Check } from 'lucide-react';
-import { Workout, WeightUnit } from '../types';
+import { Workout } from '../types';
 import { calculateWorkoutVolume, calculateCompletedSets, formatWorkoutDate, calculateTotalDistance } from '../utils/formatters';
 
 interface WorkoutHistoryProps {
   workouts: Workout[];
-  unit: WeightUnit;
   onRepeatWorkout: (workout: Workout) => void;
   onDeleteWorkout: (workoutId: string) => void;
   onStartNewWorkout: () => void;
@@ -17,7 +16,6 @@ interface WorkoutHistoryProps {
 
 export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
   workouts,
-  unit,
   onRepeatWorkout,
   onDeleteWorkout,
   onStartNewWorkout,
@@ -199,7 +197,7 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                     <div className={`grid ${dist > 0 ? 'grid-cols-4' : 'grid-cols-3'} gap-2 text-xs font-mono`}>
                       <div className="bg-[#100d0b] p-2 rounded-2xl border border-[#2b241f] text-center">
                         <span className="text-[9px] text-[#8c7e72] font-syne uppercase font-semibold block">Volume</span>
-                        <span className="font-bold text-[#e6a15c]">{volume.toLocaleString()} {unit}</span>
+                        <span className="font-bold text-[#e6a15c]">{volume.toLocaleString()} {workout.unit}</span>
                       </div>
                       <div className="bg-[#100d0b] p-2 rounded-2xl border border-[#2b241f] text-center">
                         <span className="text-[9px] text-[#8c7e72] font-syne uppercase font-semibold block">Sets</span>

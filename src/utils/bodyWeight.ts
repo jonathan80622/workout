@@ -43,26 +43,23 @@ export function createBodyWeightEntry(params: {
 export function serializeBodyWeightStore(store: BodyWeightStore): string {
   return JSON.stringify({
     version: 1,
-    displayUnit: store.displayUnit,
     entries: store.entries.map(normalizeBodyWeightEntry).filter(Boolean),
   });
 }
 
-export function parseBodyWeightStore(raw: string | null, fallbackUnit: WeightUnit = 'lbs'): BodyWeightStore | null {
+export function parseBodyWeightStore(raw: string | null): BodyWeightStore | null {
   if (!raw) return null;
 
   try {
     const parsed = JSON.parse(raw);
-    const displayUnit = parseWeightUnit(parsed?.displayUnit) || fallbackUnit;
     const rawEntries = Array.isArray(parsed) ? parsed : parsed?.entries;
 
     if (!Array.isArray(rawEntries)) {
-      return { version: 1, displayUnit, entries: [] };
+      return { version: 1, entries: [] };
     }
 
     return {
       version: 1,
-      displayUnit,
       entries: rawEntries.map(normalizeBodyWeightEntry).filter(Boolean),
     };
   } catch {

@@ -64,7 +64,6 @@ export function createDefaultAppState(): WorkoutAppState {
       clientName: '',
       ptName: '',
       appTitle: 'Workout Studio',
-      preferredUnit: 'lbs',
       themeColor: 'ios-blue',
     },
     machines: DEFAULT_MACHINES,

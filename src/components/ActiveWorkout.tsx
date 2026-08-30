@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { Plus, Play, Pause, CheckCircle2, Trash2, Compass, Clock, Settings, Feather, Calendar } from 'lucide-react';
-import { Workout, ExerciseLog, WorkoutSet, MachinePreset, WeightUnit, MuscleGroup } from '../types';
+import { Workout, ExerciseLog, WorkoutSet, MachinePreset, MuscleGroup } from '../types';
 import { SetRow } from './SetRow';
 import { MuscleFeelInput } from './MuscleFeelInput';
 import { WorkoutVideoRecorder } from './WorkoutVideoRecorder';
@@ -11,9 +11,9 @@ import { calculateWorkoutVolume, calculateCompletedSets, calculateTotalDistance,
 
 interface ActiveWorkoutProps {
   workout: Workout;
-  unit: WeightUnit;
   machines: MachinePreset[];
   onUpdateWorkout: (updated: Workout) => void;
+  onToggleWorkoutUnit: () => void;
   onFinishWorkout: (completedWorkout: Workout) => void;
   onDiscardWorkout: () => void;
   driveAccessToken: string | null;
@@ -21,9 +21,9 @@ interface ActiveWorkoutProps {
 
 export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   workout,
-  unit,
   machines,
   onUpdateWorkout,
+  onToggleWorkoutUnit,
   onFinishWorkout,
   onDiscardWorkout,
   driveAccessToken
@@ -228,12 +228,29 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           </button>
         </div>
 
+        <div className="flex items-center justify-between gap-2 border-t border-[#2b241f] pt-2.5 text-xs">
+          <span className="font-syne font-semibold text-[#a39588]">Workout unit</span>
+          <button
+            type="button"
+            onClick={onToggleWorkoutUnit}
+            className="flex items-center bg-[#1c1815] hover:bg-[#26211c] border border-[#382f29] rounded-full p-0.5 text-xs font-semibold transition-colors"
+            title="Convert this workout between pounds and kilograms"
+          >
+            <span className={`px-2 py-0.5 rounded-full transition-all text-[11px] ${workout.unit === 'lbs' ? 'bg-[#d97724] text-[#0c0a09] font-bold shadow-sm' : 'text-[#a39588]'}`}>
+              lbs
+            </span>
+            <span className={`px-2 py-0.5 rounded-full transition-all text-[11px] ${workout.unit === 'kg' ? 'bg-[#d97724] text-[#0c0a09] font-bold shadow-sm' : 'text-[#a39588]'}`}>
+              kg
+            </span>
+          </button>
+        </div>
+
         {/* Live Metrics Row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
           <div className="bg-[#100d0b] p-2.5 rounded-2xl border border-[#2b241f] flex items-center justify-between">
             <span className="text-[#a39588] font-syne text-[11px]">Total Volume</span>
             <span className="font-bold text-[#e6a15c] text-sm">
-              {totalVolume.toLocaleString()} {unit}
+              {totalVolume.toLocaleString()} {workout.unit}
             </span>
           </div>
           <div className="bg-[#100d0b] p-2.5 rounded-2xl border border-[#2b241f] flex items-center justify-between">
@@ -338,7 +355,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
             <div className="space-y-2">
               <div className="flex items-center justify-between text-[11px] font-syne font-bold text-[#a39588] uppercase tracking-wider px-1">
                 <span>Set Type</span>
-                <span>Weight ({unit})</span>
+                <span>Weight ({workout.unit})</span>
                 <span>Reps</span>
                 <span>Done</span>
                 <span className="w-6" />
@@ -349,7 +366,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                   key={set.id}
                   set={set}
                   index={sIdx}
-                  unit={unit}
+                  unit={workout.unit}
                   isCardio={exercise.category === 'Cardio & Running'}
                   onUpdate={(updatedSet) => {
                     const newSets = exercise.sets.map((s) => (s.id === updatedSet.id ? updatedSet : s));

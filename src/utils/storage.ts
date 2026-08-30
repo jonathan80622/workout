@@ -4,7 +4,7 @@ export interface UserProfile {
   clientName: string;
   ptName: string;
   appTitle?: string;
-  preferredUnit: 'lbs' | 'kg';
+  preferredUnit?: 'lbs' | 'kg';
   themeColor: 'ios-blue' | 'ios-emerald' | 'ios-purple' | 'ios-orange';
 }
 

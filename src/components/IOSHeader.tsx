@@ -2,14 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Timer, User, Compass } from 'lucide-react';
-import { WeightUnit } from '../types';
 
 interface IOSHeaderProps {
   title: string;
   isTimerRunning?: boolean;
   timerSeconds?: number;
-  unit: WeightUnit;
-  onUnitToggle: () => void;
   clientName: string;
   ptName: string;
   onOpenProfileModal?: () => void;
@@ -19,8 +16,6 @@ export const IOSHeader: React.FC<IOSHeaderProps> = ({
   title,
   isTimerRunning = false,
   timerSeconds = 0,
-  unit,
-  onUnitToggle,
   clientName,
   ptName,
   onOpenProfileModal
@@ -86,20 +81,6 @@ export const IOSHeader: React.FC<IOSHeaderProps> = ({
               <span>{formatTimer(timerSeconds)}</span>
             </div>
           )}
-
-          {/* lbs / kg segmented warm pill */}
-          <button
-            onClick={onUnitToggle}
-            className="flex items-center bg-[#1c1815] hover:bg-[#26211c] border border-[#382f29] rounded-full p-0.5 text-xs font-semibold transition-colors"
-            title="Toggle weight unit"
-          >
-            <span className={`px-2 py-0.5 rounded-full transition-all text-[11px] ${unit === 'lbs' ? 'bg-[#d97724] text-[#0c0a09] font-bold shadow-sm' : 'text-[#a39588]'}`}>
-              lbs
-            </span>
-            <span className={`px-2 py-0.5 rounded-full transition-all text-[11px] ${unit === 'kg' ? 'bg-[#d97724] text-[#0c0a09] font-bold shadow-sm' : 'text-[#a39588]'}`}>
-              kg
-            </span>
-          </button>
 
           {/* Profile / Guide config button */}
           <button

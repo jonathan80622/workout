@@ -96,7 +96,6 @@ export interface BodyWeightEntry {
 
 export interface BodyWeightStore {
   version: 1;
-  displayUnit: WeightUnit;
   entries: BodyWeightEntry[];
 }
 
@@ -137,7 +136,7 @@ export interface WorkoutAppState {
     clientName: string;
     ptName: string;
     appTitle?: string;
-    preferredUnit: WeightUnit;
+    preferredUnit?: WeightUnit; // Legacy only. Workout weights are scoped by Workout.unit.
     themeColor: 'ios-blue' | 'ios-emerald' | 'ios-purple' | 'ios-orange';
   };
   machines: MachinePreset[];
@@ -157,4 +156,4 @@ export interface MachinePreset {
   targetDescription: string;
 }
 
-export type ActiveTab = 'workout' | 'plan' | 'history' | 'weight' | 'machines' | 'analytics';
+export type ActiveTab = 'workout' | 'plan' | 'history' | 'weight' | 'machines';

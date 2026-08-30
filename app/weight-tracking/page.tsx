@@ -30,7 +30,6 @@ const seedStore = (): BodyWeightStore => {
 
   return {
     version: 1,
-    displayUnit: 'lbs',
     entries: valuesLbs.map((value, index) => {
       const date = new Date(today);
       date.setDate(today.getDate() - (valuesLbs.length - index - 1) * 7);
@@ -51,7 +50,8 @@ const formatDate = (date: string) =>
   new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' }).format(new Date(`${date}T12:00:00`));
 
 export default function WeightTrackingPage() {
-  const [store, setStore] = useState<BodyWeightStore>({ version: 1, displayUnit: 'lbs', entries: [] });
+  const [store, setStore] = useState<BodyWeightStore>({ version: 1, entries: [] });
+  const [displayUnit, setDisplayUnit] = useState<WeightUnit>('lbs');
   const [selectedRange, setSelectedRange] = useState<RangeKey>('3M');
   const [zoomLevel, setZoomLevel] = useState(1);
   const [panOffset, setPanOffset] = useState(0);
@@ -70,7 +70,6 @@ export default function WeightTrackingPage() {
     window.localStorage.setItem(storageKey, serializeBodyWeightStore(store));
   }, [store]);
 
-  const displayUnit = store.displayUnit;
   const sortedEntries = useMemo(
     () => [...store.entries].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [store.entries]
@@ -132,10 +131,6 @@ export default function WeightTrackingPage() {
       ...current,
       entries: current.entries.filter((entry) => entry.id !== entryId),
     }));
-  };
-
-  const setDisplayUnit = (unit: WeightUnit) => {
-    setStore((current) => ({ ...current, displayUnit: unit }));
   };
 
   const visibleCount = Math.max(2, Math.ceil(filteredEntries.length / zoomLevel));

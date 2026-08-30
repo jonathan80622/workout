@@ -9,7 +9,6 @@ import { IOSTabBar } from './IOSTabBar';
 import { ActiveWorkout } from './ActiveWorkout';
 import { WorkoutHistory } from './WorkoutHistory';
 import { MachineLibrary } from './MachineLibrary';
-import { AnalyticsView } from './AnalyticsView';
 import { TrainingPlanView } from './TrainingPlanView';
 import WeightTrackingPage from '@/app/weight-tracking/page';
 import { ProfileModal } from './ProfileModal';
@@ -29,6 +28,7 @@ import {
   saveStateToDrive,
   splitWorkouts,
 } from '@/src/utils/driveStorage';
+import { convertWeight } from '@/src/utils/formatters';
 
 interface WorkoutTrackerAppProps {
   initialProfile: UserProfile;
@@ -70,7 +70,6 @@ export function WorkoutTrackerApp({
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState<boolean>(false);
 
-  const unit: WeightUnit = profile.preferredUnit || 'lbs';
   const appState: WorkoutAppState = useMemo(
     () => ({
       version: 1,
@@ -131,18 +130,29 @@ export function WorkoutTrackerApp({
     setScheduledSession(state.scheduledSession);
   };
 
-  const handleUnitToggle = () => {
-    const nextUnit: 'lbs' | 'kg' = unit === 'lbs' ? 'kg' : 'lbs';
-    const updated: UserProfile = { ...profile, preferredUnit: nextUnit };
-    setProfile(updated);
-  };
-
   const handleSaveProfile = (newProfile: UserProfile) => {
     setProfile(newProfile);
   };
 
   const handleUpdateActiveWorkout = (updated: Workout) => {
     setActiveWorkout(updated);
+  };
+
+  const handleToggleActiveWorkoutUnit = () => {
+    if (!activeWorkout) return;
+
+    const nextUnit: WeightUnit = activeWorkout.unit === 'lbs' ? 'kg' : 'lbs';
+    setActiveWorkout({
+      ...activeWorkout,
+      unit: nextUnit,
+      exercises: activeWorkout.exercises.map((exercise) => ({
+        ...exercise,
+        sets: exercise.sets.map((set) => ({
+          ...set,
+          weight: convertWeight(set.weight, activeWorkout.unit, nextUnit),
+        })),
+      })),
+    });
   };
 
   const handleFinishWorkout = (completedWorkout: Workout) => {
@@ -166,7 +176,7 @@ export function WorkoutTrackerApp({
       title: workout.title,
       date: new Date().toISOString(),
       durationMinutes: 0,
-      unit,
+      unit: workout.unit,
       clientName: profile.clientName,
       ptName: profile.ptName,
       ptNotes: workout.ptNotes || '',
@@ -206,7 +216,7 @@ export function WorkoutTrackerApp({
       title: 'Full Body Movement',
       date: new Date().toISOString(),
       durationMinutes: 0,
-      unit,
+      unit: 'lbs',
       clientName: profile.clientName,
       ptName: profile.ptName,
       ptNotes: '',
@@ -223,7 +233,7 @@ export function WorkoutTrackerApp({
       title,
       date: new Date().toISOString(),
       durationMinutes: 0,
-      unit,
+      unit: 'lbs',
       clientName: profile.clientName,
       ptName: profile.ptName,
       ptNotes: scheduledSession?.notes || '',
@@ -259,7 +269,7 @@ export function WorkoutTrackerApp({
             id: `s-${Date.now()}-1`,
             setNumber: 1,
             type: 'working' as const,
-            weight: unit === 'lbs' ? 100 : 45,
+            weight: activeWorkout.unit === 'lbs' ? 100 : 45,
             reps: 10,
             completed: false,
           },
@@ -284,7 +294,7 @@ export function WorkoutTrackerApp({
         title: `${machine.name} Session`,
         date: new Date().toISOString(),
         durationMinutes: 0,
-        unit,
+        unit: 'lbs',
         clientName: profile.clientName,
         ptName: profile.ptName,
         ptNotes: '',
@@ -300,7 +310,7 @@ export function WorkoutTrackerApp({
                 id: `s-${Date.now()}-1`,
                 setNumber: 1,
                 type: 'working' as const,
-                weight: unit === 'lbs' ? 100 : 45,
+                weight: 100,
                 reps: 10,
                 completed: false,
               },
@@ -385,8 +395,6 @@ export function WorkoutTrackerApp({
           title={profile.appTitle || 'Workout Studio'}
           isTimerRunning={!!activeWorkout}
           timerSeconds={0}
-          unit={unit}
-          onUnitToggle={handleUnitToggle}
           clientName={profile.clientName}
           ptName={profile.ptName}
           onOpenProfileModal={() => setIsProfileModalOpen(true)}
@@ -414,9 +422,9 @@ export function WorkoutTrackerApp({
               {activeWorkout ? (
                 <ActiveWorkout
                   workout={activeWorkout}
-                  unit={unit}
                   machines={machines}
                   onUpdateWorkout={handleUpdateActiveWorkout}
+                  onToggleWorkoutUnit={handleToggleActiveWorkoutUnit}
                   onFinishWorkout={handleFinishWorkout}
                   onDiscardWorkout={handleDiscardActiveWorkout}
                   driveAccessToken={driveConnection.accessToken}
@@ -456,7 +464,6 @@ export function WorkoutTrackerApp({
           {activeTab === 'history' && (
             <WorkoutHistory
               workouts={workouts}
-              unit={unit}
               onDeleteWorkout={handleDeleteWorkout}
               onRepeatWorkout={handleRepeatWorkout}
               onStartNewWorkout={handleStartNewWorkoutFromScratch}
@@ -481,10 +488,6 @@ export function WorkoutTrackerApp({
             />
           )}
 
-          {/* Tab 6: Analytics */}
-          {activeTab === 'analytics' && (
-            <AnalyticsView workouts={workouts} unit={unit} />
-          )}
         </main>
 
         <IOSTabBar

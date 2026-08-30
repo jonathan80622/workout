@@ -33,7 +33,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [clientName, setClientName] = useState<string>(profile.clientName || '');
   const [ptName, setPtName] = useState<string>(profile.ptName);
   const [appTitle, setAppTitle] = useState<string>(profile.appTitle || 'Workout Studio');
-  const [unit, setUnit] = useState<'lbs' | 'kg'>(profile.preferredUnit);
 
   if (!isOpen) return null;
 
@@ -42,8 +41,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       ...profile,
       clientName: clientName.trim(),
       ptName: ptName.trim(),
-      appTitle: appTitle.trim() || 'Workout Studio',
-      preferredUnit: unit
+      appTitle: appTitle.trim() || 'Workout Studio'
     });
     onClose();
   };
@@ -156,36 +154,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               placeholder="e.g. Coach Marcus"
               className="w-full bg-[#100d0b] border border-[#2b241f] rounded-xl p-2.5 text-xs text-[#f7f3ee] outline-none focus:ring-1 focus:ring-[#d97724]"
             />
-          </div>
-
-          <div>
-            <label className="font-syne font-semibold text-[#c8b8a8] block mb-1">
-              Default Weight Unit
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setUnit('lbs')}
-                className={`py-2 rounded-xl font-syne font-bold border transition-all ${
-                  unit === 'lbs'
-                    ? 'bg-[#d97724] text-[#0c0a09] border-[#d97724]'
-                    : 'bg-[#100d0b] text-[#8c7e72] border-[#2b241f]'
-                }`}
-              >
-                Pounds (lbs)
-              </button>
-              <button
-                type="button"
-                onClick={() => setUnit('kg')}
-                className={`py-2 rounded-xl font-syne font-bold border transition-all ${
-                  unit === 'kg'
-                    ? 'bg-[#d97724] text-[#0c0a09] border-[#d97724]'
-                    : 'bg-[#100d0b] text-[#8c7e72] border-[#2b241f]'
-                }`}
-              >
-                Kilograms (kg)
-              </button>
-            </div>
           </div>
 
           <div className="pt-3 border-t border-[#2b241f]">
