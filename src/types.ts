@@ -52,6 +52,7 @@ export interface ExerciseLog {
   distance?: number; // Total distance for cardio exercise
   runningTimeMinutes?: number; // Total running time for exercise
   videos?: WorkoutVideo[];
+  ptComment?: string; // Trainer feedback on this exercise
 }
 
 export interface Workout {
@@ -66,6 +67,7 @@ export interface Workout {
   runningDistance?: number; // Total running distance in miles/km
   runningTimeMinutes?: number; // Total running time in minutes
   ptNotes?: string; // Special note intended for PT
+  ptComment?: string; // Trainer feedback on the completed workout
   ptName?: string; // e.g. "Trainer Coach Sarah"
   clientName?: string; // User name e.g. "Alex"
   isCompleted: boolean;
@@ -107,4 +109,4 @@ export interface MachinePreset {
   targetDescription: string;
 }
 
-export type ActiveTab = 'workout' | 'history' | 'machines' | 'pt-export' | 'analytics';
+export type ActiveTab = 'workout' | 'history' | 'machines' | 'analytics';

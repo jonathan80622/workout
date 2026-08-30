@@ -1,14 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Calendar, Clock, Share2, Search, Trash2, Repeat, Compass, Activity, Flame, ChevronRight, Feather, Edit2, Check } from 'lucide-react';
+import { Calendar, Search, Trash2, Repeat, Compass, Activity, Edit2, Check } from 'lucide-react';
 import { Workout, WeightUnit } from '../types';
 import { calculateWorkoutVolume, calculateCompletedSets, formatWorkoutDate, calculateTotalDistance } from '../utils/formatters';
 
 interface WorkoutHistoryProps {
   workouts: Workout[];
   unit: WeightUnit;
-  onOpenExportModal: (workout: Workout) => void;
   onRepeatWorkout: (workout: Workout) => void;
   onDeleteWorkout: (workoutId: string) => void;
   onStartNewWorkout: () => void;
@@ -19,7 +18,6 @@ interface WorkoutHistoryProps {
 export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
   workouts,
   unit,
-  onOpenExportModal,
   onRepeatWorkout,
   onDeleteWorkout,
   onStartNewWorkout,
@@ -66,7 +64,7 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
         <div>
           <h2 className="text-lg font-serif font-bold text-[#f7f3ee]">Workout History</h2>
           <p className="text-xs text-[#a39588] font-light">
-            Export any past session into an aesthetic PNG report for your PT / Coach
+            Review completed sessions and repeat past training plans.
           </p>
         </div>
 
@@ -185,12 +183,6 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
 
                   <div className="flex items-center gap-1 shrink-0">
                     <button
-                      onClick={() => onOpenExportModal(workout)}
-                      className="px-3 py-1.5 bg-[#d97724]/20 hover:bg-[#d97724]/30 text-[#f5c999] border border-[#d97724]/40 rounded-2xl text-xs font-syne font-bold flex items-center gap-1 transition-all"
-                    >
-                      <Share2 className="w-3.5 h-3.5 text-[#e6a15c]" /> Export PNG
-                    </button>
-                    <button
                       onClick={() => onDeleteWorkout(workout.id)}
                       className="p-1.5 text-[#6b5e54] hover:text-[#c86d51] hover:bg-[#c86d51]/10 rounded-lg transition-colors"
                       title="Delete log"
@@ -265,13 +257,6 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                   >
                     <Repeat className="w-3.5 h-3.5 text-[#e6a15c]" /> Repeat Session
                   </button>
-
-                  <button
-                    onClick={() => onOpenExportModal(workout)}
-                    className="text-[#e6a15c] hover:text-[#f5c999] font-syne font-bold flex items-center gap-1 transition-colors"
-                  >
-                    Export Card PNG <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
                 </div>
               </div>
             );
@@ -281,4 +266,3 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
     </div>
   );
 };
-

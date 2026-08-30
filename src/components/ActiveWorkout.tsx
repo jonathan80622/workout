@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { Plus, Play, Pause, CheckCircle2, Share2, Trash2, Compass, Clock, Settings, Sparkles, Feather, Flame, Calendar } from 'lucide-react';
+import { Plus, Play, Pause, CheckCircle2, Trash2, Compass, Clock, Settings, Feather, Calendar } from 'lucide-react';
 import { Workout, ExerciseLog, WorkoutSet, MachinePreset, WeightUnit, MuscleGroup } from '../types';
 import { SetRow } from './SetRow';
 import { MuscleFeelInput } from './MuscleFeelInput';
@@ -15,7 +15,6 @@ interface ActiveWorkoutProps {
   machines: MachinePreset[];
   onUpdateWorkout: (updated: Workout) => void;
   onFinishWorkout: (completedWorkout: Workout) => void;
-  onOpenExportModal: (workout: Workout) => void;
   onDiscardWorkout: () => void;
   driveAccessToken: string | null;
 }
@@ -26,7 +25,6 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   machines,
   onUpdateWorkout,
   onFinishWorkout,
-  onOpenExportModal,
   onDiscardWorkout,
   driveAccessToken
 }) => {
@@ -192,7 +190,6 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     };
 
     onFinishWorkout(finished);
-    onOpenExportModal(finished);
   };
 
   const formatTime = (secs: number) => {
@@ -406,7 +403,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       <div className="bg-[#181412]/90 border border-[#382f29] rounded-3xl p-4 space-y-2">
         <label className="text-xs font-serif italic font-bold text-[#f7f3ee] flex items-center gap-1.5">
           <Feather className="w-4 h-4 text-[#e6a15c]" />
-          Direct Note for Personal Trainer / Coach (Included in PNG)
+          Direct Note for Personal Trainer / Coach
         </label>
         <textarea
           rows={2}
@@ -425,7 +422,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
             className="flex-1 py-4 bg-gradient-to-r from-[#d97724] via-[#c86d51] to-[#e6a15c] hover:opacity-95 text-[#0c0a09] font-syne font-extrabold text-xs rounded-2xl flex items-center justify-center gap-2 shadow-2xl shadow-[#d97724]/20 transition-all scale-102"
           >
             <CheckCircle2 className="w-5 h-5 text-[#0c0a09]" />
-            Complete Workout & Export to PT (PNG)
+            Complete Workout
           </button>
           
           <button

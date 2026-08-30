@@ -10,8 +10,6 @@ import { ActiveWorkout } from './ActiveWorkout';
 import { WorkoutHistory } from './WorkoutHistory';
 import { MachineLibrary } from './MachineLibrary';
 import { AnalyticsView } from './AnalyticsView';
-import { PTSummaryStudio } from './PTSummaryStudio';
-import { ExportPNGModal } from './ExportPNGModal';
 import { ProfileModal } from './ProfileModal';
 import { ScheduleCalendarModal } from './ScheduleCalendarModal';
 import { NextSessionBanner } from './NextSessionBanner';
@@ -59,8 +57,6 @@ export function WorkoutTrackerApp({
   const [syncStatus, setSyncStatus] = useState<string>('Local starter data loaded.');
   const [portalUrl, setPortalUrl] = useState<string>('');
 
-  const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
-  const [exportWorkout, setExportWorkout] = useState<Workout | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState<boolean>(false);
 
@@ -139,8 +135,7 @@ export function WorkoutTrackerApp({
     const finished = { ...completedWorkout, isCompleted: true };
     setActiveWorkout(null);
     setWorkouts((prev) => [finished, ...prev]);
-    setActiveTab('pt-export');
-    setExportWorkout(finished);
+    setActiveTab('history');
   };
 
   const handleDiscardActiveWorkout = () => {
@@ -189,11 +184,6 @@ export function WorkoutTrackerApp({
 
     setActiveWorkout(newActive);
     setActiveTab('workout');
-  };
-
-  const handleOpenExportForWorkout = (workout: Workout) => {
-    setExportWorkout(workout);
-    setIsExportModalOpen(true);
   };
 
   const handleStartNewWorkoutFromScratch = () => {
@@ -368,9 +358,6 @@ export function WorkoutTrackerApp({
     );
   };
 
-  const latestCompletedWorkout = workouts[0] || null;
-  const targetPtExportWorkout = exportWorkout || latestCompletedWorkout;
-
   return (
     <div className="min-h-screen bg-[#0c0a09] text-[#f7f3ee] flex flex-col max-w-md mx-auto shadow-2xl relative border-x border-[#2b241f]">
       <IOSHeader
@@ -402,7 +389,6 @@ export function WorkoutTrackerApp({
                 machines={machines}
                 onUpdateWorkout={handleUpdateActiveWorkout}
                 onFinishWorkout={handleFinishWorkout}
-                onOpenExportModal={handleOpenExportForWorkout}
                 onDiscardWorkout={handleDiscardActiveWorkout}
                 driveAccessToken={driveConnection.accessToken}
               />
@@ -433,7 +419,6 @@ export function WorkoutTrackerApp({
           <WorkoutHistory
             workouts={workouts}
             unit={unit}
-            onOpenExportModal={handleOpenExportForWorkout}
             onDeleteWorkout={handleDeleteWorkout}
             onRepeatWorkout={handleRepeatWorkout}
             onStartNewWorkout={handleStartNewWorkoutFromScratch}
@@ -442,20 +427,7 @@ export function WorkoutTrackerApp({
           />
         )}
 
-        {/* Tab 3: PT Export */}
-        {activeTab === 'pt-export' && (
-          <div className="space-y-3">
-            {targetPtExportWorkout ? (
-              <PTSummaryStudio workout={targetPtExportWorkout} unit={unit} />
-            ) : (
-              <div className="bg-[#181412] border border-[#382f29] rounded-3xl p-6 text-center text-xs text-[#a39588]">
-                No completed workouts found. Finish a workout first to generate a PT report card!
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Tab 4: Machines */}
+        {/* Tab 3: Machines */}
         {activeTab === 'machines' && (
           <MachineLibrary
             machines={machines}
@@ -464,7 +436,7 @@ export function WorkoutTrackerApp({
           />
         )}
 
-        {/* Tab 5: Analytics */}
+        {/* Tab 4: Analytics */}
         {activeTab === 'analytics' && (
           <AnalyticsView workouts={workouts} unit={unit} />
         )}
@@ -475,16 +447,6 @@ export function WorkoutTrackerApp({
         onTabChange={setActiveTab}
         hasActiveWorkout={!!activeWorkout}
       />
-
-      {/* Modals */}
-      {exportWorkout && (
-        <ExportPNGModal
-          workout={exportWorkout}
-          unit={unit}
-          isOpen={isExportModalOpen}
-          onClose={() => setIsExportModalOpen(false)}
-        />
-      )}
 
       <ProfileModal
         profile={profile}

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Flame, History, Share2, Compass, Sparkles } from 'lucide-react';
+import { Flame, History, Compass, Sparkles } from 'lucide-react';
 import { ActiveTab } from '../types';
 
 interface IOSTabBarProps {
@@ -26,12 +26,6 @@ export const IOSTabBar: React.FC<IOSTabBarProps> = ({
       id: 'history' as ActiveTab,
       label: 'History',
       icon: History
-    },
-    {
-      id: 'pt-export' as ActiveTab,
-      label: 'PT Export',
-      icon: Share2,
-      highlight: true
     },
     {
       id: 'machines' as ActiveTab,
