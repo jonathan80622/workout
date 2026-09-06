@@ -28,49 +28,49 @@ export interface WorkoutSet {
   weightUnit: WeightUnit;
   reps: number;
   completed: boolean;
-  rpe?: number; // Rate of Perceived Exertion (1-10)
-  distance?: number; // Distance in miles or km
-  runningTimeMinutes?: number; // Running duration in minutes
+  rpe?: number;
+  distance?: number;
+  runningTimeMinutes?: number;
 }
 
 export interface MuscleFeeling {
   targetMuscles: MuscleGroup[];
   sorenessLevel: SorenessLevel;
-  pumpQuality: number; // 1 to 5
+  pumpQuality: number;
   jointComfort: JointComfort;
-  notes: string; // Detailed text description of muscle feeling
-  quickTags: string[]; // e.g. ["Target Muscle On Fire", "Form On Point", "Slight Asymmetry"]
+  notes: string;
+  quickTags: string[];
 }
 
 export interface ExerciseLog {
   id: string;
   machineName: string;
   category: MuscleGroup;
-  seatSettings?: string; // e.g., "Seat: 4, Lever: B"
+  seatSettings?: string;
   sets: WorkoutSet[];
   muscleFeeling: MuscleFeeling;
   notes?: string;
-  distance?: number; // Total distance for cardio exercise
-  runningTimeMinutes?: number; // Total running time for exercise
+  distance?: number;
+  runningTimeMinutes?: number;
   videos?: WorkoutVideo[];
-  ptComment?: string; // Trainer feedback on this exercise
+  ptComment?: string;
 }
 
 export interface Workout {
   id: string;
   title: string;
-  date: string; // ISO string
+  date: string;
   startTime?: string;
   endTime?: string;
   durationMinutes: number;
-  unit: WeightUnit; // Legacy workout-level default only. Set weightUnit is authoritative.
+  unit: WeightUnit;
   exercises: ExerciseLog[];
-  runningDistance?: number; // Total running distance in miles/km
-  runningTimeMinutes?: number; // Total running time in minutes
-  ptNotes?: string; // Special note intended for PT
-  ptComment?: string; // Trainer feedback on the completed workout
-  ptName?: string; // e.g. "Trainer Coach Sarah"
-  clientName?: string; // User name e.g. "Alex"
+  runningDistance?: number;
+  runningTimeMinutes?: number;
+  ptNotes?: string;
+  ptComment?: string;
+  ptName?: string;
+  clientName?: string;
   isCompleted: boolean;
 }
 
@@ -89,9 +89,9 @@ export interface WorkoutVideo {
 export interface BodyWeightEntry {
   schemaVersion: 1;
   id: string;
-  date: string; // YYYY-MM-DD, local weigh-in date
-  weightKg: number; // Canonical storage unit for all body weight math.
-  sourceValue: number; // The value as originally entered.
+  date: string;
+  weightKg: number;
+  sourceValue: number;
   sourceUnit: WeightUnit;
 }
 
@@ -138,15 +138,17 @@ export interface WorkoutAppState {
     clientName: string;
     ptName: string;
     appTitle?: string;
-    preferredUnit?: WeightUnit; // Legacy only. Workout weights are scoped by Workout.unit.
+    preferredUnit?: WeightUnit;
     themeColor: 'ios-blue' | 'ios-emerald' | 'ios-purple' | 'ios-orange';
+    /** AES-GCM encrypted Google refresh credential; server-only semantics. */
+    serverDriveCredential?: string;
   };
   machines: MachinePreset[];
   workouts: Workout[];
   trainingPlan: TrainingPlan;
   warmupCheckins: WarmupCheckins;
   scheduledSession: import('./utils/calendar').ScheduledSession | null;
-  videos?: WorkoutVideo[]; // Legacy top-level video list, migrated into ExerciseLog.videos on load.
+  videos?: WorkoutVideo[];
 }
 
 export interface MachinePreset {
