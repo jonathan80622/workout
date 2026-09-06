@@ -35,5 +35,3 @@ export async function GET(request: NextRequest) {
   });
   return response;
 }
-
-export { STATE_COOKIE };
