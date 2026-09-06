@@ -1,10 +1,10 @@
-'use client';
+type DriveAuthPageProps = {
+  searchParams?: Promise<{ success?: string }>;
+};
 
-import { useSearchParams } from 'next/navigation';
-
-export default function DriveAuthPage() {
-  const searchParams = useSearchParams();
-  const success = searchParams.get('success') === '1';
+export default async function DriveAuthPage({ searchParams }: DriveAuthPageProps) {
+  const params = searchParams ? await searchParams : undefined;
+  const success = params?.success === '1';
 
   return (
     <main className="min-h-screen bg-[#0c0a09] text-[#f7f3ee] flex items-center justify-center p-6">
