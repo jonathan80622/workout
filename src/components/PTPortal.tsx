@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Circle, Dumbbell, Lock, Maximize2, MessageSquareText, Minimize2, RefreshCw, X } from 'lucide-react';
 import { WorkoutAppState, WorkoutVideo } from '../types';
 import { formatWorkoutDate } from '../utils/formatters';
+import { NativeDriveVideo } from './NativeDriveVideo';
 
 type PTCommentState = Record<
   string,
@@ -242,117 +243,104 @@ export const PTPortal: React.FC = () => {
                     const completedSets = exercise.sets.filter((set) => set.completed);
                     const visibleSets = completedSets.length > 0 ? completedSets : exercise.sets;
                     return (
-                      <div key={exercise.id} className="bg-[#100d0b] border border-[#2b241f] rounded-2xl p-3">
-                        <div className={`grid gap-4 ${exerciseVideos.length > 0 ? 'lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)]' : ''}`}>
-                          {exerciseVideos.length > 0 && (
-                            <div className="space-y-3">
-                              {exerciseVideos.map((video) => (
-                                <div key={video.id} className="bg-[#181412] border border-[#382f29] rounded-2xl overflow-hidden">
-                                  <iframe
-                                    src={`https://drive.google.com/file/d/${video.driveFileId}/preview`}
-                                    allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                                    allowFullScreen
-                                    className="w-full aspect-video border-0 bg-black"
-                                    title={video.name || video.id}
-                                  />
-                                  <div className="flex items-center justify-between gap-3 p-3">
-                                    <div className="min-w-0">
-                                      <p className="truncate text-xs font-bold text-[#f7f3ee]">
-                                        {video.name || `Video ${new Date(video.createdAt).toLocaleDateString()}`}
-                                      </p>
-                                      <p className="text-[10px] text-[#8c7e72]">
-                                        Uploaded {new Date(video.createdAt).toLocaleDateString()}
-                                      </p>
-                                    </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => setExpandedVideo(video)}
-                                      className="shrink-0 h-9 w-9 rounded-full bg-[#0c0a09] text-[#f7f3ee] border border-[#382f29] flex items-center justify-center hover:bg-[#211b18]"
-                                      title="Expand video inside PT view"
-                                    >
-                                      <Maximize2 className="w-4 h-4" />
-                                    </button>
+                      <div key={exercise.id} className="bg-[#100d0b] border border-[#2b241f] rounded-2xl p-3 space-y-3">
+                        <div>
+                          <div className="flex items-center justify-between gap-3">
+                            <h3 className="text-sm font-bold">{exercise.machineName}</h3>
+                            <span className="text-[10px] text-[#e6a15c]">{exercise.category}</span>
+                          </div>
+                          <p className="text-xs text-[#a39588] mt-1">
+                            {completedSets.length} completed sets
+                            {exercise.seatSettings ? ` · Setup: ${exercise.seatSettings}` : ''}
+                          </p>
+                        </div>
+
+                        {exerciseVideos.length > 0 && (
+                          <div className="space-y-2">
+                            {exerciseVideos.map((video) => (
+                              <button
+                                key={video.id}
+                                type="button"
+                                onClick={() => setExpandedVideo(video)}
+                                className="w-full rounded-xl border border-[#382f29] bg-[#181412] p-3 text-left hover:bg-[#211b18]"
+                              >
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="truncate text-xs font-bold text-[#f7f3ee]">
+                                      {video.name || `Video ${new Date(video.createdAt).toLocaleDateString()}`}
+                                    </p>
+                                    <p className="text-[10px] text-[#8c7e72]">
+                                      Uploaded {new Date(video.createdAt).toLocaleDateString()} · Open video
+                                    </p>
                                   </div>
+                                  <Maximize2 className="h-5 w-5 shrink-0 text-[#e6a15c]" />
                                 </div>
-                              ))}
-                            </div>
-                          )}
+                              </button>
+                            ))}
+                          </div>
+                        )}
 
-                          <div className="space-y-3">
-                            <div>
-                              <div className="flex items-center justify-between gap-3">
-                                <h3 className="text-sm font-bold">{exercise.machineName}</h3>
-                                <span className="text-[10px] text-[#e6a15c]">{exercise.category}</span>
+                        <div className="bg-[#181412] border border-[#382f29] rounded-xl overflow-hidden">
+                          <div className="grid grid-cols-[44px_1fr_1fr_1fr] gap-2 px-3 py-2 text-[10px] font-bold uppercase text-[#8c7e72] border-b border-[#2b241f]">
+                            <span>Set</span>
+                            <span>Type</span>
+                            <span>Load</span>
+                            <span>Reps</span>
+                          </div>
+                          <div className="divide-y divide-[#2b241f]">
+                            {visibleSets.map((set) => (
+                              <div key={set.id} className="grid grid-cols-[44px_1fr_1fr_1fr] gap-2 px-3 py-2 text-xs text-[#f7f3ee]">
+                                <span className="font-mono text-[#e6a15c]">#{set.setNumber}</span>
+                                <span className="capitalize text-[#c8b8a8]">{set.type}</span>
+                                <span className="font-mono">
+                                  {exercise.category === 'Cardio & Running'
+                                    ? set.distance
+                                      ? `${set.distance} mi`
+                                      : '-'
+                                    : `${set.weight} ${set.weightUnit}`}
+                                </span>
+                                <span className="font-mono">
+                                  {exercise.category === 'Cardio & Running'
+                                    ? set.runningTimeMinutes
+                                      ? `${set.runningTimeMinutes}m`
+                                      : '-'
+                                    : set.reps}
+                                  {set.rpe ? ` · RPE ${set.rpe}` : ''}
+                                </span>
                               </div>
-                              <p className="text-xs text-[#a39588] mt-1">
-                                {completedSets.length} completed sets
-                                {exercise.seatSettings ? ` · Setup: ${exercise.seatSettings}` : ''}
-                              </p>
-                            </div>
+                            ))}
+                          </div>
+                        </div>
 
-                            <div className="bg-[#181412] border border-[#382f29] rounded-xl overflow-hidden">
-                              <div className="grid grid-cols-[44px_1fr_1fr_1fr] gap-2 px-3 py-2 text-[10px] font-bold uppercase text-[#8c7e72] border-b border-[#2b241f]">
-                                <span>Set</span>
-                                <span>Type</span>
-                                <span>Load</span>
-                                <span>Reps</span>
-                              </div>
-                              <div className="divide-y divide-[#2b241f]">
-                                {visibleSets.map((set) => (
-                                  <div key={set.id} className="grid grid-cols-[44px_1fr_1fr_1fr] gap-2 px-3 py-2 text-xs text-[#f7f3ee]">
-                                    <span className="font-mono text-[#e6a15c]">#{set.setNumber}</span>
-                                    <span className="capitalize text-[#c8b8a8]">{set.type}</span>
-                                    <span className="font-mono">
-                                      {exercise.category === 'Cardio & Running'
-                                        ? set.distance
-                                          ? `${set.distance} mi`
-                                          : '-'
-                                        : `${set.weight} ${set.weightUnit}`}
-                                    </span>
-                                    <span className="font-mono">
-                                      {exercise.category === 'Cardio & Running'
-                                        ? set.runningTimeMinutes
-                                          ? `${set.runningTimeMinutes}m`
-                                          : '-'
-                                        : set.reps}
-                                      {set.rpe ? ` · RPE ${set.rpe}` : ''}
-                                    </span>
-                                  </div>
+                        {(exercise.notes || exercise.muscleFeeling?.notes || exercise.muscleFeeling?.quickTags?.length > 0) && (
+                          <div className="bg-[#181412] border border-[#382f29] rounded-xl p-3 space-y-2 text-xs">
+                            {exercise.notes && <p className="text-[#c8b8a8]">{exercise.notes}</p>}
+                            {exercise.muscleFeeling?.notes && <p className="text-[#f7f3ee] font-serif italic">{exercise.muscleFeeling.notes}</p>}
+                            {exercise.muscleFeeling?.quickTags?.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5">
+                                {exercise.muscleFeeling.quickTags.map((tag) => (
+                                  <span key={tag} className="rounded-full border border-[#382f29] bg-[#100d0b] px-2 py-0.5 text-[10px] text-[#c8b8a8]">
+                                    {tag}
+                                  </span>
                                 ))}
                               </div>
-                            </div>
-
-                            {(exercise.notes || exercise.muscleFeeling?.notes || exercise.muscleFeeling?.quickTags?.length > 0) && (
-                              <div className="bg-[#181412] border border-[#382f29] rounded-xl p-3 space-y-2 text-xs">
-                                {exercise.notes && <p className="text-[#c8b8a8]">{exercise.notes}</p>}
-                                {exercise.muscleFeeling?.notes && <p className="text-[#f7f3ee] font-serif italic">{exercise.muscleFeeling.notes}</p>}
-                                {exercise.muscleFeeling?.quickTags?.length > 0 && (
-                                  <div className="flex flex-wrap gap-1.5">
-                                    {exercise.muscleFeeling.quickTags.map((tag) => (
-                                      <span key={tag} className="rounded-full border border-[#382f29] bg-[#100d0b] px-2 py-0.5 text-[10px] text-[#c8b8a8]">
-                                        {tag}
-                                      </span>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
                             )}
-
-                            <div className="space-y-2">
-                              <label htmlFor={`pt-exercise-comment-${workout.id}-${exercise.id}`} className="text-xs font-bold text-[#f7f3ee] flex items-center gap-2">
-                                <MessageSquareText className="w-4 h-4 text-[#e6a15c]" />
-                                PT comments for this exercise
-                              </label>
-                              <textarea
-                                id={`pt-exercise-comment-${workout.id}-${exercise.id}`}
-                                rows={4}
-                                value={workoutComments.exerciseComments[exercise.id] || ''}
-                                onChange={(event) => handleExerciseCommentChange(workout.id, exercise.id, event.target.value)}
-                                placeholder="Comment on load, reps, range of motion, tempo, setup, discomfort, or next-session changes."
-                                className="w-full bg-[#181412] border border-[#382f29] rounded-xl p-3 text-xs text-[#f7f3ee] placeholder-[#6b5e54] outline-none focus:ring-1 focus:ring-[#d97724] resize-y min-h-28"
-                              />
-                            </div>
                           </div>
+                        )}
+
+                        <div className="space-y-2">
+                          <label htmlFor={`pt-exercise-comment-${workout.id}-${exercise.id}`} className="text-xs font-bold text-[#f7f3ee] flex items-center gap-2">
+                            <MessageSquareText className="w-4 h-4 text-[#e6a15c]" />
+                            PT comments for this exercise
+                          </label>
+                          <textarea
+                            id={`pt-exercise-comment-${workout.id}-${exercise.id}`}
+                            rows={4}
+                            value={workoutComments.exerciseComments[exercise.id] || ''}
+                            onChange={(event) => handleExerciseCommentChange(workout.id, exercise.id, event.target.value)}
+                            placeholder="Comment on load, reps, range of motion, tempo, setup, discomfort, or next-session changes."
+                            className="w-full bg-[#181412] border border-[#382f29] rounded-xl p-3 text-xs text-[#f7f3ee] placeholder-[#6b5e54] outline-none focus:ring-1 focus:ring-[#d97724] resize-y min-h-28"
+                          />
                         </div>
                       </div>
                     );
@@ -382,13 +370,7 @@ export const PTPortal: React.FC = () => {
             </button>
           </div>
           <div className="max-w-6xl w-full mx-auto flex-1 min-h-0 bg-black border border-[#382f29] rounded-2xl overflow-hidden">
-            <iframe
-              src={`https://drive.google.com/file/d/${expandedVideo.driveFileId}/preview`}
-              allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full border-0 bg-black"
-              title={expandedVideo.name || expandedVideo.id}
-            />
+            <NativeDriveVideo video={expandedVideo} className="w-full h-full" />
           </div>
         </div>
       )}
