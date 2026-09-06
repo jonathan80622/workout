@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { normalizeAppState } from '@/src/utils/driveStorage';
+import { createPtSession, PT_SESSION_COOKIE } from '../_lib/ptMedia';
 
 const DRIVE_DOWNLOAD_URL = 'https://drive.google.com/uc?export=download&id=';
 
@@ -38,9 +39,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Drive data file did not contain valid JSON.' }, { status: 502 });
   }
 
-  return NextResponse.json(normalizeAppState(state), {
-    headers: {
-      'Cache-Control': 'no-store',
-    },
+  const portalResponse = NextResponse.json(normalizeAppState(state), {
+    headers: { 'Cache-Control': 'no-store' },
   });
+  portalResponse.cookies.set(PT_SESSION_COOKIE, createPtSession(dataFileId, configuredPassword), {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/api/pt-video',
+    maxAge: 60 * 60 * 12,
+  });
+  return portalResponse;
 }
