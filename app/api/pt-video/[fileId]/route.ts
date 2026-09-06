@@ -14,11 +14,11 @@ export async function GET(request: NextRequest, context: { params: Promise<{ fil
   const { fileId } = await context.params;
 
   try {
-    if (!(await requireVideoInPtState(session.dataFileId, fileId, session.encryptedCredential))) {
+    if (!(await requireVideoInPtState(session.dataFileId, fileId))) {
       return new Response('Video not found.', { status: 404 });
     }
 
-    const driveResponse = await fetchDriveMedia(fileId, session.encryptedCredential, request.headers.get('range'));
+    const driveResponse = await fetchDriveMedia(session.dataFileId, fileId, request.headers.get('range'));
     if (!driveResponse.ok && driveResponse.status !== 206) {
       return new Response('Unable to read video from Drive.', { status: driveResponse.status });
     }
