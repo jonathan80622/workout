@@ -99,6 +99,9 @@ export const TrainingPlanView: React.FC<TrainingPlanViewProps> = ({
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold text-[#f7f3ee]">{move.name}</p>
                       <p className="text-xs text-[#a39588]">{move.target}</p>
+                      {move.cue && (
+                        <p className="mt-1 text-xs text-[#c8b8a8] font-serif italic leading-relaxed">{move.cue}</p>
+                      )}
                     </div>
                   </div>
                 </button>
