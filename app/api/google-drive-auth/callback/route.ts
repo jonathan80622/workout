@@ -6,6 +6,7 @@ const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const STATE_COOKIE = 'workout_drive_oauth_state';
 const CREDENTIAL_FIELD = 'serverDriveCredential';
+const TOKEN_STORAGE_KEY = 'workout-recorder-google-token';
 
 function encryptRefreshToken(refreshToken: string, secret: string) {
   const key = createHash('sha256').update(secret).digest();
@@ -40,16 +41,23 @@ export async function GET(request: NextRequest) {
     }),
     cache: 'no-store',
   });
-  const tokens = await tokenResponse.json().catch(() => null) as { access_token?: string; refresh_token?: string; error_description?: string } | null;
+  const tokens = await tokenResponse.json().catch(() => null) as {
+    access_token?: string;
+    refresh_token?: string;
+    error_description?: string;
+  } | null;
   if (!tokenResponse.ok || !tokens?.access_token || !tokens?.refresh_token) {
     return new Response(tokens?.error_description || 'Google did not return durable Drive authorization.', { status: 502 });
   }
 
   const q = encodeURIComponent("name='workout-data.json' and trashed=false");
-  const listResponse = await fetch(`${DRIVE_API}/files?q=${q}&orderBy=modifiedTime%20desc&fields=files(id,name,modifiedTime)&pageSize=10`, {
-    headers: { Authorization: `Bearer ${tokens.access_token}` },
-    cache: 'no-store',
-  });
+  const listResponse = await fetch(
+    `${DRIVE_API}/files?q=${q}&orderBy=modifiedTime%20desc&fields=files(id,name,modifiedTime)&pageSize=10`,
+    {
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
+      cache: 'no-store',
+    }
+  );
   const list = await listResponse.json().catch(() => null) as { files?: Array<{ id: string }> } | null;
   const dataFileId = list?.files?.[0]?.id;
   if (!listResponse.ok || !dataFileId) {
@@ -77,9 +85,20 @@ export async function GET(request: NextRequest) {
     body: JSON.stringify(workoutState, null, 2),
     cache: 'no-store',
   });
-  if (!saveResponse.ok) return new Response('Authorized Drive, but could not persist the server playback credential.', { status: 502 });
+  if (!saveResponse.ok) {
+    return new Response('Authorized Drive, but could not persist the server playback credential.', { status: 502 });
+  }
 
-  const response = NextResponse.redirect(new URL('/drive-auth?success=1', request.nextUrl.origin));
+  const accessTokenLiteral = JSON.stringify(tokens.access_token);
+  const storageKeyLiteral = JSON.stringify(TOKEN_STORAGE_KEY);
+  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Drive connected</title></head><body><script>sessionStorage.setItem(${storageKeyLiteral}, ${accessTokenLiteral});window.location.replace('/');</script></body></html>`;
+  const response = new NextResponse(html, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+    },
+  });
   response.cookies.delete(STATE_COOKIE);
   return response;
 }
