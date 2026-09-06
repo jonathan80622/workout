@@ -8,14 +8,17 @@ export async function GET(request: NextRequest, context: { params: Promise<{ fil
   const configuredPassword = process.env.PT_VIEW_PASSWORD || process.env.NEXT_PUBLIC_PT_VIEW_PASSWORD;
   if (!configuredPassword) return new Response('PT_VIEW_PASSWORD is not configured.', { status: 500 });
 
-  const dataFileId = readPtSession(request.cookies.get(PT_SESSION_COOKIE)?.value, configuredPassword);
-  if (!dataFileId) return new Response('Unauthorized.', { status: 401 });
+  const session = readPtSession(request.cookies.get(PT_SESSION_COOKIE)?.value, configuredPassword);
+  if (!session) return new Response('Unauthorized.', { status: 401 });
 
   const { fileId } = await context.params;
-  if (!(await requireVideoInPtState(dataFileId, fileId))) return new Response('Video not found.', { status: 404 });
 
   try {
-    const driveResponse = await fetchDriveMedia(dataFileId, fileId, request.headers.get('range'));
+    if (!(await requireVideoInPtState(session.dataFileId, fileId, session.encryptedCredential))) {
+      return new Response('Video not found.', { status: 404 });
+    }
+
+    const driveResponse = await fetchDriveMedia(fileId, session.encryptedCredential, request.headers.get('range'));
     if (!driveResponse.ok && driveResponse.status !== 206) {
       return new Response('Unable to read video from Drive.', { status: driveResponse.status });
     }

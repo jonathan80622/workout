@@ -31,18 +31,30 @@ export async function POST(request: Request) {
   const state = await response.json().catch(() => null);
   if (!state) return NextResponse.json({ error: 'Drive data file did not contain valid JSON.' }, { status: 502 });
 
+  const encryptedCredential = state?.profile?.[SERVER_DRIVE_CREDENTIAL_FIELD];
+  if (typeof encryptedCredential !== 'string' || !encryptedCredential) {
+    return NextResponse.json(
+      { error: 'Drive playback is not authorized. Open /drive-auth as the workout owner once.' },
+      { status: 503 }
+    );
+  }
+
   const normalized = normalizeAppState(state);
   if (normalized.profile && SERVER_DRIVE_CREDENTIAL_FIELD in normalized.profile) {
     delete (normalized.profile as Record<string, unknown>)[SERVER_DRIVE_CREDENTIAL_FIELD];
   }
 
   const portalResponse = NextResponse.json(normalized, { headers: { 'Cache-Control': 'no-store' } });
-  portalResponse.cookies.set(PT_SESSION_COOKIE, createPtSession(dataFileId, configuredPassword), {
-    httpOnly: true,
-    sameSite: 'strict',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/api/pt-video',
-    maxAge: 60 * 60 * 12,
-  });
+  portalResponse.cookies.set(
+    PT_SESSION_COOKIE,
+    createPtSession(dataFileId, encryptedCredential, configuredPassword),
+    {
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/api/pt-video',
+      maxAge: 60 * 60 * 12,
+    }
+  );
   return portalResponse;
 }
