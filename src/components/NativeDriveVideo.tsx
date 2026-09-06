@@ -11,6 +11,7 @@ interface NativeDriveVideoProps {
 export const NativeDriveVideo: React.FC<NativeDriveVideoProps> = ({ video, className }) => {
   const [failed, setFailed] = useState(false);
   const mediaUrl = `/api/pt-video/${encodeURIComponent(video.driveFileId)}`;
+  const thumbnailUrl = `/api/pt-video/${encodeURIComponent(video.driveFileId)}/thumbnail`;
 
   if (failed) {
     return (
@@ -33,6 +34,7 @@ export const NativeDriveVideo: React.FC<NativeDriveVideoProps> = ({ video, class
   return (
     <video
       src={mediaUrl}
+      poster={thumbnailUrl}
       controls
       playsInline
       preload="metadata"
