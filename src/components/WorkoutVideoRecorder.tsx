@@ -94,7 +94,8 @@ export const WorkoutVideoRecorder: React.FC<WorkoutVideoRecorderProps> = ({
             <div key={video.id} className="bg-[#181412] border border-[#382f29] rounded-2xl overflow-hidden">
               <iframe
                 src={`https://drive.google.com/file/d/${video.driveFileId}/preview`}
-                allow="autoplay; fullscreen"
+                allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                allowFullScreen
                 className="w-full aspect-video border-0 bg-black"
                 title={video.name || video.id}
               />

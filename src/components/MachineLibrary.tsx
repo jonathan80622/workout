@@ -35,6 +35,8 @@ export const MachineLibrary: React.FC<MachineLibraryProps> = ({
   const [editSeatSettings, setEditSeatSettings] = useState<string>('');
   const [editingNameId, setEditingNameId] = useState<string | null>(null);
   const [editNameText, setEditNameText] = useState<string>('');
+  const [editingDescId, setEditingDescId] = useState<string | null>(null);
+  const [editDescText, setEditDescText] = useState<string>('');
 
   const [isNewModalOpen, setIsNewModalOpen] = useState<boolean>(false);
   const [newName, setNewName] = useState<string>('');
@@ -77,6 +79,19 @@ export const MachineLibrary: React.FC<MachineLibraryProps> = ({
       onUpdateMachines(updated);
     }
     setEditingNameId(null);
+  };
+
+  const handleStartEditDesc = (m: MachinePreset) => {
+    setEditingDescId(m.id);
+    setEditDescText(m.targetDescription);
+  };
+
+  const handleSaveDescEdit = (machineId: string) => {
+    const updated = machines.map((m) =>
+      m.id === machineId ? { ...m, targetDescription: editDescText.trim() } : m
+    );
+    onUpdateMachines(updated);
+    setEditingDescId(null);
   };
 
   const handleDeleteMachine = (id: string) => {
@@ -267,10 +282,41 @@ export const MachineLibrary: React.FC<MachineLibraryProps> = ({
               )}
             </div>
 
-            {/* Target Muscle Description */}
-            <p className="text-xs text-[#a39588] font-serif italic leading-relaxed">
-              "{machine.targetDescription}"
-            </p>
+            {/* Target Muscle Description / Prefix Cue */}
+            <div className="bg-[#100d0b] p-2.5 rounded-2xl border border-[#2b241f] space-y-1 text-xs">
+              <div className="flex items-center justify-between text-[#a39588]">
+                <span className="font-syne font-semibold">Form Cue / Prefix Description:</span>
+                {editingDescId !== machine.id ? (
+                  <button
+                    onClick={() => handleStartEditDesc(machine)}
+                    className="text-[#e6a15c] hover:underline flex items-center gap-0.5 text-[11px] font-syne"
+                  >
+                    <Edit2 className="w-3 h-3" /> Edit
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleSaveDescEdit(machine.id)}
+                    className="text-[#849a88] font-bold flex items-center gap-0.5 text-[11px] font-syne"
+                  >
+                    <Check className="w-3 h-3" /> Save
+                  </button>
+                )}
+              </div>
+
+              {editingDescId === machine.id ? (
+                <textarea
+                  rows={2}
+                  value={editDescText}
+                  onChange={(e) => setEditDescText(e.target.value)}
+                  placeholder="e.g. 前手臂要儘量和地面垂直"
+                  className="w-full bg-[#181412] border border-[#382f29] rounded-xl p-2 text-xs text-[#f7f3ee] outline-none focus:ring-1 focus:ring-[#d97724] resize-none"
+                />
+              ) : (
+                <p className="text-[#f7f3ee] font-serif italic leading-relaxed">
+                  "{machine.targetDescription || '尚未設定提示文字（點擊編輯新增）'}"
+                </p>
+              )}
+            </div>
           </div>
         ))}
       </div>

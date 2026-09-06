@@ -408,6 +408,7 @@ export function WorkoutTrackerApp({
                 <ActiveWorkout
                   workout={activeWorkout}
                   machines={machines}
+                  pastWorkouts={workouts}
                   onUpdateWorkout={handleUpdateActiveWorkout}
                   onFinishWorkout={handleFinishWorkout}
                   onDiscardWorkout={handleDiscardActiveWorkout}

@@ -120,6 +120,7 @@ export interface WarmupMove {
   id: string;
   name: string;
   target: string;
+  cue?: string;
 }
 
 export interface TrainingPlan {

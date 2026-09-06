@@ -4,9 +4,15 @@ export const DEFAULT_TRAINING_PLAN: TrainingPlan = {
   version: 1,
   title: 'Push / Pull Program',
   warmupMoves: [
-    { id: 'hooklying', name: 'Hooklying', target: '6-8' },
+    {
+      id: 'hooklying',
+      name: 'Hooklying',
+      target: '6-8',
+      cue: '腳往前推，大腿內側夾東西，大腿後側和肚子下方要用力，手60度，吸氣三秒吐氣六秒',
+    },
     { id: 'left-side-bend', name: '四足跪姿左側彎', target: '6-8' },
     { id: 'dead-bug', name: '死蟲式', target: '8下' },
+    { id: 'shoulder-ir-er', name: '躺姿肩內外轉', target: '8-10下（每側）' },
   ],
   blocks: [
     {

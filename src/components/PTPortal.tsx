@@ -248,31 +248,30 @@ export const PTPortal: React.FC = () => {
                             <div className="space-y-3">
                               {exerciseVideos.map((video) => (
                                 <div key={video.id} className="bg-[#181412] border border-[#382f29] rounded-2xl overflow-hidden">
-                                  <div className="relative bg-black">
-                                    <iframe
-                                      src={`https://drive.google.com/file/d/${video.driveFileId}/preview`}
-                                      allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                                      allowFullScreen
-                                      sandbox="allow-scripts allow-same-origin allow-presentation"
-                                      className="w-full aspect-video border-0 bg-black"
-                                      title={video.name || video.id}
-                                    />
+                                  <iframe
+                                    src={`https://drive.google.com/file/d/${video.driveFileId}/preview`}
+                                    allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                                    allowFullScreen
+                                    className="w-full aspect-video border-0 bg-black"
+                                    title={video.name || video.id}
+                                  />
+                                  <div className="flex items-center justify-between gap-3 p-3">
+                                    <div className="min-w-0">
+                                      <p className="truncate text-xs font-bold text-[#f7f3ee]">
+                                        {video.name || `Video ${new Date(video.createdAt).toLocaleDateString()}`}
+                                      </p>
+                                      <p className="text-[10px] text-[#8c7e72]">
+                                        Uploaded {new Date(video.createdAt).toLocaleDateString()}
+                                      </p>
+                                    </div>
                                     <button
                                       type="button"
                                       onClick={() => setExpandedVideo(video)}
-                                      className="absolute right-2 top-2 z-10 h-9 w-9 rounded-full bg-[#0c0a09]/85 text-[#f7f3ee] border border-[#382f29] flex items-center justify-center hover:bg-[#181412]"
+                                      className="shrink-0 h-9 w-9 rounded-full bg-[#0c0a09] text-[#f7f3ee] border border-[#382f29] flex items-center justify-center hover:bg-[#211b18]"
                                       title="Expand video inside PT view"
                                     >
                                       <Maximize2 className="w-4 h-4" />
                                     </button>
-                                  </div>
-                                  <div className="p-3">
-                                    <p className="truncate text-xs font-bold text-[#f7f3ee]">
-                                      {video.name || `Video ${new Date(video.createdAt).toLocaleDateString()}`}
-                                    </p>
-                                    <p className="text-[10px] text-[#8c7e72]">
-                                      Uploaded {new Date(video.createdAt).toLocaleDateString()}
-                                    </p>
                                   </div>
                                 </div>
                               ))}
@@ -387,7 +386,6 @@ export const PTPortal: React.FC = () => {
               src={`https://drive.google.com/file/d/${expandedVideo.driveFileId}/preview`}
               allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
               allowFullScreen
-              sandbox="allow-scripts allow-same-origin allow-presentation"
               className="w-full h-full border-0 bg-black"
               title={expandedVideo.name || expandedVideo.id}
             />

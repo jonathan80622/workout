@@ -12,15 +12,24 @@ import { calculateWorkoutVolume, calculateCompletedSets, calculateTotalDistance,
 interface ActiveWorkoutProps {
   workout: Workout;
   machines: MachinePreset[];
+  pastWorkouts: Workout[];
   onUpdateWorkout: (updated: Workout) => void;
   onFinishWorkout: (completedWorkout: Workout) => void;
   onDiscardWorkout: () => void;
   driveAccessToken: string | null;
 }
 
+interface LoggedExercise {
+  machineName: string;
+  category: MuscleGroup;
+  seatSettings?: string;
+  lastLoggedDate: string;
+}
+
 export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   workout,
   machines,
+  pastWorkouts,
   onUpdateWorkout,
   onFinishWorkout,
   onDiscardWorkout,
@@ -68,6 +77,52 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
 
   const handlePtNoteChange = (note: string) => {
     onUpdateWorkout({ ...workout, ptNotes: note });
+  };
+
+  const loggedExercises: LoggedExercise[] = React.useMemo(() => {
+    const byName = new Map<string, LoggedExercise>();
+    const sortedWorkouts = [...pastWorkouts].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    sortedWorkouts.forEach((pastWorkout) => {
+      pastWorkout.exercises.forEach((exercise) => {
+        if (!byName.has(exercise.machineName)) {
+          byName.set(exercise.machineName, {
+            machineName: exercise.machineName,
+            category: exercise.category,
+            seatSettings: exercise.seatSettings,
+            lastLoggedDate: pastWorkout.date,
+          });
+        }
+      });
+    });
+    return Array.from(byName.values());
+  }, [pastWorkouts]);
+
+  const handleAddExerciseFromLogged = (logged: LoggedExercise) => {
+    const newExercise: ExerciseLog = {
+      id: 'ex-' + Date.now() + Math.random().toString(36).substr(2, 4),
+      machineName: logged.machineName,
+      category: logged.category,
+      seatSettings: logged.seatSettings || '',
+      sets: [
+        { id: 's-' + Date.now() + '-1', setNumber: 1, type: 'working', weight: 100, weightUnit: 'lbs', reps: 10, completed: false }
+      ],
+      muscleFeeling: {
+        targetMuscles: [logged.category],
+        sorenessLevel: 'none',
+        pumpQuality: 4,
+        jointComfort: 'great',
+        notes: '',
+        quickTags: []
+      }
+    };
+
+    onUpdateWorkout({
+      ...workout,
+      exercises: [...workout.exercises, newExercise]
+    });
+    setIsAddMachineModalOpen(false);
   };
 
   const handleAddExerciseFromPreset = (preset: MachinePreset) => {
@@ -449,25 +504,49 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
               </button>
             </div>
 
-            {/* Quick Presets List */}
-            <div>
-              <span className="text-xs font-serif italic text-[#c8b8a8] block mb-2">Preset Exercise Machines</span>
-              <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
-                {machines.map((machine) => (
-                  <button
-                    key={machine.id}
-                    onClick={() => handleAddExerciseFromPreset(machine)}
-                    className="w-full text-left p-2.5 rounded-2xl bg-[#100d0b] hover:bg-[#211b18] border border-[#2b241f] hover:border-[#d97724]/50 flex items-center justify-between transition-all"
-                  >
-                    <div>
-                      <span className="text-xs font-bold text-[#f7f3ee] block">{machine.name}</span>
-                      <span className="text-[10px] text-[#8c7e72]">{machine.category} • {machine.equipmentType}</span>
-                    </div>
-                    <Plus className="w-4 h-4 text-[#e6a15c]" />
-                  </button>
-                ))}
+            {/* Recently Logged Exercises */}
+            {loggedExercises.length > 0 && (
+              <div>
+                <span className="text-xs font-serif italic text-[#c8b8a8] block mb-2">Previously Logged Exercises</span>
+                <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+                  {loggedExercises.map((logged) => (
+                    <button
+                      key={logged.machineName}
+                      onClick={() => handleAddExerciseFromLogged(logged)}
+                      className="w-full text-left p-2.5 rounded-2xl bg-[#100d0b] hover:bg-[#211b18] border border-[#2b241f] hover:border-[#d97724]/50 flex items-center justify-between transition-all"
+                    >
+                      <div>
+                        <span className="text-xs font-bold text-[#f7f3ee] block">{logged.machineName}</span>
+                        <span className="text-[10px] text-[#8c7e72]">{logged.category}</span>
+                      </div>
+                      <Plus className="w-4 h-4 text-[#e6a15c]" />
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Quick Presets List */}
+            {machines.length > 0 && (
+              <div>
+                <span className="text-xs font-serif italic text-[#c8b8a8] block mb-2">Preset Exercise Machines</span>
+                <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+                  {machines.map((machine) => (
+                    <button
+                      key={machine.id}
+                      onClick={() => handleAddExerciseFromPreset(machine)}
+                      className="w-full text-left p-2.5 rounded-2xl bg-[#100d0b] hover:bg-[#211b18] border border-[#2b241f] hover:border-[#d97724]/50 flex items-center justify-between transition-all"
+                    >
+                      <div>
+                        <span className="text-xs font-bold text-[#f7f3ee] block">{machine.name}</span>
+                        <span className="text-[10px] text-[#8c7e72]">{machine.category} • {machine.equipmentType}</span>
+                      </div>
+                      <Plus className="w-4 h-4 text-[#e6a15c]" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Add Custom Machine */}
             <div className="pt-3 border-t border-[#2b241f] space-y-2">
