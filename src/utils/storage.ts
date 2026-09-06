@@ -6,8 +6,6 @@ export interface UserProfile {
   appTitle?: string;
   preferredUnit?: 'lbs' | 'kg';
   themeColor: 'ios-blue' | 'ios-emerald' | 'ios-purple' | 'ios-orange';
-  /** Encrypted Google refresh credential. Opaque to the browser; used only by server-side PT video playback. */
-  serverDriveCredential?: string;
 }
 
 export function sanitizeWorkout(w: Workout): Workout {
