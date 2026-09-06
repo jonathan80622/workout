@@ -1,22 +1,19 @@
-import { createDecipheriv, createHash, createHmac, timingSafeEqual } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
+import { getDriveRefreshToken } from './driveAuthStore';
 
 export const PT_SESSION_COOKIE = 'workout_pt_session';
-export const SERVER_DRIVE_CREDENTIAL_FIELD = 'serverDriveCredential';
 
 const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
-let cachedAccessToken: string | null = null;
-let cachedAccessTokenExpiresAt = 0;
-let cachedCredential: string | null = null;
+const accessTokenCache = new Map<string, { token: string; expiresAt: number }>();
 
 export type PtSession = {
   dataFileId: string;
-  encryptedCredential: string;
 };
 
-export function createPtSession(dataFileId: string, encryptedCredential: string, password: string) {
-  const payloadJson = JSON.stringify({ dataFileId, encryptedCredential } satisfies PtSession);
+export function createPtSession(dataFileId: string, password: string) {
+  const payloadJson = JSON.stringify({ dataFileId } satisfies PtSession);
   const payload = Buffer.from(payloadJson, 'utf8').toString('base64url');
   const signature = createHmac('sha256', password).update(payload).digest('base64url');
   return `${payload}.${signature}`;
@@ -35,48 +32,21 @@ export function readPtSession(cookieValue: string | undefined, password: string)
   try {
     const value = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as Partial<PtSession>;
     if (typeof value.dataFileId !== 'string' || !value.dataFileId) return null;
-    if (typeof value.encryptedCredential !== 'string' || !value.encryptedCredential) return null;
-    return {
-      dataFileId: value.dataFileId,
-      encryptedCredential: value.encryptedCredential,
-    };
+    return { dataFileId: value.dataFileId };
   } catch {
     return null;
   }
 }
 
-function decryptRefreshToken(value: string) {
-  const secret = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
-  if (!secret) throw new Error('GOOGLE_DRIVE_CLIENT_SECRET is not configured.');
-
-  const [version, ivValue, tagValue, ciphertextValue] = value.split('.');
-  if (version !== 'v1' || !ivValue || !tagValue || !ciphertextValue) {
-    throw new Error('Stored Drive credential is invalid.');
-  }
-
-  const key = createHash('sha256').update(secret).digest();
-  const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(ivValue, 'base64url'));
-  decipher.setAuthTag(Buffer.from(tagValue, 'base64url'));
-  return Buffer.concat([
-    decipher.update(Buffer.from(ciphertextValue, 'base64url')),
-    decipher.final(),
-  ]).toString('utf8');
-}
-
-async function getDriveAccessToken(encryptedCredential: string) {
-  if (
-    cachedAccessToken &&
-    cachedCredential === encryptedCredential &&
-    Date.now() < cachedAccessTokenExpiresAt - 60_000
-  ) {
-    return cachedAccessToken;
-  }
+async function getDriveAccessToken(dataFileId: string) {
+  const cached = accessTokenCache.get(dataFileId);
+  if (cached && Date.now() < cached.expiresAt - 60_000) return cached.token;
 
   const clientId = process.env.GOOGLE_DRIVE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
   if (!clientId || !clientSecret) throw new Error('Server-side Drive OAuth client is not configured.');
 
-  const refreshToken = decryptRefreshToken(encryptedCredential);
+  const refreshToken = await getDriveRefreshToken(dataFileId);
   const response = await fetch(GOOGLE_TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -97,22 +67,23 @@ async function getDriveAccessToken(encryptedCredential: string) {
     throw new Error(token?.error_description || 'Unable to refresh Google Drive access.');
   }
 
-  cachedAccessToken = token.access_token;
-  cachedCredential = encryptedCredential;
-  cachedAccessTokenExpiresAt = Date.now() + (token.expires_in || 3600) * 1000;
-  return cachedAccessToken;
+  accessTokenCache.set(dataFileId, {
+    token: token.access_token,
+    expiresAt: Date.now() + (token.expires_in || 3600) * 1000,
+  });
+  return token.access_token;
 }
 
-export async function fetchDriveJson(fileId: string, encryptedCredential: string) {
-  const accessToken = await getDriveAccessToken(encryptedCredential);
+export async function fetchDriveJson(fileId: string) {
+  const accessToken = await getDriveAccessToken(fileId);
   return fetch(`${DRIVE_API}/files/${encodeURIComponent(fileId)}?alt=media&supportsAllDrives=true`, {
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: 'no-store',
   });
 }
 
-export async function requireVideoInPtState(dataFileId: string, fileId: string, encryptedCredential: string) {
-  const response = await fetchDriveJson(dataFileId, encryptedCredential);
+export async function requireVideoInPtState(dataFileId: string, fileId: string) {
+  const response = await fetchDriveJson(dataFileId);
   if (!response.ok) return false;
   const state = await response.json().catch(() => null);
   if (!state || !Array.isArray(state.workouts)) return false;
@@ -127,8 +98,8 @@ export async function requireVideoInPtState(dataFileId: string, fileId: string, 
   return Array.isArray(state.videos) && state.videos.some((video: { driveFileId?: unknown }) => video?.driveFileId === fileId);
 }
 
-export async function fetchDriveMedia(fileId: string, encryptedCredential: string, range?: string | null) {
-  const accessToken = await getDriveAccessToken(encryptedCredential);
+export async function fetchDriveMedia(dataFileId: string, fileId: string, range?: string | null) {
+  const accessToken = await getDriveAccessToken(dataFileId);
   const headers = new Headers({ Authorization: `Bearer ${accessToken}` });
   if (range) headers.set('Range', range);
   return fetch(`${DRIVE_API}/files/${encodeURIComponent(fileId)}?alt=media&supportsAllDrives=true`, {
