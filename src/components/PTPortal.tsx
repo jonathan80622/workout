@@ -323,19 +323,10 @@ export const PTPortal: React.FC = () => {
                               </div>
                             </div>
 
-                            {(exercise.notes || exercise.muscleFeeling?.notes || exercise.muscleFeeling?.quickTags?.length > 0) && (
-                              <div className="bg-[#181412] border border-[#382f29] rounded-xl p-3 space-y-2 text-xs">
+                            {(exercise.notes || exercise.muscleFeeling?.notes) && (
+                              <div className="bg-[#181412] border border-[#382f29] rounded-xl p-3 text-xs">
                                 {exercise.notes && <p className="text-[#c8b8a8]">{exercise.notes}</p>}
                                 {exercise.muscleFeeling?.notes && <p className="text-[#f7f3ee] font-serif italic">{exercise.muscleFeeling.notes}</p>}
-                                {exercise.muscleFeeling?.quickTags?.length > 0 && (
-                                  <div className="flex flex-wrap gap-1.5">
-                                    {exercise.muscleFeeling.quickTags.map((tag) => (
-                                      <span key={tag} className="rounded-full border border-[#382f29] bg-[#100d0b] px-2 py-0.5 text-[10px] text-[#c8b8a8]">
-                                        {tag}
-                                      </span>
-                                    ))}
-                                  </div>
-                                )}
                               </div>
                             )}
 

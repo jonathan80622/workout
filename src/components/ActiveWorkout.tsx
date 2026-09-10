@@ -87,7 +87,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         pumpQuality: 4,
         jointComfort: 'great',
         notes: '',
-        quickTags: ['👁️ Mind-Muscle Connection']
+        quickTags: []
       }
     };
 
@@ -368,7 +368,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
               </button>
             </div>
 
-            {/* Muscle Feel Feedback Input per machine */}
+            {/* Per-exercise notes */}
             <MuscleFeelInput
               machineName={exercise.machineName}
               value={exercise.muscleFeeling}

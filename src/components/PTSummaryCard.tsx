@@ -348,41 +348,18 @@ export const PTSummaryCard: React.FC<PTSummaryCardProps> = ({
                   )}
                 </div>
 
-                {/* Muscle Feel Feedback Box per exercise */}
-                {exercise.muscleFeeling && (exercise.muscleFeeling.notes || exercise.muscleFeeling.targetMuscles.length > 0) && (
+                {/* Exercise notes */}
+                {exercise.muscleFeeling?.notes && (
                   <div className={`p-3 rounded-xl border text-xs space-y-1.5 ${themeClasses.feedbackCard}`}>
-                    <div className="flex items-center justify-between text-[#e6a15c] font-serif italic text-xs">
+                    <div className="flex items-center gap-1 text-[#e6a15c] font-serif italic text-xs">
                       <span className="flex items-center gap-1">
                         <Activity className="w-3.5 h-3.5 text-[#d97724]" />
-                        {isZh ? '肌肉感知與充血反饋' : 'Muscle Sensation Feedback'}
+                        {isZh ? '動作備註' : 'Exercise Notes'}
                       </span>
-                      {exercise.muscleFeeling.pumpQuality > 0 && (
-                        <span className="flex items-center gap-1 text-[#e6a15c] text-[10px] font-syne">
-                          <Flame className="w-3 h-3" /> {isZh ? '充血:' : 'Pump:'} {'✦'.repeat(exercise.muscleFeeling.pumpQuality)}
-                        </span>
-                      )}
                     </div>
-
-                    {/* Detailed text notes */}
-                    {exercise.muscleFeeling.notes && (
-                      <p className="text-xs italic bg-black/20 p-2 rounded-lg border border-black/10 leading-relaxed opacity-90">
-                        "{exercise.muscleFeeling.notes}"
-                      </p>
-                    )}
-
-                    {/* Quick Tags */}
-                    {exercise.muscleFeeling.quickTags && exercise.muscleFeeling.quickTags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 pt-0.5">
-                        {exercise.muscleFeeling.quickTags.map((tag, tIdx) => (
-                          <span
-                            key={tIdx}
-                            className="bg-[#849a88]/15 border border-[#849a88]/30 text-[#a3b8a7] text-[10px] px-2 py-0.5 rounded-full font-medium"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                    <p className="text-xs italic bg-black/20 p-2 rounded-lg border border-black/10 leading-relaxed opacity-90">
+                      "{exercise.muscleFeeling.notes}"
+                    </p>
                   </div>
                 )}
               </div>
@@ -412,4 +389,3 @@ export const PTSummaryCard: React.FC<PTSummaryCardProps> = ({
     </div>
   );
 };
-

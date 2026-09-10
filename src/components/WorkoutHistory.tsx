@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Calendar, Search, Trash2, Repeat, Compass, Activity, Edit2, Check } from 'lucide-react';
+import { Calendar, Search, Trash2, Repeat, Compass, Edit2, Check } from 'lucide-react';
 import { Workout } from '../types';
 import { calculateWorkoutVolume, calculateCompletedSets, formatWorkoutDate, calculateTotalDistance } from '../utils/formatters';
 
@@ -235,11 +235,11 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                   </div>
                 </div>
 
-                {/* Muscle Sensation Highlight Preview */}
+                {/* Exercise note preview */}
                 {workout.exercises.some((e) => e.muscleFeeling?.notes) && (
                   <div className="bg-[#d97724]/10 border border-[#d97724]/20 p-2.5 rounded-2xl text-xs space-y-1">
                     <span className="text-[10px] font-syne font-bold text-[#e6a15c] uppercase tracking-wider flex items-center gap-1">
-                      <Activity className="w-3 h-3 text-[#d97724]" /> Muscle Feedback Note
+                      Exercise Note
                     </span>
                     <p className="text-[#f7f3ee] text-[11px] font-serif italic line-clamp-2">
                       "{workout.exercises.find((e) => e.muscleFeeling?.notes)?.muscleFeeling.notes}"
