@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { Plus, Play, Pause, CheckCircle2, Trash2, Compass, Clock, Settings, Feather, Calendar } from 'lucide-react';
 import { Workout, ExerciseLog, WorkoutSet, MachinePreset, MuscleGroup } from '../types';
+import { formatWorkoutDate } from '../utils/formatters';
 import { SetRow } from './SetRow';
 import { MuscleFeelInput } from './MuscleFeelInput';
 import { WorkoutVideoRecorder } from './WorkoutVideoRecorder';
@@ -11,7 +12,7 @@ import { calculateWorkoutVolume, calculateCompletedSets, calculateTotalDistance,
 
 interface ActiveWorkoutProps {
   workout: Workout;
-  machines: MachinePreset[];
+  workoutHistory: Workout[];
   onUpdateWorkout: (updated: Workout) => void;
   onFinishWorkout: (completedWorkout: Workout) => void;
   onDiscardWorkout: () => void;
@@ -20,7 +21,7 @@ interface ActiveWorkoutProps {
 
 export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   workout,
-  machines,
+  workoutHistory,
   onUpdateWorkout,
   onFinishWorkout,
   onDiscardWorkout,
@@ -31,6 +32,46 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   const [isAddMachineModalOpen, setIsAddMachineModalOpen] = useState<boolean>(false);
   const [customMachineName, setCustomMachineName] = useState<string>('');
   const [customCategory, setCustomCategory] = useState<MuscleGroup>('Quads');
+
+  const historicalExercises = useMemo(() => {
+    const seen = new Map<string, MachinePreset>();
+    [...workoutHistory]
+      .filter((pastWorkout) => pastWorkout.isCompleted)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .forEach((pastWorkout) => pastWorkout.exercises.forEach((exercise) => {
+        const name = exercise.machineName.trim();
+        const key = name.toLocaleLowerCase();
+        if (name && !seen.has(key)) {
+          seen.set(key, {
+            id: `history-${exercise.id}`,
+            name,
+            category: exercise.category,
+            defaultSeatSettings: exercise.seatSettings || '',
+            equipmentType: 'Machine',
+            targetDescription: 'Previously logged exercise.',
+          });
+        }
+      }));
+    return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }, [workoutHistory]);
+
+  const getPriorFeedback = (exerciseName: string) => {
+    const normalizedName = exerciseName.trim().toLocaleLowerCase();
+    if (!normalizedName) return [];
+    return workoutHistory
+      .filter((pastWorkout) => pastWorkout.isCompleted)
+      .flatMap((pastWorkout) => pastWorkout.exercises
+        .filter((pastExercise) =>
+          pastExercise.machineName.trim().toLocaleLowerCase() === normalizedName &&
+          Boolean(pastExercise.ptComment?.trim())
+        )
+        .map((pastExercise) => ({
+          id: `${pastWorkout.id}-${pastExercise.id}`,
+          date: pastWorkout.date,
+          comment: pastExercise.ptComment!.trim(),
+        })))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  };
 
   // Live timer effect
   useEffect(() => {
@@ -333,6 +374,20 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
               />
             </div>
 
+            {(() => {
+              const priorFeedback = getPriorFeedback(exercise.machineName);
+              return priorFeedback.length > 0 ? (
+                <div className="bg-[#d97724]/10 border border-[#d97724]/25 rounded-2xl p-3 space-y-2 text-xs">
+                  <p className="font-syne font-bold text-[#f5c999]">🔥 PT Feedback from prior workouts</p>
+                  {priorFeedback.map((feedback) => (
+                    <p key={feedback.id} className="text-[#f7f3ee] leading-relaxed">
+                      <span className="text-[#a39588]">{formatWorkoutDate(feedback.date)}: </span>{feedback.comment}
+                    </p>
+                  ))}
+                </div>
+              ) : null;
+            })()}
+
             {/* Set Table Rows */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-[11px] font-syne font-bold text-[#a39588] uppercase tracking-wider px-1">
@@ -449,11 +504,11 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
               </button>
             </div>
 
-            {/* Quick Presets List */}
+            {/* Exercises previously logged in workout history */}
             <div>
-              <span className="text-xs font-serif italic text-[#c8b8a8] block mb-2">Preset Exercise Machines</span>
+              <span className="text-xs font-serif italic text-[#c8b8a8] block mb-2">Previously Logged Exercises</span>
               <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
-                {machines.map((machine) => (
+                {historicalExercises.map((machine) => (
                   <button
                     key={machine.id}
                     onClick={() => handleAddExerciseFromPreset(machine)}
@@ -461,11 +516,14 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                   >
                     <div>
                       <span className="text-xs font-bold text-[#f7f3ee] block">{machine.name}</span>
-                      <span className="text-[10px] text-[#8c7e72]">{machine.category} • {machine.equipmentType}</span>
+                      <span className="text-[10px] text-[#8c7e72]">{machine.category}</span>
                     </div>
                     <Plus className="w-4 h-4 text-[#e6a15c]" />
                   </button>
                 ))}
+                {historicalExercises.length === 0 && (
+                  <p className="p-3 text-xs text-[#8c7e72]">No exercises in completed workout history yet.</p>
+                )}
               </div>
             </div>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Calendar, Search, Trash2, Repeat, Compass, Edit2, Check } from 'lucide-react';
+import { Calendar, Search, Trash2, Repeat, Compass, Edit2, Check, MessageSquareText } from 'lucide-react';
 import { Workout } from '../types';
 import { calculateWorkoutVolume, calculateCompletedSets, formatWorkoutDate, calculateTotalDistance } from '../utils/formatters';
 
@@ -12,6 +12,7 @@ interface WorkoutHistoryProps {
   onStartNewWorkout: () => void;
   onUpdateWorkoutTitle?: (workoutId: string, newTitle: string) => void;
   onUpdateWorkoutDate?: (workoutId: string, newDateIso: string) => void;
+  onUpdateExercisePtComment?: (workoutId: string, exerciseId: string, ptComment: string) => void;
 }
 
 export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
@@ -20,7 +21,8 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
   onDeleteWorkout,
   onStartNewWorkout,
   onUpdateWorkoutTitle,
-  onUpdateWorkoutDate
+  onUpdateWorkoutDate,
+  onUpdateExercisePtComment
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -234,6 +236,30 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                     ))}
                   </div>
                 </div>
+
+                {onUpdateExercisePtComment && (
+                  <div className="space-y-2 pt-1">
+                    <span className="text-[10px] font-syne font-bold text-[#a39588] uppercase tracking-wider block">
+                      PT Feedback Notes
+                    </span>
+                    {workout.exercises.map((exercise, exerciseIndex) => (
+                      <div key={exercise.id || exerciseIndex} className="bg-[#100d0b] border border-[#2b241f] rounded-2xl p-3 space-y-1.5">
+                        <label htmlFor={`pt-feedback-${workout.id}-${exercise.id}`} className="text-xs font-bold text-[#f7f3ee] flex items-center gap-1.5">
+                          <MessageSquareText className="w-3.5 h-3.5 text-[#e6a15c]" />
+                          {exercise.machineName}
+                        </label>
+                        <textarea
+                          id={`pt-feedback-${workout.id}-${exercise.id}`}
+                          rows={2}
+                          value={exercise.ptComment || ''}
+                          onChange={(event) => onUpdateExercisePtComment(workout.id, exercise.id, event.target.value)}
+                          placeholder="Add PT feedback for this exercise. It will appear whenever this exercise is used again."
+                          className="w-full bg-[#181412] border border-[#382f29] rounded-xl p-2.5 text-xs text-[#f7f3ee] placeholder-[#6b5e54] outline-none focus:ring-1 focus:ring-[#d97724] resize-y"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Exercise note preview */}
                 {workout.exercises.some((e) => e.muscleFeeling?.notes) && (

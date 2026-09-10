@@ -367,6 +367,19 @@ export function WorkoutTrackerApp({
     );
   };
 
+  const handleUpdateExercisePtComment = (workoutId: string, exerciseId: string, ptComment: string) => {
+    setWorkouts((prev) => prev.map((workout) =>
+      workout.id === workoutId
+        ? {
+            ...workout,
+            exercises: workout.exercises.map((exercise) =>
+              exercise.id === exerciseId ? { ...exercise, ptComment } : exercise
+            ),
+          }
+        : workout
+    ));
+  };
+
   const isDriveConnected = driveConnection.isConnected && Boolean(driveConnection.accessToken);
 
   return (
@@ -407,7 +420,7 @@ export function WorkoutTrackerApp({
               {activeWorkout ? (
                 <ActiveWorkout
                   workout={activeWorkout}
-                  machines={machines}
+                  workoutHistory={workouts}
                   onUpdateWorkout={handleUpdateActiveWorkout}
                   onFinishWorkout={handleFinishWorkout}
                   onDiscardWorkout={handleDiscardActiveWorkout}
@@ -453,6 +466,7 @@ export function WorkoutTrackerApp({
               onStartNewWorkout={handleStartNewWorkoutFromScratch}
               onUpdateWorkoutTitle={handleUpdateWorkoutTitle}
               onUpdateWorkoutDate={handleUpdateWorkoutDate}
+              onUpdateExercisePtComment={handleUpdateExercisePtComment}
             />
           )}
 

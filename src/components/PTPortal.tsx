@@ -330,6 +330,13 @@ export const PTPortal: React.FC = () => {
                               </div>
                             )}
 
+                            {exercise.ptComment?.trim() && (
+                              <div className="bg-[#d97724]/10 border border-[#d97724]/25 rounded-xl p-3 text-xs space-y-1">
+                                <p className="font-syne font-bold text-[#f5c999]">PT Feedback Note</p>
+                                <p className="text-[#f7f3ee] leading-relaxed">{exercise.ptComment}</p>
+                              </div>
+                            )}
+
                             <div className="space-y-2">
                               <label htmlFor={`pt-exercise-comment-${workout.id}-${exercise.id}`} className="text-xs font-bold text-[#f7f3ee] flex items-center gap-2">
                                 <MessageSquareText className="w-4 h-4 text-[#e6a15c]" />
