@@ -8,6 +8,7 @@ import { formatWorkoutDate } from '../utils/formatters';
 import { SetRow } from './SetRow';
 import { MuscleFeelInput } from './MuscleFeelInput';
 import { WorkoutVideoRecorder } from './WorkoutVideoRecorder';
+import { ExerciseLoadHistory } from './ExerciseLoadHistory';
 import { calculateWorkoutVolume, calculateCompletedSets, calculateTotalDistance, calculateTotalRunningTime, calculateAveragePace } from '../utils/formatters';
 
 interface ActiveWorkoutProps {
@@ -387,6 +388,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                 </div>
               ) : null;
             })()}
+
+            <ExerciseLoadHistory exercise={exercise} workouts={workoutHistory} />
 
             {/* Set Table Rows */}
             <div className="space-y-2">
