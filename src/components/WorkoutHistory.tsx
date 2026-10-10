@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Calendar, Search, Trash2, Repeat, Compass, Edit2, Check, MessageSquareText } from 'lucide-react';
 import { Workout } from '../types';
 import { calculateWorkoutVolume, calculateCompletedSets, formatWorkoutDate, calculateTotalDistance } from '../utils/formatters';
+import type { AnalyticsTrack } from '../analytics/events';
 
 interface WorkoutHistoryProps {
   workouts: Workout[];
@@ -13,6 +14,7 @@ interface WorkoutHistoryProps {
   onUpdateWorkoutTitle?: (workoutId: string, newTitle: string) => void;
   onUpdateWorkoutDate?: (workoutId: string, newDateIso: string) => void;
   onUpdateExercisePtComment?: (workoutId: string, exerciseId: string, ptComment: string) => void;
+  onTrack?: AnalyticsTrack;
 }
 
 export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
@@ -22,7 +24,8 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
   onStartNewWorkout,
   onUpdateWorkoutTitle,
   onUpdateWorkoutDate,
-  onUpdateExercisePtComment
+  onUpdateExercisePtComment,
+  onTrack
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -44,6 +47,21 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
     );
     return matchesTitle || matchesMachine || matchesNotes;
   });
+
+  useEffect(() => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed || !onTrack) return;
+
+    const timer = window.setTimeout(() => {
+      onTrack('history_searched', {
+        query_length: trimmed.length,
+        result_count: filteredWorkouts.length,
+        total_count: completedWorkouts.length,
+      });
+    }, 600);
+
+    return () => window.clearTimeout(timer);
+  }, [completedWorkouts.length, filteredWorkouts.length, onTrack, searchQuery]);
 
   const handleStartEditing = (workout: Workout) => {
     setEditingId(workout.id);

@@ -3,19 +3,22 @@
 import React, { useState } from 'react';
 import { Calendar, Check, Download, ExternalLink, X, Sparkles, Feather, Bell } from 'lucide-react';
 import { downloadICSFile, getGoogleCalendarUrl, ScheduledSession, formatFriendlyDateTime } from '../utils/calendar';
+import type { AnalyticsTrack } from '../analytics/events';
 
 interface ScheduleCalendarModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultTitle?: string;
   onSessionSaved?: (session: ScheduledSession) => void;
+  onTrack?: AnalyticsTrack;
 }
 
 export const ScheduleCalendarModal: React.FC<ScheduleCalendarModalProps> = ({
   isOpen,
   onClose,
   defaultTitle = 'Workout Session',
-  onSessionSaved
+  onSessionSaved,
+  onTrack
 }) => {
   // Default to 2 days from now at 09:00 AM
   const getDefaultTargetDate = () => {
@@ -50,6 +53,11 @@ export const ScheduleCalendarModal: React.FC<ScheduleCalendarModalProps> = ({
     };
 
     if (onSessionSaved) onSessionSaved(session);
+    onTrack?.('scheduled_session_saved', {
+      method: 'device_calendar',
+      duration_minutes: durationMinutes,
+      days_until_session: getDaysUntil(startDate),
+    });
 
     // Download .ics file for iOS Calendar / macOS / Android / Windows
     downloadICSFile({
@@ -74,6 +82,11 @@ export const ScheduleCalendarModal: React.FC<ScheduleCalendarModalProps> = ({
     };
 
     if (onSessionSaved) onSessionSaved(session);
+    onTrack?.('scheduled_session_saved', {
+      method: 'google_calendar',
+      duration_minutes: durationMinutes,
+      days_until_session: getDaysUntil(startDate),
+    });
 
     const googleUrl = getGoogleCalendarUrl({
       title: `🏋️ ${session.title}`,
@@ -98,6 +111,11 @@ export const ScheduleCalendarModal: React.FC<ScheduleCalendarModalProps> = ({
     };
 
     if (onSessionSaved) onSessionSaved(session);
+    onTrack?.('scheduled_session_saved', {
+      method: 'app_only',
+      duration_minutes: durationMinutes,
+      days_until_session: getDaysUntil(startDate),
+    });
 
     setToastMessage('✨ Next workout saved!');
     setTimeout(() => {
@@ -260,3 +278,7 @@ export const ScheduleCalendarModal: React.FC<ScheduleCalendarModalProps> = ({
     </div>
   );
 };
+
+function getDaysUntil(date: Date): number {
+  return Math.max(0, Math.round((date.getTime() - Date.now()) / 86_400_000));
+}

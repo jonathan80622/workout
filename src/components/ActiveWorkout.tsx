@@ -10,6 +10,7 @@ import { MuscleFeelInput } from './MuscleFeelInput';
 import { WorkoutVideoRecorder } from './WorkoutVideoRecorder';
 import { ExerciseLoadHistory } from './ExerciseLoadHistory';
 import { calculateWorkoutVolume, calculateCompletedSets, calculateTotalDistance, calculateTotalRunningTime, calculateAveragePace } from '../utils/formatters';
+import type { AnalyticsTrack } from '../analytics/events';
 
 interface ActiveWorkoutProps {
   workout: Workout;
@@ -18,6 +19,7 @@ interface ActiveWorkoutProps {
   onFinishWorkout: (completedWorkout: Workout) => void;
   onDiscardWorkout: () => void;
   driveAccessToken: string | null;
+  onTrack?: AnalyticsTrack;
 }
 
 export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
@@ -26,7 +28,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   onUpdateWorkout,
   onFinishWorkout,
   onDiscardWorkout,
-  driveAccessToken
+  driveAccessToken,
+  onTrack
 }) => {
   const [isTimerRunning, setIsTimerRunning] = useState<boolean>(true);
   const [timerSeconds, setTimerSeconds] = useState<number>(workout.durationMinutes ? workout.durationMinutes * 60 : 0);
@@ -137,6 +140,11 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       ...workout,
       exercises: [...workout.exercises, newExercise]
     });
+    onTrack?.('exercise_added', {
+      source: 'active_workout',
+      category: preset.category,
+      exercise_count: workout.exercises.length + 1,
+    });
     setIsAddMachineModalOpen(false);
   };
 
@@ -165,15 +173,27 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       ...workout,
       exercises: [...workout.exercises, newExercise]
     });
+    onTrack?.('exercise_added', {
+      source: 'custom',
+      category: customCategory,
+      exercise_count: workout.exercises.length + 1,
+    });
     setCustomMachineName('');
     setIsAddMachineModalOpen(false);
   };
 
   const handleRemoveExercise = (exId: string) => {
+    const exercise = workout.exercises.find((ex) => ex.id === exId);
     onUpdateWorkout({
       ...workout,
       exercises: workout.exercises.filter((ex) => ex.id !== exId)
     });
+    if (exercise) {
+      onTrack?.('exercise_removed', {
+        category: exercise.category,
+        remaining_exercise_count: Math.max(0, workout.exercises.length - 1),
+      });
+    }
   };
 
   const handleUpdateExercise = (updatedEx: ExerciseLog) => {
@@ -184,6 +204,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   };
 
   const handleExerciseVideoUploaded = (exerciseId: string, video: import('../types').WorkoutVideo) => {
+    const exercise = workout.exercises.find((item) => item.id === exerciseId);
     onUpdateWorkout({
       ...workout,
       exercises: workout.exercises.map((exercise) =>
@@ -192,6 +213,13 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           : exercise
       ),
     });
+    if (exercise) {
+      onTrack?.('video_uploaded', {
+        category: exercise.category,
+        duration_seconds: video.durationSeconds,
+        existing_video_count: exercise.videos?.length || 0,
+      });
+    }
   };
 
   const handleAddSetToExercise = (exId: string) => {
@@ -214,6 +242,11 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       sets: [...exercise.sets, newSet]
     };
     handleUpdateExercise(updated);
+    onTrack?.('set_added', {
+      category: exercise.category,
+      set_count: updated.sets.length,
+      is_cardio: exercise.category === 'Cardio & Running',
+    });
   };
 
   const handleFinishSession = () => {
@@ -371,6 +404,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                   handleUpdateExercise({ ...exercise, seatSettings: e.target.value })
                 }
                 placeholder="座椅角度、高度與卡槽刻度 (例：座椅角度 #3, 刻度 Notch #2 / Seat #4, Pin #6)"
+                aria-label="Seat settings"
                 className="bg-transparent text-[#f7f3ee] placeholder-[#6b5e54] w-full outline-none"
               />
             </div>
@@ -410,6 +444,17 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                   onUpdate={(updatedSet) => {
                     const newSets = exercise.sets.map((s) => (s.id === updatedSet.id ? updatedSet : s));
                     handleUpdateExercise({ ...exercise, sets: newSets });
+                    if (!set.completed && updatedSet.completed) {
+                      onTrack?.('set_completed', {
+                        category: exercise.category,
+                        set_type: updatedSet.type,
+                        weight_unit: updatedSet.weightUnit,
+                        is_cardio: exercise.category === 'Cardio & Running',
+                        has_distance: Boolean(updatedSet.distance && updatedSet.distance > 0),
+                        reps: updatedSet.reps,
+                        weight: updatedSet.weight,
+                      });
+                    }
                   }}
                   onDelete={() => {
                     const newSets = exercise.sets.filter((s) => s.id !== set.id);
@@ -466,6 +511,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           value={workout.ptNotes || ''}
           onChange={(e) => handlePtNoteChange(e.target.value)}
           placeholder="e.g. Coach Marcus, felt very strong today on the leg press! Slow eccentrics felt smooth."
+          aria-label="Note for your trainer"
           className="w-full bg-[#100d0b] border border-[#2b241f] rounded-xl p-3 text-xs text-[#f7f3ee] placeholder-[#6b5e54] focus:outline-none focus:ring-1 focus:ring-[#d97724] resize-none"
         />
       </div>
@@ -515,6 +561,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                   <button
                     key={machine.id}
                     onClick={() => handleAddExerciseFromPreset(machine)}
+                    aria-label={`Add ${machine.name} (${machine.category})`}
                     className="w-full text-left p-2.5 rounded-2xl bg-[#100d0b] hover:bg-[#211b18] border border-[#2b241f] hover:border-[#d97724]/50 flex items-center justify-between transition-all"
                   >
                     <div>

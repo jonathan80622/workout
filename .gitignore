@@ -8,3 +8,7 @@ coverage/
 !.env.example
 .next/
 *.db
+
+# jev-use e2e run output
+e2e/jev-use/.run/
+__pycache__/

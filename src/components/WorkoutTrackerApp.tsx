@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Workout, MachinePreset, ActiveTab, WorkoutAppState, TrainingPlan, WarmupCheckins } from '@/src/types';
 import { UserProfile } from '@/src/utils/storage';
 import { ScheduledSession } from '@/src/utils/calendar';
+import { AnalyticsProvider, useAnalytics } from '@/src/analytics/AnalyticsProvider';
 import { IOSHeader } from './IOSHeader';
 import { IOSTabBar } from './IOSTabBar';
 import { ActiveWorkout } from './ActiveWorkout';
@@ -28,6 +29,8 @@ import {
   saveStateToDrive,
   splitWorkouts,
 } from '@/src/utils/driveStorage';
+import { isE2EMode, loadE2ESeed, saveE2EState } from '@/src/utils/e2eBridge';
+import { calculateCompletedSets, calculateTotalDistance, calculateWorkoutVolume } from '@/src/utils/formatters';
 
 interface WorkoutTrackerAppProps {
   initialProfile: UserProfile;
@@ -40,7 +43,15 @@ interface WorkoutTrackerAppProps {
   initialTab?: ActiveTab;
 }
 
-export function WorkoutTrackerApp({
+export function WorkoutTrackerApp(props: WorkoutTrackerAppProps) {
+  return (
+    <AnalyticsProvider>
+      <WorkoutTrackerAppContent {...props} />
+    </AnalyticsProvider>
+  );
+}
+
+function WorkoutTrackerAppContent({
   initialProfile,
   initialWorkouts,
   initialActiveWorkout,
@@ -50,6 +61,7 @@ export function WorkoutTrackerApp({
   initialWarmupCheckins,
   initialTab = 'workout',
 }: WorkoutTrackerAppProps) {
+  const track = useAnalytics();
   const [activeTab, setActiveTab] = useState<ActiveTab>(initialTab);
   const [profile, setProfile] = useState<UserProfile>(initialProfile);
   const [workouts, setWorkouts] = useState<Workout[]>(initialWorkouts);
@@ -65,6 +77,9 @@ export function WorkoutTrackerApp({
   });
   const [syncStatus, setSyncStatus] = useState<string>('Local starter data loaded.');
   const [portalUrl, setPortalUrl] = useState<string>('');
+  // In e2e mode, state is mirrored to the test oracle only after the seed loads,
+  // so the default starter state never overwrites it.
+  const [isE2ESeeded, setIsE2ESeeded] = useState<boolean>(false);
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState<boolean>(false);
@@ -83,6 +98,17 @@ export function WorkoutTrackerApp({
   );
 
   useEffect(() => {
+    if (isE2EMode()) {
+      loadE2ESeed()
+        .then((state) => {
+          applyLoadedState(state);
+          setIsE2ESeeded(true);
+          setSyncStatus('Loaded e2e seed.');
+        })
+        .catch((error) => setSyncStatus(error instanceof Error ? error.message : 'E2E seed failed.'));
+      return;
+    }
+
     const connection = getDriveConnection();
     setDriveConnection(connection);
     const localState = readLocalState();
@@ -103,8 +129,13 @@ export function WorkoutTrackerApp({
   }, []);
 
   useEffect(() => {
+    // Never let seeded e2e data overwrite a real browser's saved workouts.
+    if (isE2EMode()) {
+      if (isE2ESeeded) saveE2EState(appState).catch(() => undefined);
+      return;
+    }
     saveLocalState(appState);
-  }, [appState]);
+  }, [appState, isE2ESeeded]);
 
   useEffect(() => {
     if (!driveConnection.accessToken) return;
@@ -133,22 +164,50 @@ export function WorkoutTrackerApp({
     setProfile(newProfile);
   };
 
+  const handleTabChange = (tab: ActiveTab) => {
+    setActiveTab(tab);
+    track('tab_viewed', { tab });
+  };
+
   const handleUpdateActiveWorkout = (updated: Workout) => {
     setActiveWorkout(updated);
   };
 
   const handleFinishWorkout = (completedWorkout: Workout) => {
     const finished = { ...completedWorkout, isCompleted: true };
+    track('workout_completed', {
+      duration_minutes: finished.durationMinutes,
+      exercise_count: finished.exercises.length,
+      completed_set_count: calculateCompletedSets(finished),
+      total_volume: calculateWorkoutVolume(finished),
+      total_distance: calculateTotalDistance(finished),
+      has_pt_note: Boolean(finished.ptNotes?.trim()),
+      video_count: finished.exercises.reduce((sum, exercise) => sum + (exercise.videos?.length || 0), 0),
+    });
     setActiveWorkout(null);
     setWorkouts((prev) => [finished, ...prev]);
     setActiveTab('history');
   };
 
   const handleDiscardActiveWorkout = () => {
+    if (activeWorkout) {
+      track('workout_discarded', {
+        duration_minutes: activeWorkout.durationMinutes,
+        exercise_count: activeWorkout.exercises.length,
+        completed_set_count: calculateCompletedSets(activeWorkout),
+      });
+    }
     setActiveWorkout(null);
   };
 
   const handleDeleteWorkout = (workoutId: string) => {
+    const workout = workouts.find((w) => w.id === workoutId);
+    if (workout) {
+      track('workout_deleted', {
+        exercise_count: workout.exercises.length,
+        completed_set_count: calculateCompletedSets(workout),
+      });
+    }
     setWorkouts((prev) => prev.filter((w) => w.id !== workoutId));
   };
 
@@ -191,6 +250,14 @@ export function WorkoutTrackerApp({
 
     setActiveWorkout(newActive);
     setActiveTab('workout');
+    track('workout_repeated', {
+      exercise_count: workout.exercises.length,
+      completed_set_count: calculateCompletedSets(workout),
+    });
+    track('workout_started', {
+      source: 'history',
+      exercise_count: newActive.exercises.length,
+    });
   };
 
   const handleStartNewWorkoutFromScratch = () => {
@@ -207,6 +274,11 @@ export function WorkoutTrackerApp({
       exercises: [],
     };
     setActiveWorkout(newActive);
+    track('workout_started', {
+      source: 'scratch',
+      has_scheduled_session: Boolean(scheduledSession),
+      exercise_count: 0,
+    });
   };
 
   const handleStartScheduledNow = () => {
@@ -226,6 +298,14 @@ export function WorkoutTrackerApp({
     setActiveWorkout(newActive);
     setScheduledSession(null);
     setActiveTab('workout');
+    track('scheduled_session_started', {
+      has_notes: Boolean(scheduledSession?.notes?.trim()),
+    });
+    track('workout_started', {
+      source: 'scheduled',
+      has_scheduled_session: true,
+      exercise_count: 0,
+    });
   };
 
   const handleSaveScheduledSession = (session: ScheduledSession) => {
@@ -314,6 +394,17 @@ export function WorkoutTrackerApp({
       setActiveWorkout(newWorkout);
     }
     setActiveTab('workout');
+    track('exercise_added', {
+      source: 'machine_library',
+      category: machine.category,
+      exercise_count: activeWorkout ? activeWorkout.exercises.length + 1 : 1,
+    });
+    if (!activeWorkout) {
+      track('workout_started', {
+        source: 'machine_library',
+        exercise_count: 1,
+      });
+    }
   };
 
   const handleResetData = () => {
@@ -331,6 +422,7 @@ export function WorkoutTrackerApp({
       const target = await getDriveSyncTarget(connection.accessToken!);
       setPortalUrl(target.portalUrl);
       setSyncStatus('Connected and loaded from Google Drive.');
+      track('drive_connected', {});
     } catch (error) {
       setSyncStatus(error instanceof Error ? error.message : 'Unable to connect Google Drive.');
     }
@@ -341,6 +433,7 @@ export function WorkoutTrackerApp({
     setDriveConnection(getDriveConnection());
     setPortalUrl('');
     setSyncStatus('Drive disconnected. Changes stay in this browser.');
+    track('drive_disconnected', {});
   };
 
   const handleUpdateWorkoutTitle = (workoutId: string, newTitle: string) => {
@@ -425,6 +518,7 @@ export function WorkoutTrackerApp({
                   onFinishWorkout={handleFinishWorkout}
                   onDiscardWorkout={handleDiscardActiveWorkout}
                   driveAccessToken={driveConnection.accessToken}
+                  onTrack={track}
                 />
               ) : (
                 <div className="bg-[#181412] border border-[#382f29] rounded-3xl p-6 text-center space-y-4 shadow-xl">
@@ -467,6 +561,7 @@ export function WorkoutTrackerApp({
               onUpdateWorkoutTitle={handleUpdateWorkoutTitle}
               onUpdateWorkoutDate={handleUpdateWorkoutDate}
               onUpdateExercisePtComment={handleUpdateExercisePtComment}
+              onTrack={track}
             />
           )}
 
@@ -490,7 +585,7 @@ export function WorkoutTrackerApp({
 
         <IOSTabBar
           activeTab={activeTab}
-          onTabChange={setActiveTab}
+          onTabChange={handleTabChange}
           hasActiveWorkout={!!activeWorkout}
         />
 
@@ -511,6 +606,7 @@ export function WorkoutTrackerApp({
           isOpen={isScheduleModalOpen}
           onClose={() => setIsScheduleModalOpen(false)}
           onSessionSaved={handleSaveScheduledSession}
+          onTrack={track}
         />
       </div>
     </div>

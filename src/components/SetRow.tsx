@@ -181,6 +181,7 @@ export const SetRow: React.FC<SetRowProps> = ({
                   step="1"
                   value={set.weight || ''}
                   placeholder="0"
+                  aria-label={`Set ${index + 1} load (${set.weightUnit})`}
                   onChange={(e) => onUpdate({ ...set, weight: parseFloat(e.target.value) || 0 })}
                   className="w-14 text-center bg-transparent text-[#f7f3ee] font-mono font-bold text-sm outline-none"
                 />
@@ -218,6 +219,7 @@ export const SetRow: React.FC<SetRowProps> = ({
                   min="0"
                   value={set.reps || ''}
                   placeholder="0"
+                  aria-label={`Set ${index + 1} reps`}
                   onChange={(e) => onUpdate({ ...set, reps: parseInt(e.target.value, 10) || 0 })}
                   className="w-10 text-center bg-transparent text-[#f7f3ee] font-mono font-bold text-sm outline-none"
                 />
