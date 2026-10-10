@@ -1,0 +1,2496 @@
+{
+  "version": 1,
+  "profile": {
+    "clientName": "",
+    "ptName": "",
+    "appTitle": "Workout Studio",
+    "themeColor": "ios-blue",
+    "preferredUnit": "kg"
+  },
+  "machines": [
+    {
+      "id": "m1",
+      "name": "Leg Press Machine",
+      "category": "Quads",
+      "defaultSeatSettings": "Seat Angle: 3, Backrest: Notch 2",
+      "equipmentType": "Machine",
+      "targetDescription": "Focus on quad contraction at the top, knees tracking over toes."
+    },
+    {
+      "id": "m2",
+      "name": "Lat Pulldown (Wide Grip)",
+      "category": "Lats & Back",
+      "defaultSeatSettings": "Thigh Pad: #4",
+      "equipmentType": "Cable",
+      "targetDescription": "Pulls down to upper chest, drive elbows down to contract lats."
+    },
+    {
+      "id": "m3",
+      "name": "Seated Chest Press",
+      "category": "Chest",
+      "defaultSeatSettings": "Seat Height: #5, Handles at Mid-Chest",
+      "equipmentType": "Machine",
+      "targetDescription": "Deep stretch at bottom, squeeze inner pecs at peak extension."
+    },
+    {
+      "id": "m4",
+      "name": "Seated Leg Curl Machine",
+      "category": "Hamstrings",
+      "defaultSeatSettings": "Thigh Pad: Lock 3, Shin Pad: #2",
+      "equipmentType": "Machine",
+      "targetDescription": "Isolates hamstrings. Flex toes back and squeeze at bottom."
+    },
+    {
+      "id": "m5",
+      "name": "Seated Cable Row",
+      "category": "Lats & Back",
+      "defaultSeatSettings": "V-Bar Handle, Foot Plate: Row 2",
+      "equipmentType": "Cable",
+      "targetDescription": "Keep chest upright, pull handle to navel and retract scapula."
+    },
+    {
+      "id": "m6",
+      "name": "Pec Deck / Butterfly Machine",
+      "category": "Chest",
+      "defaultSeatSettings": "Seat Height: #4, Arm Arms Position: #2",
+      "equipmentType": "Machine",
+      "targetDescription": "Keep slight bend in elbows, feel deep stretch in pecs."
+    },
+    {
+      "id": "m7",
+      "name": "Seated Shoulder Press Machine",
+      "category": "Shoulders",
+      "defaultSeatSettings": "Seat Height: #3",
+      "equipmentType": "Machine",
+      "targetDescription": "Targets front & lateral deltoids. Avoid locking out elbows."
+    },
+    {
+      "id": "m8",
+      "name": "Triceps Rope Pushdown",
+      "category": "Triceps",
+      "defaultSeatSettings": "High Cable Pulley, Rope Attachment",
+      "equipmentType": "Cable",
+      "targetDescription": "Flare rope outward at the bottom for intense lateral head lockout."
+    },
+    {
+      "id": "m9",
+      "name": "Preacher Curl Machine",
+      "category": "Biceps",
+      "defaultSeatSettings": "Seat Height: #2, Arm Pad Lock: #3",
+      "equipmentType": "Machine",
+      "targetDescription": "Strict biceps isolation with arm back fully supported."
+    },
+    {
+      "id": "m10",
+      "name": "Smith Machine Squat",
+      "category": "Quads",
+      "defaultSeatSettings": "Safety Stoppers: Pin 7",
+      "equipmentType": "Smith Machine",
+      "targetDescription": "Feet slightly forward, drop hips parallel with knee joint."
+    },
+    {
+      "id": "m11",
+      "name": "Hack Squat Machine",
+      "category": "Quads",
+      "defaultSeatSettings": "Foot placement: Lower middle",
+      "equipmentType": "Machine",
+      "targetDescription": "Emphasizes VMO quad teardrop. Smooth controlled descent."
+    },
+    {
+      "id": "m12",
+      "name": "Cable Lateral Raise",
+      "category": "Shoulders",
+      "defaultSeatSettings": "Low Pulley, Single Handle Attachment",
+      "equipmentType": "Cable",
+      "targetDescription": "Continuous tension on side delts. Raise to shoulder height."
+    },
+    {
+      "id": "m13",
+      "name": "Calf Raise Machine",
+      "category": "Calves",
+      "defaultSeatSettings": "Shoulder Pad: #5",
+      "equipmentType": "Machine",
+      "targetDescription": "Full stretch at bottom heel drop, explosive drive on toes."
+    },
+    {
+      "id": "m14",
+      "name": "Abdominal Crunch Machine",
+      "category": "Abs & Core",
+      "defaultSeatSettings": "Seat Pin: #2",
+      "equipmentType": "Machine",
+      "targetDescription": "Focus on curling ribcage toward pelvis, slow eccentric."
+    },
+    {
+      "id": "m15",
+      "name": "Treadmill Interval Run",
+      "category": "Cardio & Running",
+      "defaultSeatSettings": "Speed: 6.5 mph, Incline: 1.5%",
+      "equipmentType": "Cardio / Treadmill",
+      "targetDescription": "Track running time, distance, and cadence pace for cardiovascular endurance."
+    },
+    {
+      "id": "m16",
+      "name": "Outdoor Distance Run",
+      "category": "Cardio & Running",
+      "defaultSeatSettings": "GPS Tracked",
+      "equipmentType": "Cardio / Treadmill",
+      "targetDescription": "Aerobic running session tracking total distance, time elapsed, and average pace."
+    }
+  ],
+  "workouts": [
+    {
+      "id": "w-1791133674161",
+      "title": "Full Body Movement",
+      "date": "2026-10-04T17:07:54.161Z",
+      "durationMinutes": 3,
+      "unit": "lbs",
+      "clientName": "",
+      "ptName": "",
+      "ptNotes": "",
+      "isCompleted": false,
+      "exercises": [
+        {
+          "id": "ex-17911336764091fgr",
+          "machineName": "Life 機械正手下拉",
+          "category": "Lats & Back",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1791133676409-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": 80,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": false
+            },
+            {
+              "id": "s-1791133676409-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 120,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1791133676409-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 140,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Lats & Back"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": []
+        },
+        {
+          "id": "ex-1791133683231g8l6",
+          "machineName": "凱擘正手划船",
+          "category": "Lats & Back",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1791133683231-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": 80,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": false
+            },
+            {
+              "id": "s-1791133683231-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 120,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1791133683231-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 140,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Lats & Back"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": []
+        }
+      ]
+    },
+    {
+      "id": "w-1790620106011",
+      "title": "Full Body Movement",
+      "date": "2026-09-29T16:04:56.366Z",
+      "durationMinutes": 18,
+      "unit": "lbs",
+      "clientName": "",
+      "ptName": "",
+      "ptNotes": "",
+      "isCompleted": true,
+      "exercises": [
+        {
+          "id": "ex-1790697899196yikl",
+          "machineName": "Life 機械正手下拉",
+          "category": "Lats & Back",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1790697899196-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": 205,
+              "weightUnit": "lbs",
+              "reps": 8,
+              "completed": false
+            },
+            {
+              "id": "s-1790697899196-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 205,
+              "weightUnit": "lbs",
+              "reps": 8,
+              "completed": false
+            },
+            {
+              "id": "s-1790697899196-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 205,
+              "weightUnit": "lbs",
+              "reps": 8,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Lats & Back"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1790697954812",
+              "workoutId": "w-1790620106011",
+              "exerciseId": "ex-1790697899196yikl",
+              "driveFileId": "1cPqSOSAP1qRYFgwwGT5FRUIblOMkN9fk",
+              "createdAt": "2026-09-29T16:05:38.727Z",
+              "durationSeconds": 41,
+              "mimeType": "video/quicktime",
+              "name": "2026-09-29_full-body-movement_life_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/1cPqSOSAP1qRYFgwwGT5FRUIblOMkN9fk/view?usp=drivesdk"
+            }
+          ]
+        },
+        {
+          "id": "ex-1790698209543yj5y",
+          "machineName": "輔助引體向上",
+          "category": "Lats & Back",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1790698209543-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": -100,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1790698209543-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": -100,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1790698209543-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": -100,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Lats & Back"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1790698611897",
+              "workoutId": "w-1790620106011",
+              "exerciseId": "ex-1790698209543yj5y",
+              "driveFileId": "1vrAAOs9rzMbWaf7sCGl_gMefFbSye9dO",
+              "createdAt": "2026-09-29T16:16:15.237Z",
+              "durationSeconds": 51,
+              "mimeType": "video/quicktime",
+              "name": "2026-09-29_full-body-movement_workout_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/1vrAAOs9rzMbWaf7sCGl_gMefFbSye9dO/view?usp=drivesdk"
+            }
+          ]
+        },
+        {
+          "id": "ex-179069995263731qp",
+          "machineName": "海默二頭彎舉",
+          "category": "Biceps",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1790699952637-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": 140,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": false
+            },
+            {
+              "id": "s-1790699952637-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 140,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1790699952637-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 140,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Biceps"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": []
+        },
+        {
+          "id": "ex-1790700622915d2he",
+          "machineName": "啞鈴垂式彎舉",
+          "category": "Biceps",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1790700622915-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": 25,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1790700622915-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 25,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1790700622915-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 25,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Biceps"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1790701090779",
+              "workoutId": "w-1790620106011",
+              "exerciseId": "ex-1790700622915d2he",
+              "driveFileId": "1LK3kAo6we3GaTafcWtbJRHlKfPmvJjKt",
+              "createdAt": "2026-09-29T16:56:24.307Z",
+              "durationSeconds": 57,
+              "mimeType": "video/quicktime",
+              "name": "2026-09-29_full-body-movement_workout_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/1LK3kAo6we3GaTafcWtbJRHlKfPmvJjKt/view?usp=drivesdk"
+            }
+          ]
+        },
+        {
+          "id": "ex-1790701388783inpx",
+          "machineName": "蝴蝶機反向飛鳥",
+          "category": "Lats & Back",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1790701388783-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": 85,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": false
+            },
+            {
+              "id": "s-1790701388783-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 85,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1790701388783-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 85,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Lats & Back"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1790701761964",
+              "workoutId": "w-1790620106011",
+              "exerciseId": "ex-1790701388783inpx",
+              "driveFileId": "1yB56h9a17t1p3C7-1JBbQcBjY_TTxHv0",
+              "createdAt": "2026-09-29T17:09:07.388Z",
+              "durationSeconds": 40,
+              "mimeType": "video/quicktime",
+              "name": "2026-09-29_full-body-movement_workout_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/1yB56h9a17t1p3C7-1JBbQcBjY_TTxHv0/view?usp=drivesdk"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "w-1790200983709",
+      "title": "Full Body Movement",
+      "date": "2026-09-23T22:03:07.338Z",
+      "durationMinutes": 16,
+      "unit": "lbs",
+      "clientName": "",
+      "ptName": "",
+      "ptNotes": "",
+      "isCompleted": true,
+      "exercises": [
+        {
+          "id": "ex-1790200996459ohus",
+          "machineName": "蝴蝶機反向飛鳥",
+          "category": "Lats & Back",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1790200996459-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": 75,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1790200996459-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 90,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1790200996459-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 90,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Lats & Back"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1790201266154",
+              "workoutId": "w-1790200983709",
+              "exerciseId": "ex-1790200996459ohus",
+              "driveFileId": "14iestvr2EiqtVxHo7giqutJ9PIeP_1pq",
+              "createdAt": "2026-09-23T22:06:31.751Z",
+              "durationSeconds": 33,
+              "mimeType": "video/quicktime",
+              "name": "2026-09-23_full-body-movement_workout_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/14iestvr2EiqtVxHo7giqutJ9PIeP_1pq/view?usp=drivesdk"
+            }
+          ],
+          "ptComment": "看起來可以再加重量，不過要確保手肘在向心時不要伸直，保持微彎，胸口靠好椅墊"
+        },
+        {
+          "id": "ex-1790201762429xcy3",
+          "machineName": "海默二頭彎舉",
+          "category": "Biceps",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1790201762429-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": 100,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": false
+            },
+            {
+              "id": "s-1790201762429-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 110,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1790201762429-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 110,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Biceps"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": []
+        },
+        {
+          "id": "ex-17902022999878qlg",
+          "machineName": "輔助引體向上",
+          "category": "Lats & Back",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1790202299987-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": -220,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": false
+            },
+            {
+              "id": "s-1790202299987-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": -220,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1790202299987-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 140,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Lats & Back"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1790202408163",
+              "workoutId": "w-1790200983709",
+              "exerciseId": "ex-17902022999878qlg",
+              "driveFileId": "1byJ5xwJKdwxiV6NKImsKTB80mwj_u-YL",
+              "createdAt": "2026-09-23T22:26:04.685Z",
+              "durationSeconds": 52,
+              "mimeType": "video/quicktime",
+              "name": "2026-09-23_full-body-movement_workout_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/1byJ5xwJKdwxiV6NKImsKTB80mwj_u-YL/view?usp=drivesdk"
+            }
+          ],
+          "ptComment": "向心的時候，整個身體會往右上去，代表可能右背或右核心出比較多力，再加上你向心的時候，會有刻意夾背的動作，應該是要做出手肘往肋骨收進來的動作，而不是往後夾"
+        },
+        {
+          "id": "ex-1790202698203lz2j",
+          "machineName": "凱擘正手划船",
+          "category": "Lats & Back",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1790202698203-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": 50,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1790202698203-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 50,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1790202698203-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 50,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": false
+            },
+            {
+              "id": "s-1790203261682-97df",
+              "setNumber": 4,
+              "type": "working",
+              "weight": 60,
+              "weightUnit": "lbs",
+              "reps": 5,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Lats & Back"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": []
+        },
+        {
+          "id": "ex-179020369869277pj",
+          "machineName": "啞鈴垂式彎舉",
+          "category": "Biceps",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1790203698692-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": 25,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1790203698692-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 25,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1790203698692-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 25,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Biceps"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "看到影片說手肘到後面不可以前翻？要下斜方帶動？\nhttps://youtube.com/shorts/otBHBS1_uk0?is=bVeeSUvnrB5o7Sir",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1790203745880",
+              "workoutId": "w-1790200983709",
+              "exerciseId": "ex-179020369869277pj",
+              "driveFileId": "1fJtS94cCRaHSuQ5241obRjICvcMHDMcr",
+              "createdAt": "2026-09-23T22:48:53.127Z",
+              "durationSeconds": 42,
+              "mimeType": "video/quicktime",
+              "name": "2026-09-23_full-body-movement_workout_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/1fJtS94cCRaHSuQ5241obRjICvcMHDMcr/view?usp=drivesdk"
+            }
+          ],
+          "ptComment": "手肘跟肩膀還是會晃動，你改成坐姿上斜的角度去操作，讓手肘在起始位置上半身後方，比較好固定肩關節跟手臂"
+        },
+        {
+          "id": "ex-1790204138426kgvv",
+          "machineName": "Life 機械正手下拉",
+          "category": "Lats & Back",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1790204138426-1",
+              "setNumber": 1,
+              "type": "working",
+              "weight": 205,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1790204148052-zumn",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 205,
+              "weightUnit": "lbs",
+              "reps": 8,
+              "completed": false
+            },
+            {
+              "id": "s-1790204149940-fztx",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 205,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Lats & Back"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 3,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": []
+        }
+      ]
+    },
+    {
+      "id": "w-1790095878066",
+      "title": "Full Body Movement",
+      "date": "2026-09-22T16:51:18.066Z",
+      "durationMinutes": 9,
+      "unit": "lbs",
+      "clientName": "",
+      "ptName": "",
+      "ptNotes": "",
+      "isCompleted": true,
+      "exercises": [
+        {
+          "id": "ex-1790095890414q0vl",
+          "machineName": "啞鈴側平舉",
+          "category": "Shoulders",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1790095890414-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": 20,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": false
+            },
+            {
+              "id": "s-1790095890414-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 20,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1790095890414-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 17.5,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1790095906725-b63z",
+              "setNumber": 4,
+              "type": "working",
+              "weight": 17.5,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Shoulders"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": []
+        },
+        {
+          "id": "ex-1790096951749kd42",
+          "machineName": "機械平胸推",
+          "category": "Chest",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1790096951749-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": 115,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": false
+            },
+            {
+              "id": "s-1790096951749-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 120,
+              "weightUnit": "lbs",
+              "reps": 8,
+              "completed": false
+            },
+            {
+              "id": "s-1790096951749-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 120,
+              "weightUnit": "lbs",
+              "reps": 8,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Chest"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": []
+        },
+        {
+          "id": "ex-1790096981536f9y1",
+          "machineName": "凱擘平握把ext",
+          "category": "Triceps",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1790096981536-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": 72.5,
+              "weightUnit": "lbs",
+              "reps": 8,
+              "completed": false
+            },
+            {
+              "id": "s-1790096981536-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 72.5,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1790096981536-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 140,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Triceps"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": []
+        }
+      ]
+    },
+    {
+      "id": "w-1789143511679",
+      "title": "Full Body Movement",
+      "date": "2026-09-11T16:18:31.679Z",
+      "durationMinutes": 30,
+      "unit": "lbs",
+      "clientName": "",
+      "ptName": "",
+      "ptNotes": "",
+      "isCompleted": true,
+      "exercises": [
+        {
+          "id": "ex-1789143599631pau6",
+          "machineName": "海默二頭彎舉",
+          "category": "Biceps",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1789143599631-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": 125,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": false
+            },
+            {
+              "id": "s-1789143599631-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 125,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1789143599631-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 125,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Biceps"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": []
+        },
+        {
+          "id": "ex-1789144895508nspa",
+          "machineName": "蝴蝶機反向飛鳥",
+          "category": "Lats & Back",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1789144895508-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": 80,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": false
+            },
+            {
+              "id": "s-1789144895508-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 80,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1789144895508-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 80,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Lats & Back"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1789144948484",
+              "workoutId": "w-1789143511679",
+              "exerciseId": "ex-1789144895508nspa",
+              "driveFileId": "1PqxGRohEV0wvc1FshSFdtWBgXGtu9Drm",
+              "createdAt": "2026-09-11T16:42:18.249Z",
+              "durationSeconds": 40,
+              "mimeType": "video/quicktime",
+              "name": "2026-09-11_full-body-movement_workout_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/1PqxGRohEV0wvc1FshSFdtWBgXGtu9Drm/view?usp=drivesdk"
+            }
+          ]
+        },
+        {
+          "id": "ex-17891453877499qx4",
+          "machineName": "輔助引體向上",
+          "category": "Lats & Back",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1789145387749-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": -64,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": false
+            },
+            {
+              "id": "s-1789145387749-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": -73,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1789145387749-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": -82,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1789145404170-o5fy",
+              "setNumber": 4,
+              "type": "working",
+              "weight": -91,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Lats & Back"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1789145432813",
+              "workoutId": "w-1789143511679",
+              "exerciseId": "ex-17891453877499qx4",
+              "driveFileId": "1lJNn7-dLpD3TFJdscSVjm9eDVz5uNjgL",
+              "createdAt": "2026-09-11T16:50:22.784Z",
+              "durationSeconds": 37,
+              "mimeType": "video/quicktime",
+              "name": "2026-09-11_full-body-movement_workout_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/1lJNn7-dLpD3TFJdscSVjm9eDVz5uNjgL/view?usp=drivesdk"
+            }
+          ],
+          "ptComment": "引體向上\n看得出來重量太重了，每一下保持背部張力，你會放掉再重啟"
+        },
+        {
+          "id": "ex-1789149068562engi",
+          "machineName": "凱擘正手划船",
+          "category": "Lats & Back",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1789149068562-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": 100,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1789149068562-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 120,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1789149068562-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 120,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Lats & Back"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": []
+        },
+        {
+          "id": "ex-1789149814653ziz7",
+          "machineName": "啞鈴垂式彎舉",
+          "category": "Biceps",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1789149814653-1",
+              "setNumber": 1,
+              "type": "working",
+              "weight": 30,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1789149823255-ndpa",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 35,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1789149826137-ke61",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 35,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Biceps"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 3,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1789149861612",
+              "workoutId": "w-1789143511679",
+              "exerciseId": "ex-1789149814653ziz7",
+              "driveFileId": "1Rb-2PJCKiybUnduha-QQ6MfdosBY6eIV",
+              "createdAt": "2026-09-11T18:04:08.757Z",
+              "durationSeconds": 65,
+              "mimeType": "video/quicktime",
+              "name": "2026-09-11_full-body-movement_workout_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/1Rb-2PJCKiybUnduha-QQ6MfdosBY6eIV/view?usp=drivesdk"
+            }
+          ],
+          "ptComment": "啞鈴不需舉過肩膀，啞鈴筆直舉上來就好，你會往兩側外面舉，變成前臂往外舉的過程中，也保持手肘固定"
+        }
+      ]
+    },
+    {
+      "id": "w-1789062497931",
+      "title": "推A 修動作v2",
+      "date": "2026-09-10T17:48:17.931Z",
+      "durationMinutes": 14,
+      "unit": "lbs",
+      "clientName": "",
+      "ptName": "",
+      "ptNotes": "",
+      "isCompleted": true,
+      "exercises": [
+        {
+          "id": "ex-1789063346986wycm",
+          "machineName": "Life機械肩推",
+          "category": "Shoulders",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1789063346986-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": 85,
+              "weightUnit": "lbs",
+              "reps": 8,
+              "completed": false
+            },
+            {
+              "id": "s-1789063346986-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 70,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1789063346986-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 80,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Shoulders"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "向心我試圖往前平面",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1789064345930",
+              "workoutId": "w-1789062497931",
+              "exerciseId": "ex-1789063346986wycm",
+              "driveFileId": "1-dvinx8JTzUlg0gsOd38eIbw7Yg4vi9Z",
+              "createdAt": "2026-09-10T18:18:55.471Z",
+              "durationSeconds": 43,
+              "mimeType": "video/quicktime",
+              "name": "2026-09-10_a-v2_life_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/1-dvinx8JTzUlg0gsOd38eIbw7Yg4vi9Z/view?usp=drivesdk"
+            }
+          ]
+        },
+        {
+          "id": "ex-1789064379843ydzn",
+          "machineName": "蝴蝶機夾胸",
+          "category": "Chest",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1789064379843-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": 160,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1789064379843-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 170,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1789064379843-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 140,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Chest"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1789065054628",
+              "workoutId": "w-1789062497931",
+              "exerciseId": "ex-1789064379843ydzn",
+              "driveFileId": "1HF6WyDfYbAmnpYaNWZLbOt8uFOgPGrku",
+              "createdAt": "2026-09-10T18:30:45.004Z",
+              "durationSeconds": 53,
+              "mimeType": "video/quicktime",
+              "name": "2026-09-10_a-v2_workout_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/1HF6WyDfYbAmnpYaNWZLbOt8uFOgPGrku/view?usp=drivesdk"
+            }
+          ]
+        },
+        {
+          "id": "ex-1789143449208ujt5",
+          "machineName": "啞鈴側平舉",
+          "category": "Shoulders",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1789143449208-1",
+              "setNumber": 1,
+              "type": "warmup",
+              "weight": 20,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": false
+            },
+            {
+              "id": "s-1789143449208-2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 20,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            },
+            {
+              "id": "s-1789143449208-3",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 20,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Shoulders"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 4,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1789143485326",
+              "workoutId": "w-1789062497931",
+              "exerciseId": "ex-1789143449208ujt5",
+              "driveFileId": "1tviwki2j4PrwyvOnTAj3uGkgN9Dl73Ss",
+              "createdAt": "2026-09-11T16:17:55.370Z",
+              "durationSeconds": 34,
+              "mimeType": "video/quicktime",
+              "name": "2026-09-10_a-v2_workout_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/1tviwki2j4PrwyvOnTAj3uGkgN9Dl73Ss/view?usp=drivesdk"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "w-1788543829510",
+      "title": "推 A",
+      "date": "2026-09-04T17:43:50.555Z",
+      "durationMinutes": 16,
+      "unit": "lbs",
+      "clientName": "",
+      "ptName": "",
+      "ptNotes": "",
+      "isCompleted": true,
+      "exercises": [
+        {
+          "id": "ex-1788543884789yoev",
+          "machineName": "啞鈴側平舉",
+          "category": "Shoulders",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1788543884789-1",
+              "setNumber": 1,
+              "type": "working",
+              "weight": 20,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": true
+            },
+            {
+              "id": "s-1788543924462-3qq2",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 20,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": true
+            },
+            {
+              "id": "s-1788543926358-2zx8",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 20,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": true
+            },
+            {
+              "id": "s-1788543930651-68de",
+              "setNumber": 4,
+              "type": "working",
+              "weight": 20,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": true
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Shoulders"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 3,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1788543965500",
+              "workoutId": "w-1788543829510",
+              "exerciseId": "ex-1788543884789yoev",
+              "driveFileId": "1Hm_4bFSYX5NdaQB2paQDfw-bYau-ntiu",
+              "createdAt": "2026-09-04T17:45:49.833Z",
+              "durationSeconds": 37,
+              "mimeType": "video/quicktime",
+              "name": "2026-09-04_a_workout_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/1Hm_4bFSYX5NdaQB2paQDfw-bYau-ntiu/view?usp=drivesdk"
+            }
+          ],
+          "ptComment": "手腕不能垂下來的，一定要直，這樣才能吃到側三角"
+        },
+        {
+          "id": "ex-1788543994928dl7a",
+          "machineName": "機械平胸推",
+          "category": "Chest",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1788543994928-1",
+              "setNumber": 1,
+              "type": "working",
+              "weight": 245,
+              "weightUnit": "lbs",
+              "reps": 9,
+              "completed": true
+            },
+            {
+              "id": "s-1788544365259-n1qw",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 245,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": true
+            },
+            {
+              "id": "s-1788544634657-6ghy",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 245,
+              "weightUnit": "lbs",
+              "reps": 7,
+              "completed": true
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Chest"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 3,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": []
+        },
+        {
+          "id": "ex-1788545274527otpe",
+          "machineName": "蝴蝶機夾胸",
+          "category": "Chest",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1788545274527-1",
+              "setNumber": 1,
+              "type": "working",
+              "weight": 205,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": false
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Chest"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 3,
+            "jointComfort": "great",
+            "notes": "上次：\n蝴蝶機夾胸向心時，背要貼緊椅墊，不要用軀幹往前帶",
+            "quickTags": []
+          },
+          "videos": [],
+          "ptComment": ""
+        }
+      ]
+    },
+    {
+      "id": "w-1788276831112",
+      "title": "拉A",
+      "date": "2026-09-01T15:33:51.113Z",
+      "durationMinutes": 20,
+      "unit": "lbs",
+      "clientName": "",
+      "ptName": "",
+      "ptNotes": "",
+      "isCompleted": true,
+      "exercises": [
+        {
+          "id": "ex-1788276853217467x",
+          "machineName": "輔助引體向上",
+          "category": "Lats & Back",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1788276853217-1",
+              "setNumber": 1,
+              "type": "working",
+              "weight": -140,
+              "weightUnit": "lbs",
+              "reps": 7,
+              "completed": true
+            },
+            {
+              "id": "s-1788277552636-a9m7",
+              "setNumber": 2,
+              "type": "working",
+              "weight": -140,
+              "weightUnit": "lbs",
+              "reps": 7,
+              "completed": true
+            },
+            {
+              "id": "s-1788277555082-dq7d",
+              "setNumber": 3,
+              "type": "working",
+              "weight": -140,
+              "weightUnit": "lbs",
+              "reps": 7,
+              "completed": true
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Lats & Back"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 3,
+            "jointComfort": "great",
+            "notes": "你上次說：「划船跟引體向上 離心手伸直的時候 就動作停止 不要再過度延伸肩胛\n引體向上 的握距再窄一點 大概 1.5 倍肩寬\n影片裡大概兩倍」\n感覺肩膀出很多力；自從減少離心時間專心在向心，感覺大小圓、旋轉etc「背窩肉」出力多很多\n",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1788277327059",
+              "workoutId": "w-1788276831112",
+              "exerciseId": "ex-1788276853217467x",
+              "driveFileId": "1XXzGNBBhOON9r29-8laE_1VRG8yRCohM",
+              "createdAt": "2026-09-01T15:41:47.409Z",
+              "durationSeconds": 48,
+              "mimeType": "video/quicktime",
+              "name": "2026-09-01_a_workout_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/1XXzGNBBhOON9r29-8laE_1VRG8yRCohM/view?usp=drivesdk"
+            }
+          ],
+          "ptComment": "引體向上不要刻意夾背 順順的直上直下 你會在向心的時候往前衝"
+        },
+        {
+          "id": "ex-1788277762014gf81",
+          "machineName": "海默二頭彎舉",
+          "category": "Biceps",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1788277762014-1",
+              "setNumber": 1,
+              "type": "working",
+              "weight": 125,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": true
+            },
+            {
+              "id": "s-1788277818079-os87",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 125,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": true
+            },
+            {
+              "id": "s-1788278658576-zkrx",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 125,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": true
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Biceps"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 3,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": []
+        },
+        {
+          "id": "ex-1788287910801n3nl",
+          "machineName": "啞鈴單臂划船",
+          "category": "Lats & Back",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1788287910801-1",
+              "setNumber": 1,
+              "type": "working",
+              "weight": 65,
+              "weightUnit": "lbs",
+              "reps": 8,
+              "completed": true
+            },
+            {
+              "id": "s-1788287927226-fpbi",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 70,
+              "weightUnit": "lbs",
+              "reps": 8,
+              "completed": true
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Lats & Back"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 3,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1788288149995",
+              "workoutId": "w-1788276831112",
+              "exerciseId": "ex-1788287910801n3nl",
+              "driveFileId": "1AdHZlnGTnh1I3U1gKtygwYZQF3joiCV5",
+              "createdAt": "2026-09-01T18:42:11.232Z",
+              "durationSeconds": 78,
+              "mimeType": "video/quicktime",
+              "name": "2026-09-01_a_workout_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/1AdHZlnGTnh1I3U1gKtygwYZQF3joiCV5/view?usp=drivesdk"
+            }
+          ],
+          "ptComment": "啞鈴單臂划船 你離心到手伸直 動作就停 不要再刻意把肩胛往前推"
+        },
+        {
+          "id": "ex-1788288394516gijm",
+          "machineName": "蝴蝶機反向飛鳥",
+          "category": "Lats & Back",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1788288394516-1",
+              "setNumber": 1,
+              "type": "working",
+              "weight": 70,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": true
+            },
+            {
+              "id": "s-1788288658544-t4i6",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 70,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": true
+            },
+            {
+              "id": "s-1788288660903-5879",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 70,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": true
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Lats & Back"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 3,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1788288750363",
+              "workoutId": "w-1788276831112",
+              "exerciseId": "ex-1788288394516gijm",
+              "driveFileId": "1losHCDJCbviVU5OGHviF_EDAQgniy0dJ",
+              "createdAt": "2026-09-01T18:52:13.737Z",
+              "durationSeconds": 39,
+              "mimeType": "video/quicktime",
+              "name": "2026-09-01_a_workout_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/1losHCDJCbviVU5OGHviF_EDAQgniy0dJ/view?usp=drivesdk"
+            }
+          ]
+        },
+        {
+          "id": "ex-1788289457325wde5",
+          "machineName": "凱擘正手划船",
+          "category": "Lats & Back",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1788289457325-1",
+              "setNumber": 1,
+              "type": "working",
+              "weight": 70,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": true
+            },
+            {
+              "id": "s-1788289511193-v8vw",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 70,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": true
+            },
+            {
+              "id": "s-1788289512092-y5xv",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 70,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": true
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Lats & Back"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 3,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1788289553579",
+              "workoutId": "w-1788276831112",
+              "exerciseId": "ex-1788289457325wde5",
+              "driveFileId": "1llyIPZI8t193ef1Sm4kQIdlLh9tSG75X",
+              "createdAt": "2026-09-01T19:05:31.880Z",
+              "durationSeconds": 44,
+              "mimeType": "video/quicktime",
+              "name": "2026-09-01_a_workout_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/1llyIPZI8t193ef1Sm4kQIdlLh9tSG75X/view?usp=drivesdk"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "w-1788101588544",
+      "title": "推A",
+      "date": "2026-08-31T20:23:13.737Z",
+      "durationMinutes": 26,
+      "unit": "lbs",
+      "clientName": "",
+      "ptName": "",
+      "ptNotes": "巨累…",
+      "isCompleted": true,
+      "exercises": [
+        {
+          "id": "ex-1788207804384j4yi",
+          "machineName": "啞鈴側平舉",
+          "category": "Shoulders",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1788207804384-1",
+              "setNumber": 1,
+              "type": "working",
+              "weight": 25,
+              "weightUnit": "lbs",
+              "reps": 15,
+              "completed": true
+            },
+            {
+              "id": "s-1788207869537-s8dt",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 25,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": true
+            },
+            {
+              "id": "s-1788207873594-e2na",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 25,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": true
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Shoulders"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 3,
+            "jointComfort": "great",
+            "notes": "三角強烈，有疑竇是平面要怎麼喬？感覺更往後可以有一個很感受度的平面",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1788207834347",
+              "workoutId": "w-1788101588544",
+              "exerciseId": "ex-1788207804384j4yi",
+              "driveFileId": "18a4OzeUV49NqanhiviQV5HuZmPAOUNph",
+              "createdAt": "2026-08-31T20:23:44.640Z",
+              "durationSeconds": 40,
+              "mimeType": "video/quicktime",
+              "name": "2026-08-31_a_workout_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/18a4OzeUV49NqanhiviQV5HuZmPAOUNph/view?usp=drivesdk"
+            }
+          ]
+        },
+        {
+          "id": "ex-17882081803326nng",
+          "machineName": "蝴蝶機夾胸",
+          "category": "Chest",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1788208180333-1",
+              "setNumber": 1,
+              "type": "working",
+              "weight": 215,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": true
+            },
+            {
+              "id": "s-1788208189100-k63z",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 205,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": true
+            },
+            {
+              "id": "s-1788208462168-qs8g",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 205,
+              "weightUnit": "lbs",
+              "reps": 10,
+              "completed": true
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Chest"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 3,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1788208261924",
+              "workoutId": "w-1788101588544",
+              "exerciseId": "ex-17882081803326nng",
+              "driveFileId": "1H2AMkON0i-F8QkabFpJCX6hwlPggd3Re",
+              "createdAt": "2026-08-31T20:30:53.838Z",
+              "durationSeconds": 31,
+              "mimeType": "video/quicktime",
+              "name": "2026-08-31_a_workout_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/1H2AMkON0i-F8QkabFpJCX6hwlPggd3Re/view?usp=drivesdk"
+            }
+          ]
+        },
+        {
+          "id": "ex-1788208534658w37c",
+          "machineName": "凱擘平握把ext",
+          "category": "Triceps",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1788208534658-1",
+              "setNumber": 1,
+              "type": "working",
+              "weight": 62.5,
+              "weightUnit": "lbs",
+              "reps": 12,
+              "completed": true
+            },
+            {
+              "id": "s-1788209740871-e6zj",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 72.5,
+              "weightUnit": "lbs",
+              "reps": 8,
+              "completed": true
+            },
+            {
+              "id": "s-1788209826067-0u2n",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 67.5,
+              "weightUnit": "lbs",
+              "reps": 8,
+              "completed": true
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Triceps"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 3,
+            "jointComfort": "great",
+            "notes": "",
+            "quickTags": []
+          },
+          "videos": []
+        },
+        {
+          "id": "ex-1788209024070mly1",
+          "machineName": "Life機械肩推",
+          "category": "Shoulders",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1788209024070-1",
+              "setNumber": 1,
+              "type": "working",
+              "weight": 100,
+              "weightUnit": "lbs",
+              "reps": 7,
+              "completed": true
+            },
+            {
+              "id": "s-1788209095032-cr15",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 85,
+              "weightUnit": "lbs",
+              "reps": 7,
+              "completed": true
+            },
+            {
+              "id": "s-1788209167073-nsor",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 85,
+              "weightUnit": "lbs",
+              "reps": 9,
+              "completed": true
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Shoulders"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 3,
+            "jointComfort": "great",
+            "notes": "幹有夠麗潔",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1788209192695",
+              "workoutId": "w-1788101588544",
+              "exerciseId": "ex-1788209024070mly1",
+              "driveFileId": "1muChJ0LUf663Q8HfWHCRaOE6wYh2n4VL",
+              "createdAt": "2026-08-31T20:46:23.417Z",
+              "durationSeconds": 41,
+              "mimeType": "video/quicktime",
+              "name": "2026-08-31_a_life_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/1muChJ0LUf663Q8HfWHCRaOE6wYh2n4VL/view?usp=drivesdk"
+            }
+          ]
+        },
+        {
+          "id": "ex-1788210341059v9z4",
+          "machineName": "機械平胸推",
+          "category": "Chest",
+          "seatSettings": "",
+          "sets": [
+            {
+              "id": "s-1788210341059-1",
+              "setNumber": 1,
+              "type": "working",
+              "weight": 100,
+              "weightUnit": "lbs",
+              "reps": 5,
+              "completed": true
+            },
+            {
+              "id": "s-1788210348441-1h10",
+              "setNumber": 2,
+              "type": "working",
+              "weight": 100,
+              "weightUnit": "lbs",
+              "reps": 5,
+              "completed": true
+            },
+            {
+              "id": "s-1788210350301-bi2m",
+              "setNumber": 3,
+              "type": "working",
+              "weight": 100,
+              "weightUnit": "lbs",
+              "reps": 5,
+              "completed": true
+            }
+          ],
+          "muscleFeeling": {
+            "targetMuscles": [
+              "Chest"
+            ],
+            "sorenessLevel": "none",
+            "pumpQuality": 3,
+            "jointComfort": "great",
+            "notes": "手麻 怕",
+            "quickTags": []
+          },
+          "videos": [
+            {
+              "id": "video-1788210400781",
+              "workoutId": "w-1788101588544",
+              "exerciseId": "ex-1788210341059v9z4",
+              "driveFileId": "1dR08DLXb0eFag2OBwLq-u1GKKGWNjFjV",
+              "createdAt": "2026-08-31T21:06:29.948Z",
+              "durationSeconds": 27,
+              "mimeType": "video/quicktime",
+              "name": "2026-08-31_a_workout_video-01.mov",
+              "webViewLink": "https://drive.google.com/file/d/1dR08DLXb0eFag2OBwLq-u1GKKGWNjFjV/view?usp=drivesdk"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "trainingPlan": {
+    "version": 1,
+    "title": "Push / Pull Program",
+    "blocks": [
+      {
+        "id": "push-a",
+        "title": "推 A",
+        "subtitle": "Chest, shoulders, triceps",
+        "accent": "#d97724",
+        "exercises": [
+          {
+            "id": "push-a-1",
+            "name": "啞鈴上胸臥推",
+            "sets": "3組",
+            "reps": "6-8下",
+            "rest": "2-3分"
+          },
+          {
+            "id": "push-a-2",
+            "name": "機械平胸推",
+            "sets": "3組",
+            "reps": "8-10下",
+            "rest": "2-3分"
+          },
+          {
+            "id": "push-a-3",
+            "name": "蝴蝶機夾胸",
+            "sets": "3組",
+            "reps": "10-12下",
+            "rest": "2分"
+          },
+          {
+            "id": "push-a-4",
+            "name": "Life 機械肩推",
+            "sets": "4組",
+            "reps": "8-10下",
+            "rest": "2-3分"
+          },
+          {
+            "id": "push-a-5",
+            "name": "啞鈴側平舉",
+            "sets": "3組",
+            "reps": "12-15下",
+            "rest": "2分"
+          },
+          {
+            "id": "push-a-6",
+            "name": "Hammer tricep extension",
+            "sets": "3組",
+            "reps": "12下",
+            "rest": "2分"
+          },
+          {
+            "id": "push-a-7",
+            "name": "Cable 平握把 extension",
+            "sets": "2組",
+            "reps": "12-15下",
+            "rest": "2分"
+          }
+        ]
+      },
+      {
+        "id": "pull-a",
+        "title": "拉 A",
+        "subtitle": "Back, rear delts, biceps",
+        "accent": "#849a88",
+        "exercises": [
+          {
+            "id": "pull-a-1",
+            "name": "對握輔助引體向上",
+            "sets": "3組",
+            "reps": "8-10下",
+            "rest": "2-3分"
+          },
+          {
+            "id": "pull-a-2",
+            "name": "啞鈴單臂划船",
+            "sets": "3組",
+            "reps": "8-10下",
+            "rest": "2-3分"
+          },
+          {
+            "id": "pull-a-3",
+            "name": "Life 機械正手下拉",
+            "sets": "3組",
+            "reps": "10-12下",
+            "rest": "2-3分"
+          },
+          {
+            "id": "pull-a-4",
+            "name": "Cable 正手划船",
+            "sets": "3組",
+            "reps": "10-12下",
+            "rest": "2-3分"
+          },
+          {
+            "id": "pull-a-5",
+            "name": "蝴蝶機反向飛鳥",
+            "sets": "3組",
+            "reps": "10-12下",
+            "rest": "2分"
+          },
+          {
+            "id": "pull-a-6",
+            "name": "Hammer 二頭彎舉",
+            "sets": "3組",
+            "reps": "10-12下",
+            "rest": "2分"
+          },
+          {
+            "id": "pull-a-7",
+            "name": "啞鈴垂式彎舉",
+            "sets": "2組",
+            "reps": "12-15下",
+            "rest": "2分"
+          }
+        ]
+      },
+      {
+        "id": "push-b",
+        "title": "推 B",
+        "subtitle": "Pressing variation day",
+        "accent": "#c86d51",
+        "exercises": [
+          {
+            "id": "push-b-1",
+            "name": "史密斯上胸臥推",
+            "sets": "3組",
+            "reps": "6-8下",
+            "rest": "2-3分"
+          },
+          {
+            "id": "push-b-2",
+            "name": "啞鈴平胸臥推",
+            "sets": "3組",
+            "reps": "8-10下",
+            "rest": "2-3分"
+          },
+          {
+            "id": "push-b-3",
+            "name": "Cable夾胸",
+            "sets": "3組",
+            "reps": "10-12下",
+            "rest": "2分"
+          },
+          {
+            "id": "push-b-4",
+            "name": "啞鈴坐姿肩推",
+            "sets": "4組",
+            "reps": "8-10下",
+            "rest": "2-3分"
+          },
+          {
+            "id": "push-b-5",
+            "name": "機械側平舉",
+            "sets": "3組",
+            "reps": "12-15下",
+            "rest": "2分"
+          },
+          {
+            "id": "push-b-6",
+            "name": "Cable 纜繩三頭下壓",
+            "sets": "3組",
+            "reps": "12-15下",
+            "rest": "2分"
+          },
+          {
+            "id": "push-b-7",
+            "name": "Cable 過頭extension",
+            "sets": "2組",
+            "reps": "12-15下",
+            "rest": "2分"
+          }
+        ]
+      },
+      {
+        "id": "pull-b",
+        "title": "拉 B",
+        "subtitle": "Vertical and row variation day",
+        "accent": "#f5c999",
+        "exercises": [
+          {
+            "id": "pull-b-1",
+            "name": "正手滑輪下拉",
+            "sets": "3組",
+            "reps": "8-10下",
+            "rest": "2-3分"
+          },
+          {
+            "id": "pull-b-2",
+            "name": "機械反手划船",
+            "sets": "3組",
+            "reps": "8-10下",
+            "rest": "2-3分"
+          },
+          {
+            "id": "pull-b-3",
+            "name": "Hoist 機械下拉",
+            "sets": "3組",
+            "reps": "10-12下",
+            "rest": "2-3分"
+          },
+          {
+            "id": "pull-b-4",
+            "name": "Cable 對握與肩同寬划船",
+            "sets": "3組",
+            "reps": "10-12下",
+            "rest": "2-3分"
+          },
+          {
+            "id": "pull-b-5",
+            "name": "Face pull",
+            "sets": "3組",
+            "reps": "10-12下",
+            "rest": "2分"
+          },
+          {
+            "id": "pull-b-6",
+            "name": "啞鈴斜板二頭彎舉",
+            "sets": "3組",
+            "reps": "10-12下",
+            "rest": "2分"
+          },
+          {
+            "id": "pull-b-7",
+            "name": "Cable 垂式彎舉",
+            "sets": "2組",
+            "reps": "12-15下",
+            "rest": "2分"
+          }
+        ]
+      }
+    ],
+    "warmupMoves": [
+      {
+        "id": "hooklying",
+        "name": "Hooklying",
+        "target": "6-8"
+      },
+      {
+        "id": "left-side-bend",
+        "name": "四足跪姿左側彎",
+        "target": "6-8"
+      },
+      {
+        "id": "dead-bug",
+        "name": "死蟲式",
+        "target": "8下"
+      }
+    ]
+  },
+  "warmupCheckins": {},
+  "scheduledSession": null
+}

@@ -23,7 +23,7 @@ const expectedTables = [
 
 const expectedConstraints = [
   'workout_sets_rpe_bounds',
-  'workout_sets_nonnegative_values',
+  'workout_sets_nonnegative_reps_distance_time',
   'body_weight_entries_positive_values',
   'videos_positive_duration',
   'trainer_feedback_exercise_matches_workout',
