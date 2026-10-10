@@ -237,14 +237,7 @@ function WorkoutTrackerAppContent({
           completed: false,
           rpe: s.rpe,
         })),
-        muscleFeeling: {
-          targetMuscles: [ex.category],
-          sorenessLevel: 'none',
-          pumpQuality: 4,
-          jointComfort: 'great',
-          notes: '',
-          quickTags: [],
-        },
+        notes: ex.notes || '',
       })),
     };
 
@@ -338,14 +331,6 @@ function WorkoutTrackerAppContent({
             completed: false,
           },
         ],
-        muscleFeeling: {
-          targetMuscles: [machine.category],
-          sorenessLevel: 'none' as const,
-          pumpQuality: 4,
-          jointComfort: 'great' as const,
-          notes: '',
-          quickTags: [],
-        },
       };
       const updated = {
         ...activeWorkout,
@@ -380,14 +365,6 @@ function WorkoutTrackerAppContent({
                 completed: false,
               },
             ],
-            muscleFeeling: {
-              targetMuscles: [machine.category],
-              sorenessLevel: 'none' as const,
-              pumpQuality: 4,
-              jointComfort: 'great' as const,
-              notes: '',
-              quickTags: [],
-            },
           },
         ],
       };

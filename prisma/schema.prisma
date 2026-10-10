@@ -1,0 +1,360 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CLIENT
+  PT
+}
+
+enum WeightUnit {
+  lbs
+  kg
+}
+
+enum SetType {
+  warmup
+  working
+  drop
+  failure
+}
+
+enum EquipmentType {
+  MACHINE
+  CABLE
+  FREE_WEIGHT
+  SMITH_MACHINE
+  CARDIO_TREADMILL
+}
+
+enum ScheduledSessionStatus {
+  scheduled
+  completed
+  cancelled
+}
+
+enum FeedbackSource {
+  imported_pt_local
+  pt_portal
+  api
+}
+
+enum ChatMessageRole {
+  user
+  assistant
+  system
+  tool
+}
+
+enum ImportSourceType {
+  drive_json
+  browser_local_storage
+  body_weight_local_storage
+  pt_local_comments
+}
+
+enum ImportBatchStatus {
+  pending
+  running
+  completed
+  failed
+}
+
+model User {
+  id                String             @id @default(uuid()) @db.Uuid
+  authSubject       String             @unique @map("auth_subject")
+  role              UserRole
+  displayName       String?            @map("display_name")
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  profile           Profile?
+  workouts          Workout[]          @relation("WorkoutOwner")
+  machinePresets    MachinePreset[]    @relation("MachinePresetOwner")
+  trainingPlans     TrainingPlan[]     @relation("TrainingPlanOwner")
+  warmupCheckins    WarmupCheckin[]    @relation("WarmupCheckinOwner")
+  scheduledSessions ScheduledSession[] @relation("ScheduledSessionOwner")
+  bodyWeights       BodyWeightEntry[]  @relation("BodyWeightOwner")
+  authoredFeedback  TrainerFeedback[]  @relation("TrainerFeedbackAuthor")
+  chatConversations ChatConversation[] @relation("ChatConversationOwner")
+  importBatches     ImportBatch[]      @relation("ImportBatchOwner")
+
+  @@map("users")
+}
+
+model Profile {
+  userId      String  @id @map("user_id") @db.Uuid
+  clientName  String  @map("client_name")
+  ptNameLabel String? @map("pt_name_label")
+  appTitle    String? @map("app_title")
+  themeColor  String? @map("theme_color")
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model Workout {
+  id                 String            @id @default(uuid()) @db.Uuid
+  ownerId            String            @map("owner_id") @db.Uuid
+  legacyId           String?           @map("legacy_id")
+  title              String
+  date               DateTime          @db.Timestamptz(6)
+  startTimeRaw       String?           @map("start_time_raw")
+  endTimeRaw         String?           @map("end_time_raw")
+  durationMinutes    Int               @map("duration_minutes")
+  isCompleted        Boolean           @map("is_completed")
+  ptNotes            String?           @map("pt_notes")
+  ptComment          String?           @map("pt_comment")
+  runningDistance    Decimal?          @map("running_distance") @db.Decimal(10, 3)
+  runningTimeMinutes Decimal?          @map("running_time_minutes") @db.Decimal(10, 3)
+  revision           Int               @default(1)
+  owner              User              @relation("WorkoutOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  exercises          ExerciseLog[]
+  feedback           TrainerFeedback[]
+
+  @@unique([ownerId, legacyId])
+  @@index([ownerId, date])
+  @@map("workouts")
+}
+
+model ExerciseLog {
+  id                 String            @id @default(uuid()) @db.Uuid
+  workoutId          String            @map("workout_id") @db.Uuid
+  legacyId           String?           @map("legacy_id")
+  position           Int
+  machineName        String            @map("machine_name")
+  category           String
+  seatSettings       String?           @map("seat_settings")
+  notes              String?
+  distance           Decimal?          @db.Decimal(10, 3)
+  runningTimeMinutes Decimal?          @map("running_time_minutes") @db.Decimal(10, 3)
+  ptComment          String?           @map("pt_comment")
+  workout            Workout           @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  sets               WorkoutSet[]
+  videos             Video[]
+  feedback           TrainerFeedback[]
+
+  @@unique([workoutId, legacyId])
+  @@unique([id, workoutId])
+  @@index([workoutId, position])
+  @@map("exercise_logs")
+}
+
+model WorkoutSet {
+  id                 String      @id @default(uuid()) @db.Uuid
+  exerciseLogId      String      @map("exercise_log_id") @db.Uuid
+  legacyId           String?     @map("legacy_id")
+  position           Int
+  setNumber          Int         @map("set_number")
+  type               SetType
+  weight             Decimal     @db.Decimal(10, 3)
+  weightUnit         WeightUnit  @map("weight_unit")
+  reps               Int
+  completed          Boolean
+  rpe                Decimal?    @db.Decimal(3, 1)
+  distance           Decimal?    @db.Decimal(10, 3)
+  runningTimeMinutes Decimal?    @map("running_time_minutes") @db.Decimal(10, 3)
+  exercise           ExerciseLog @relation(fields: [exerciseLogId], references: [id], onDelete: Cascade)
+
+  @@unique([exerciseLogId, legacyId])
+  @@index([exerciseLogId, position])
+  @@map("workout_sets")
+}
+
+model MachinePreset {
+  id                  String        @id @default(uuid()) @db.Uuid
+  ownerId             String        @map("owner_id") @db.Uuid
+  legacyId            String?       @map("legacy_id")
+  name                String
+  category            String
+  equipmentType       EquipmentType @map("equipment_type")
+  defaultSeatSettings String?       @map("default_seat_settings")
+  targetDescription   String        @map("target_description")
+  position            Int
+  owner               User          @relation("MachinePresetOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, legacyId])
+  @@index([ownerId, position])
+  @@map("machine_presets")
+}
+
+model TrainingPlan {
+  id          String              @id @default(uuid()) @db.Uuid
+  ownerId     String              @map("owner_id") @db.Uuid
+  title       String
+  version     Int
+  isCurrent   Boolean             @default(false) @map("is_current")
+  owner       User                @relation("TrainingPlanOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  blocks      TrainingPlanBlock[]
+  warmupMoves WarmupMove[]
+
+  @@index([ownerId, isCurrent])
+  @@map("training_plans")
+}
+
+model TrainingPlanBlock {
+  id        String                 @id @default(uuid()) @db.Uuid
+  planId    String                 @map("plan_id") @db.Uuid
+  legacyId  String?                @map("legacy_id")
+  position  Int
+  title     String
+  subtitle  String?
+  accent    String?
+  plan      TrainingPlan           @relation(fields: [planId], references: [id], onDelete: Cascade)
+  exercises TrainingPlanExercise[]
+
+  @@unique([planId, position])
+  @@unique([planId, legacyId])
+  @@map("training_plan_blocks")
+}
+
+model TrainingPlanExercise {
+  id       String            @id @default(uuid()) @db.Uuid
+  blockId  String            @map("block_id") @db.Uuid
+  legacyId String?           @map("legacy_id")
+  position Int
+  name     String
+  setsText String            @map("sets_text")
+  repsText String            @map("reps_text")
+  restText String            @map("rest_text")
+  block    TrainingPlanBlock @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  @@unique([blockId, position])
+  @@unique([blockId, legacyId])
+  @@map("training_plan_exercises")
+}
+
+model WarmupMove {
+  id         String       @id @default(uuid()) @db.Uuid
+  planId     String       @map("plan_id") @db.Uuid
+  legacyId   String?      @map("legacy_id")
+  position   Int
+  name       String
+  targetText String       @map("target_text")
+  plan       TrainingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, position])
+  @@unique([planId, legacyId])
+  @@map("warmup_moves")
+}
+
+model WarmupCheckin {
+  id                String   @id @default(uuid()) @db.Uuid
+  ownerId           String   @map("owner_id") @db.Uuid
+  checkinDate       DateTime @map("checkin_date") @db.Date
+  moveIdOrLegacyKey String   @map("move_id_or_legacy_key")
+  completed         Boolean
+  owner             User     @relation("WarmupCheckinOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, checkinDate, moveIdOrLegacyKey])
+  @@map("warmup_checkins")
+}
+
+model ScheduledSession {
+  id            String                 @id @default(uuid()) @db.Uuid
+  ownerId       String                 @map("owner_id") @db.Uuid
+  legacyId      String?                @map("legacy_id")
+  title         String
+  scheduledDate DateTime               @map("scheduled_date") @db.Timestamptz(6)
+  notes         String?
+  status        ScheduledSessionStatus @default(scheduled)
+  owner         User                   @relation("ScheduledSessionOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, legacyId])
+  @@index([ownerId, scheduledDate])
+  @@map("scheduled_sessions")
+}
+
+model BodyWeightEntry {
+  id          String     @id @default(uuid()) @db.Uuid
+  ownerId     String     @map("owner_id") @db.Uuid
+  legacyId    String?    @map("legacy_id")
+  date        DateTime   @db.Date
+  weightKg    Decimal    @map("weight_kg") @db.Decimal(7, 3)
+  sourceValue Decimal    @map("source_value") @db.Decimal(7, 3)
+  sourceUnit  WeightUnit @map("source_unit")
+  owner       User       @relation("BodyWeightOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, legacyId])
+  @@index([ownerId, date])
+  @@map("body_weight_entries")
+}
+
+model Video {
+  id              String      @id @default(uuid()) @db.Uuid
+  exerciseLogId   String      @map("exercise_log_id") @db.Uuid
+  legacyId        String?     @map("legacy_id")
+  driveFileId     String      @map("drive_file_id")
+  createdAt       DateTime    @map("created_at") @db.Timestamptz(6)
+  durationSeconds Decimal     @map("duration_seconds") @db.Decimal(10, 3)
+  mimeType        String      @map("mime_type")
+  name            String?
+  webViewLink     String?     @map("web_view_link")
+  exercise        ExerciseLog @relation(fields: [exerciseLogId], references: [id], onDelete: Cascade)
+
+  @@unique([exerciseLogId, legacyId])
+  @@index([driveFileId])
+  @@map("videos")
+}
+
+model TrainerFeedback {
+  id            String         @id @default(uuid()) @db.Uuid
+  authorId      String         @map("author_id") @db.Uuid
+  workoutId     String         @map("workout_id") @db.Uuid
+  exerciseLogId String?        @map("exercise_log_id") @db.Uuid
+  text          String
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  source        FeedbackSource
+  author        User           @relation("TrainerFeedbackAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  workout       Workout        @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  exercise      ExerciseLog?   @relation(fields: [exerciseLogId], references: [id], onDelete: Cascade)
+
+  @@index([workoutId, createdAt])
+  @@index([exerciseLogId, createdAt])
+  @@map("trainer_feedback")
+}
+
+model ChatConversation {
+  id        String        @id @default(uuid()) @db.Uuid
+  ownerId   String        @map("owner_id") @db.Uuid
+  title     String?
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  owner     User          @relation("ChatConversationOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+
+  @@index([ownerId, updatedAt])
+  @@map("chat_conversations")
+}
+
+model ChatMessage {
+  id             String           @id @default(uuid()) @db.Uuid
+  conversationId String           @map("conversation_id") @db.Uuid
+  role           ChatMessageRole
+  content        String
+  toolCallsJson  Json?            @map("tool_calls_json")
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@map("chat_messages")
+}
+
+model ImportBatch {
+  id          String            @id @default(uuid()) @db.Uuid
+  ownerId     String            @map("owner_id") @db.Uuid
+  sourceType  ImportSourceType  @map("source_type")
+  checksum    String
+  status      ImportBatchStatus
+  startedAt   DateTime          @default(now()) @map("started_at") @db.Timestamptz(6)
+  completedAt DateTime?         @map("completed_at") @db.Timestamptz(6)
+  reportJson  Json?             @map("report_json")
+  owner       User              @relation("ImportBatchOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, sourceType, checksum])
+  @@index([ownerId, startedAt])
+  @@map("import_batches")
+}

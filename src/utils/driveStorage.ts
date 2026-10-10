@@ -332,8 +332,7 @@ function normalizeExercise(value: unknown): ExerciseLog | null {
     typeof exercise.id !== 'string' ||
     typeof exercise.machineName !== 'string' ||
     typeof exercise.category !== 'string' ||
-    !Array.isArray(exercise.sets) ||
-    !exercise.muscleFeeling
+    !Array.isArray(exercise.sets)
   ) {
     return null;
   }

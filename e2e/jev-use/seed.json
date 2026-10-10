@@ -31,14 +31,7 @@
             { "id": "s-e2e-0924-lp-2", "setNumber": 2, "type": "working", "weight": 200, "weightUnit": "lbs", "reps": 8, "completed": true },
             { "id": "s-e2e-0924-lp-3", "setNumber": 3, "type": "working", "weight": 200, "weightUnit": "lbs", "reps": 6, "completed": true }
           ],
-          "muscleFeeling": {
-            "targetMuscles": ["Quads"],
-            "sorenessLevel": "moderate",
-            "pumpQuality": 4,
-            "jointComfort": "minor_stiffness",
-            "notes": "Last set got grindy.",
-            "quickTags": []
-          }
+          "notes": "Last set got grindy."
         },
         {
           "id": "ex-e2e-0924-curl",
@@ -49,15 +42,7 @@
           "sets": [
             { "id": "s-e2e-0924-lc-1", "setNumber": 1, "type": "working", "weight": 90, "weightUnit": "lbs", "reps": 12, "completed": true },
             { "id": "s-e2e-0924-lc-2", "setNumber": 2, "type": "working", "weight": 90, "weightUnit": "lbs", "reps": 12, "completed": true }
-          ],
-          "muscleFeeling": {
-            "targetMuscles": ["Hamstrings"],
-            "sorenessLevel": "mild",
-            "pumpQuality": 4,
-            "jointComfort": "great",
-            "notes": "",
-            "quickTags": []
-          }
+          ]
         }
       ]
     },
@@ -82,15 +67,7 @@
             { "id": "s-e2e-0917-lp-1", "setNumber": 1, "type": "warmup", "weight": 90, "weightUnit": "lbs", "reps": 12, "completed": true },
             { "id": "s-e2e-0917-lp-2", "setNumber": 2, "type": "working", "weight": 180, "weightUnit": "lbs", "reps": 10, "completed": true },
             { "id": "s-e2e-0917-lp-3", "setNumber": 3, "type": "working", "weight": 190, "weightUnit": "lbs", "reps": 10, "completed": true }
-          ],
-          "muscleFeeling": {
-            "targetMuscles": ["Quads"],
-            "sorenessLevel": "mild",
-            "pumpQuality": 4,
-            "jointComfort": "great",
-            "notes": "",
-            "quickTags": []
-          }
+          ]
         }
       ]
     }

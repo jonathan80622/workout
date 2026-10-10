@@ -43,7 +43,10 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
       e.machineName.toLowerCase().includes(query)
     );
     const matchesNotes = w.exercises.some((e) =>
-      e.muscleFeeling?.notes?.toLowerCase().includes(query)
+      e.notes?.toLowerCase().includes(query) ||
+      e.ptComment?.toLowerCase().includes(query) ||
+      w.ptNotes?.toLowerCase().includes(query) ||
+      w.ptComment?.toLowerCase().includes(query)
     );
     return matchesTitle || matchesMachine || matchesNotes;
   });
@@ -101,7 +104,7 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search by title, machine name, or muscle note..."
+          placeholder="Search by title, machine name, note, or PT feedback..."
           className="w-full bg-[#181412] border border-[#382f29] rounded-2xl pl-10 pr-4 py-2.5 text-xs text-[#f7f3ee] placeholder-[#6b5e54] focus:outline-none focus:ring-1 focus:ring-[#d97724]"
         />
       </div>
@@ -280,13 +283,13 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                 )}
 
                 {/* Exercise note preview */}
-                {workout.exercises.some((e) => e.muscleFeeling?.notes) && (
+                {workout.exercises.some((e) => e.notes?.trim()) && (
                   <div className="bg-[#d97724]/10 border border-[#d97724]/20 p-2.5 rounded-2xl text-xs space-y-1">
                     <span className="text-[10px] font-syne font-bold text-[#e6a15c] uppercase tracking-wider flex items-center gap-1">
                       Exercise Note
                     </span>
                     <p className="text-[#f7f3ee] text-[11px] font-serif italic line-clamp-2">
-                      "{workout.exercises.find((e) => e.muscleFeeling?.notes)?.muscleFeeling.notes}"
+                      "{workout.exercises.find((e) => e.notes?.trim())?.notes}"
                     </p>
                   </div>
                 )}

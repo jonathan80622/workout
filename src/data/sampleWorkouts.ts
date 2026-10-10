@@ -23,14 +23,7 @@ export const SAMPLE_WORKOUTS: Workout[] = [
           { id: 's3', setNumber: 3, type: 'working', weight: 260, weightUnit: 'lbs', reps: 10, completed: true, rpe: 8.5 },
           { id: 's4', setNumber: 4, type: 'working', weight: 280, weightUnit: 'lbs', reps: 8, completed: true, rpe: 9 },
         ],
-        muscleFeeling: {
-          targetMuscles: ['Quads', 'Glutes'],
-          sorenessLevel: 'mild',
-          pumpQuality: 5,
-          jointComfort: 'great',
-          notes: 'Deep quad contraction fired up intensely at 280 lbs. Zero joint strain with solid foot placement.',
-          quickTags: ['👁️ Mind-Muscle Connection', '🛡️ Solid Knee Protection', '🌿 100% Pain Free']
-        }
+        notes: 'Deep quad contraction fired up intensely at 280 lbs. Zero joint strain with solid foot placement.'
       },
       {
         id: 'ex-2',
@@ -42,14 +35,7 @@ export const SAMPLE_WORKOUTS: Workout[] = [
           { id: 's6', setNumber: 2, type: 'working', weight: 115, weightUnit: 'lbs', reps: 10, completed: true, rpe: 8 },
           { id: 's7', setNumber: 3, type: 'working', weight: 125, weightUnit: 'lbs', reps: 10, completed: true, rpe: 9 },
         ],
-        muscleFeeling: {
-          targetMuscles: ['Hamstrings'],
-          sorenessLevel: 'moderate',
-          pumpQuality: 4,
-          jointComfort: 'great',
-          notes: 'Hamstring contraction felt deep and controlled at full extension.',
-          quickTags: ['🌊 Smooth Joint Motion', '🪵 Controlled Tempo']
-        }
+        notes: 'Hamstring contraction felt deep and controlled at full extension.'
       },
       {
         id: 'ex-3',
@@ -61,14 +47,7 @@ export const SAMPLE_WORKOUTS: Workout[] = [
           { id: 's9', setNumber: 2, type: 'working', weight: 150, weightUnit: 'lbs', reps: 12, completed: true, rpe: 8.5 },
           { id: 's10', setNumber: 3, type: 'drop', weight: 100, weightUnit: 'lbs', reps: 15, completed: true, rpe: 9.5 }
         ],
-        muscleFeeling: {
-          targetMuscles: ['Calves'],
-          sorenessLevel: 'none',
-          pumpQuality: 4,
-          jointComfort: 'great',
-          notes: '3-second pause at bottom stretch on every rep. Deep calf burn.',
-          quickTags: ['⚡ High Muscle Energy', '✨ Strong Peak Pump']
-        }
+        notes: '3-second pause at bottom stretch on every rep. Deep calf burn.'
       }
     ]
   },
@@ -94,14 +73,7 @@ export const SAMPLE_WORKOUTS: Workout[] = [
           { id: 's13', setNumber: 3, type: 'working', weight: 160, weightUnit: 'lbs', reps: 10, completed: true, rpe: 8.5 },
           { id: 's14', setNumber: 4, type: 'failure', weight: 175, weightUnit: 'lbs', reps: 7, completed: true, rpe: 10 }
         ],
-        muscleFeeling: {
-          targetMuscles: ['Chest', 'Triceps'],
-          sorenessLevel: 'mild',
-          pumpQuality: 5,
-          jointComfort: 'great',
-          notes: 'Adjusted seat height for optimal chest drive. Right shoulder felt completely supported.',
-          quickTags: ['👁️ Mind-Muscle Connection', '🌿 100% Pain Free', '🧘 Solid Core Stability']
-        }
+        notes: 'Adjusted seat height for optimal chest drive. Right shoulder felt completely supported.'
       },
       {
         id: 'ex-5',
@@ -113,14 +85,7 @@ export const SAMPLE_WORKOUTS: Workout[] = [
           { id: 's16', setNumber: 2, type: 'working', weight: 20, weightUnit: 'lbs', reps: 12, completed: true, rpe: 8.5 },
           { id: 's17', setNumber: 3, type: 'working', weight: 20, weightUnit: 'lbs', reps: 11, completed: true, rpe: 9 }
         ],
-        muscleFeeling: {
-          targetMuscles: ['Shoulders'],
-          sorenessLevel: 'none',
-          pumpQuality: 5,
-          jointComfort: 'great',
-          notes: 'Pure side delt activation without traps over-engaging.',
-          quickTags: ['👁️ Mind-Muscle Connection', '🌊 Smooth Motion']
-        }
+        notes: 'Pure side delt activation without traps over-engaging.'
       },
       {
         id: 'ex-6',
@@ -132,14 +97,7 @@ export const SAMPLE_WORKOUTS: Workout[] = [
           { id: 's19', setNumber: 2, type: 'working', weight: 55, weightUnit: 'lbs', reps: 10, completed: true, rpe: 8.5 },
           { id: 's20', setNumber: 3, type: 'drop', weight: 35, weightUnit: 'lbs', reps: 14, completed: true, rpe: 9.5 }
         ],
-        muscleFeeling: {
-          targetMuscles: ['Triceps'],
-          sorenessLevel: 'mild',
-          pumpQuality: 4,
-          jointComfort: 'minor_stiffness',
-          notes: 'Slight stiffness in left elbow resolved when spreading the rope handles wider at peak contraction.',
-          quickTags: ['🌾 Mild Stiffness', '⚡ High Muscle Energy']
-        }
+        notes: 'Slight stiffness in left elbow resolved when spreading the rope handles wider at peak contraction.'
       }
     ]
   },
@@ -164,16 +122,8 @@ export const SAMPLE_WORKOUTS: Workout[] = [
         sets: [
           { id: 's21', setNumber: 1, type: 'working', weight: 0, weightUnit: 'lbs', reps: 0, distance: 3.2, runningTimeMinutes: 25, completed: true, rpe: 8 }
         ],
-        muscleFeeling: {
-          targetMuscles: ['Cardio & Running', 'Quads', 'Calves'],
-          sorenessLevel: 'none',
-          pumpQuality: 5,
-          jointComfort: 'great',
-          notes: 'Maintained smooth cadenced stride without ankle roll or joint strain.',
-          quickTags: ['🌿 100% Pain Free', '⚡ High Muscle Energy', '🧘 Solid Core Stability']
-        }
+        notes: 'Maintained smooth cadenced stride without ankle roll or joint strain.'
       }
     ]
   }
 ];
-

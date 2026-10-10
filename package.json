@@ -5,10 +5,17 @@
   "scripts": {
     "dev": "next dev -p 3000 -H 0.0.0.0",
     "build": "next build",
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:deploy:verify": "node scripts/deploy-database.mjs",
+    "db:verify": "node scripts/verify-database.mjs",
     "start": "next start -p 3000 -H 0.0.0.0",
     "lint": "next lint"
   },
   "dependencies": {
+    "@prisma/client": "6.17.1",
     "canvas-confetti": "^1.9.4",
     "html-to-image": "^1.11.13",
     "lucide-react": "^0.546.0",
@@ -25,6 +32,7 @@
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "postcss": "^8.5.3",
+    "prisma": "6.17.1",
     "tailwindcss": "^4.0.9",
     "typescript": "^5.8.2"
   }

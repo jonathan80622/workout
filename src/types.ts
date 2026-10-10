@@ -17,9 +17,6 @@ export type MuscleGroup =
   | 'Forearms'
   | 'Cardio & Running';
 
-export type SorenessLevel = 'none' | 'mild' | 'moderate' | 'intense';
-export type JointComfort = 'great' | 'minor_stiffness' | 'discomfort';
-
 export interface WorkoutSet {
   id: string;
   setNumber: number;
@@ -33,22 +30,12 @@ export interface WorkoutSet {
   runningTimeMinutes?: number; // Running duration in minutes
 }
 
-export interface MuscleFeeling {
-  targetMuscles: MuscleGroup[];
-  sorenessLevel: SorenessLevel;
-  pumpQuality: number; // 1 to 5
-  jointComfort: JointComfort;
-  notes: string; // Detailed text description of muscle feeling
-  quickTags: string[]; // e.g. ["Target Muscle On Fire", "Form On Point", "Slight Asymmetry"]
-}
-
 export interface ExerciseLog {
   id: string;
   machineName: string;
   category: MuscleGroup;
   seatSettings?: string; // e.g., "Seat: 4, Lever: B"
   sets: WorkoutSet[];
-  muscleFeeling: MuscleFeeling;
   notes?: string;
   distance?: number; // Total distance for cardio exercise
   runningTimeMinutes?: number; // Total running time for exercise

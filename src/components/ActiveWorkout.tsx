@@ -6,7 +6,6 @@ import { Plus, Play, Pause, CheckCircle2, Trash2, Compass, Clock, Settings, Feat
 import { Workout, ExerciseLog, WorkoutSet, MachinePreset, MuscleGroup } from '../types';
 import { formatWorkoutDate } from '../utils/formatters';
 import { SetRow } from './SetRow';
-import { MuscleFeelInput } from './MuscleFeelInput';
 import { WorkoutVideoRecorder } from './WorkoutVideoRecorder';
 import { ExerciseLoadHistory } from './ExerciseLoadHistory';
 import { calculateWorkoutVolume, calculateCompletedSets, calculateTotalDistance, calculateTotalRunningTime, calculateAveragePace } from '../utils/formatters';
@@ -126,14 +125,6 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         { id: 's-' + Date.now() + '-2', setNumber: 2, type: 'working', weight: 120, weightUnit: 'lbs', reps: 10, completed: false },
         { id: 's-' + Date.now() + '-3', setNumber: 3, type: 'working', weight: 140, weightUnit: 'lbs', reps: 10, completed: false }
       ],
-      muscleFeeling: {
-        targetMuscles: [preset.category],
-        sorenessLevel: 'none',
-        pumpQuality: 4,
-        jointComfort: 'great',
-        notes: '',
-        quickTags: []
-      }
     };
 
     onUpdateWorkout({
@@ -159,14 +150,6 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       sets: [
         { id: 's-' + Date.now() + '-1', setNumber: 1, type: 'working', weight: 100, weightUnit: 'lbs', reps: 10, completed: false }
       ],
-      muscleFeeling: {
-        targetMuscles: [customCategory],
-        sorenessLevel: 'none',
-        pumpQuality: 3,
-        jointComfort: 'great',
-        notes: '',
-        quickTags: []
-      }
     };
 
     onUpdateWorkout({
@@ -470,15 +453,6 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                 <Plus className="w-3.5 h-3.5" /> Add Set
               </button>
             </div>
-
-            {/* Per-exercise notes */}
-            <MuscleFeelInput
-              machineName={exercise.machineName}
-              value={exercise.muscleFeeling}
-              onChange={(updatedFeeling) =>
-                handleUpdateExercise({ ...exercise, muscleFeeling: updatedFeeling })
-              }
-            />
 
             <WorkoutVideoRecorder
               workout={workout}

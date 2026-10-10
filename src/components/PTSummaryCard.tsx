@@ -349,7 +349,7 @@ export const PTSummaryCard: React.FC<PTSummaryCardProps> = ({
                 </div>
 
                 {/* Exercise notes */}
-                {exercise.muscleFeeling?.notes && (
+                {exercise.notes && (
                   <div className={`p-3 rounded-xl border text-xs space-y-1.5 ${themeClasses.feedbackCard}`}>
                     <div className="flex items-center gap-1 text-[#e6a15c] font-serif italic text-xs">
                       <span className="flex items-center gap-1">
@@ -358,7 +358,7 @@ export const PTSummaryCard: React.FC<PTSummaryCardProps> = ({
                       </span>
                     </div>
                     <p className="text-xs italic bg-black/20 p-2 rounded-lg border border-black/10 leading-relaxed opacity-90">
-                      "{exercise.muscleFeeling.notes}"
+                      "{exercise.notes}"
                     </p>
                   </div>
                 )}
