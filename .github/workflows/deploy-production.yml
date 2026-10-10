@@ -15,7 +15,7 @@ concurrency:
 jobs:
   deploy:
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -23,7 +23,7 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_TELEMETRY_DISABLED: '1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
 
@@ -37,7 +37,7 @@ jobs:
             fi
           done
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: npm
@@ -55,13 +55,17 @@ jobs:
         run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
 
       - name: Validate and mask production environment
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: node scripts/prepare-production-env.mjs
 
       - name: Build production app
         run: vercel build --prod --token="$VERCEL_TOKEN"
 
       - name: Migrate and verify production database
-        run: node --env-file=.vercel/.env.production.local scripts/deploy-database.mjs
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/deploy-database.mjs
 
       - name: Deploy verified build
         run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"

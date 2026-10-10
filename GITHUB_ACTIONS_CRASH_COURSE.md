@@ -25,7 +25,7 @@ GitHub Actions starts a temporary Ubuntu computer
 The runner finishes; Vercel keeps serving the app
 ```
 
-The temporary computer is called a **runner**. `ubuntu-latest` in our workflow asks
+The temporary computer is called a **runner**. `ubuntu-24.04` in our workflow asks
 GitHub to provide one. We do not rent or maintain that machine ourselves.
 
 GitHub Actions is useful for tests, builds, deployments, and other automation.
@@ -42,7 +42,7 @@ hosting product and is not involved here.
 | Run | One execution of the recipe | A deployment attempt for a specific commit |
 | Job | A group of steps assigned to a runner | Our `deploy` job |
 | Step | One operation within a job | Build, migrate, or deploy |
-| Action | A reusable component invoked by a step | `actions/checkout@v4` |
+| Action | A reusable component invoked by a step | `actions/checkout@v5` |
 | Secret | A protected value supplied to a workflow | `VERCEL_TOKEN` |
 
 Steps in one job run in order and share the runner's working files. Separate jobs
@@ -85,7 +85,7 @@ on:
 jobs:
   deploy:
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
 ```
 
@@ -96,7 +96,7 @@ The timeout limits how long the job can run.
 ### Reusable actions versus commands
 
 ```yaml
-- uses: actions/setup-node@v4
+- uses: actions/setup-node@v6
   with:
     node-version: '22'
     cache: npm
@@ -106,24 +106,27 @@ The timeout limits how long the job can run.
 ```
 
 `uses` invokes a reusable action. Here, it prepares Node.js 22 and npm caching.
-`@v4` is the version reference of that action, not the Node version.
+`@v6` is the version reference of that action, not the Node version.
 `with` supplies the action's inputs.
 
 `run` executes a command on the runner. `npm ci` installs the dependency versions
 recorded in our npm lockfile. `run: |` introduces a command block spanning multiple
 lines. [GitHub workflow syntax reference](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax)
 
-## 5. What the three secrets do
+## 5. What the secrets do
 
 | GitHub secret | Purpose | Is it a credential? |
 | --- | --- | --- |
 | `VERCEL_TOKEN` | Authenticates the runner to Vercel | Yes; treat it like a password |
 | `VERCEL_ORG_ID` | Selects the Vercel team/account scope | No; it is an identifier |
 | `VERCEL_PROJECT_ID` | Selects the existing workout project | No; it is an identifier |
+| `DATABASE_URL` | Connects the migration runner to production Postgres | Yes; includes database credentials |
 
 There is **one token and two IDs**, not three passwords. The IDs tell Vercel which
 project we mean; the token proves that the runner has permission to act there.
-We store all three as secrets for consistent configuration.
+We store those three Vercel settings as secrets for consistent configuration.
+The fourth secret, `DATABASE_URL`, is required because Vercel cannot return values
+marked Sensitive to an external runner.
 
 On GitHub: **Repository > Settings > Secrets and variables > Actions > Secrets >
 New repository secret**. Names must match the workflow exactly.
@@ -161,7 +164,10 @@ to create a GitHub personal access token for this workflow.
 ## 6. Where DATABASE_URL goes
 
 `DATABASE_URL` is a database connection string containing connection details and
-credentials. It stays configured in the Vercel project's **Production** environment.
+credentials. Keep it in Vercel's **Production** environment for the app, and put the
+production connection string in a GitHub Actions secret named `DATABASE_URL` for
+the migration runner. Obtain the PostgreSQL connection string from your database
+provider's connection settings; do not use a Prisma API URL.
 
 Our workflow uses the Vercel token to pull production settings into:
 
@@ -169,15 +175,16 @@ Our workflow uses the Vercel token to pull production settings into:
 .vercel/.env.production.local
 ```
 
-The [environment preparation script](scripts/prepare-production-env.mjs) checks
-that the file contains a database URL and registers the pulled values for log
-masking. Secrets downloaded from Vercel are not automatically GitHub repository
-secrets. [Vercel pull documentation](https://vercel.com/docs/cli/pull)
+Sensitive values in this file are `[SENSITIVE]` placeholders, not usable credentials.
+The token does not bypass that restriction. The
+[environment preparation script](scripts/prepare-production-env.mjs) validates the
+separate GitHub database secret and masks downloaded credential values without
+masking ordinary flags such as `1`. [Vercel sensitive variables](https://vercel.com/docs/environment-variables/sensitive-environment-variables)
 
-For the migration, Node reads the file into the process environment:
+For the migration, the workflow injects the GitHub secret as `DATABASE_URL` and runs:
 
 ```bash
-node --env-file=.vercel/.env.production.local scripts/deploy-database.mjs
+node scripts/deploy-database.mjs
 ```
 
 Prisma reads `DATABASE_URL` from that environment and connects to Postgres.
@@ -185,8 +192,8 @@ We do not paste the connection string into YAML or add a `NEXT_PUBLIC_` prefix.
 The runner's downloaded environment file is ignored by Git, is not uploaded as
 an Actions artifact, and has a cleanup step at the end.
 
-If Vercel cannot return a usable production URL, the workflow stops at the
-environment check. Having a value configured is not proof that the runner can
+If the GitHub secret is missing, a placeholder, or not a PostgreSQL URL, the workflow
+stops at the environment check. Having a value configured is not proof that the runner can
 connect; the migration step tests the real connection.
 
 ## 7. Build, migrate, deploy: three different operations
@@ -227,9 +234,9 @@ Normally, a failed step skips the subsequent steps. Our cleanup step uses
 
 | Failure | What to inspect |
 | --- | --- |
-| Missing credential | The three GitHub secret names and values |
+| Missing credential | The four GitHub secret names and values |
 | Vercel authentication error | Token expiration, scope, team ID, project ID |
-| Missing database URL | Vercel's Production environment settings |
+| Missing database URL | GitHub's `DATABASE_URL` secret; Vercel's sensitive value cannot be pulled |
 | Build failure | The first useful compiler/type error in the build log |
 | Migration failure | Connection error or failed SQL migration details |
 | Verification failure | Missing table, index, or constraint listed in the log |

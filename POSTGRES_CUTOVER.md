@@ -13,9 +13,14 @@ Add these repository secrets under Settings > Secrets and variables > Actions:
 - `VERCEL_TOKEN`: a Vercel token scoped to the project's team.
 - `VERCEL_ORG_ID`: that team's ID.
 - `VERCEL_PROJECT_ID`: the workout project's ID.
+- `DATABASE_URL`: the production PostgreSQL connection string, starting with
+  `postgresql://` or `postgres://`. Obtain it from the database provider's connection
+  settings. Keep the Vercel production value too; do not disable its sensitive setting.
 
-`DATABASE_URL` remains in Vercel's Production environment. Actions pulls that
-environment, masks its values in logs, checks that the URL exists, builds the app,
+Vercel sensitive values are returned as `[SENSITIVE]` by `vercel pull`; the token
+cannot retrieve them. Actions uses the separate GitHub `DATABASE_URL` secret for
+migrations. It pulls build settings, masks downloaded credentials, validates the
+GitHub database URL, builds the app,
 runs the migration and schema verification, then deploys the prebuilt output.
 Downloaded environment files are ignored by Git and not uploaded as artifacts.
 
@@ -25,7 +30,7 @@ The Vercel production branch must remain `main`. Manual Vercel dashboard deploym
 bypass this gate, so use Actions for production releases.
 
 The first push containing the workflow attempts a production migration and deployment.
-Configure the three secrets before pushing. No production migration has been verified
+Configure the four secrets before pushing. No production migration has been verified
 from this local checkout yet.
 
 If a step fails, later steps do not run. Inspect the failed step in Actions, fix the
@@ -48,16 +53,9 @@ The current app code still uses the existing local/Drive structured-data path. T
 
    `db:deploy:verify` runs `prisma migrate deploy` and then verifies the expected tables, custom constraints, and partial index.
 
-3. If running from a locally linked Vercel project, pull production env first:
-
-   ```bash
-   vercel link
-   vercel env pull .env.production.local --environment=production
-   set -a
-   . ./.env.production.local
-   set +a
-   npm run db:deploy:verify
-   ```
+3. For local use, supply the database connection string securely as `DATABASE_URL`.
+   Pulling Vercel settings cannot retrieve a sensitive database URL. Never use the
+   literal `[SENSITIVE]` placeholder as a connection string.
 
 4. If running from CI, inject `DATABASE_URL` as a protected secret and run the same command as a manual job.
 
