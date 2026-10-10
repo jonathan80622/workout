@@ -29,8 +29,10 @@ jobs:
 
       - name: Check deployment credentials
         shell: bash
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID DATABASE_URL; do
             if [ -z "${!name}" ]; then
               echo "::error::Missing GitHub Actions secret: $name"
               exit 1
@@ -51,29 +53,15 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
-      - name: Pull production environment from Vercel
-        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
-
-      - name: Validate and mask production environment
+      - name: Validate production migration environment
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
         run: node scripts/prepare-production-env.mjs
-
-      - name: Build production app
-        env:
-          NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
-        run: vercel build --prod --token="$VERCEL_TOKEN"
 
       - name: Migrate and verify production database
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: node scripts/deploy-database.mjs
 
-      - name: Deploy verified build
-        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
-
-      - name: Remove downloaded environment
-        if: always()
-        run: |
-          node -e "require('node:fs').rmSync('.vercel/.env.production.local', { force: true })"
+      - name: Deploy production from source
+        run: vercel deploy --prod --yes --token="$VERCEL_TOKEN"
