@@ -108,7 +108,7 @@ export function getDriveConnection(): DriveConnection {
   const stored = typeof window === 'undefined' ? null : window.sessionStorage.getItem(TOKEN_STORAGE_KEY);
 
   return {
-    isConfigured: Boolean(clientId),
+    isConfigured: isGoogleOAuthClientId(clientId),
     isConnected: Boolean(stored),
     accessToken: stored,
   };
@@ -116,14 +116,20 @@ export function getDriveConnection(): DriveConnection {
 
 export async function connectGoogleDrive(): Promise<DriveConnection> {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-  if (!clientId) {
-    throw new Error('Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID.');
+  if (!isGoogleOAuthClientId(clientId)) {
+    throw new Error('Missing or invalid NEXT_PUBLIC_GOOGLE_CLIENT_ID.');
   }
 
   await loadGoogleIdentityScript();
   const token = await requestAccessToken(clientId);
   window.sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
   return getDriveConnection();
+}
+
+export function isGoogleOAuthClientId(value: unknown): value is string {
+  return typeof value === 'string' &&
+    value !== '[SENSITIVE]' &&
+    /^[0-9a-z-]+\.apps\.googleusercontent\.com$/i.test(value);
 }
 
 export function disconnectGoogleDrive() {

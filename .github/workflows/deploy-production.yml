@@ -57,9 +57,12 @@ jobs:
       - name: Validate and mask production environment
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
         run: node scripts/prepare-production-env.mjs
 
       - name: Build production app
+        env:
+          NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
         run: vercel build --prod --token="$VERCEL_TOKEN"
 
       - name: Migrate and verify production database
