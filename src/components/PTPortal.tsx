@@ -5,6 +5,8 @@ import { CheckCircle2, Circle, Dumbbell, Lock, Maximize2, MessageSquareText, Min
 import { WorkoutAppState, WorkoutVideo } from '../types';
 import { formatWorkoutDate } from '../utils/formatters';
 
+type PtClient = { id: string; label: string; workoutCount: number };
+
 type PTCommentState = Record<
   string,
   {
@@ -16,6 +18,8 @@ type PTCommentState = Record<
 export const PTPortal: React.FC = () => {
   const [password, setPassword] = useState('');
   const [state, setState] = useState<WorkoutAppState | null>(null);
+  const [clients, setClients] = useState<PtClient[]>([]);
+  const [clientId, setClientId] = useState<string | null>(null);
   const [status, setStatus] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [comments, setComments] = useState<PTCommentState>({});
@@ -23,13 +27,15 @@ export const PTPortal: React.FC = () => {
 
   const saveQueue = useRef(Promise.resolve());
   const saveComment = (workoutId: string, text: string, exerciseId?: string) => {
+    // Captured now, so a comment queued before switching clients still saves to the client it was written for.
+    const commentClientId = clientId;
     setStatus('Saving comment...');
     saveQueue.current = saveQueue.current.then(async () => {
       try {
         const response = await fetch('/api/pt-state', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password, workoutId, exerciseId, text }),
+          body: JSON.stringify({ password, clientId: commentClientId, workoutId, exerciseId, text }),
         });
         if (!response.ok) throw new Error((await response.json()).error || 'Comment not saved.');
         setStatus('Comment saved.');
@@ -39,15 +45,16 @@ export const PTPortal: React.FC = () => {
     });
   };
 
-  const loadPortal = async () => {
+  // Loads one client's data. Without a client ID the server picks the client with the most workouts.
+  const loadPortal = async (requestedClientId?: string) => {
     setIsLoading(true);
-    setStatus('Checking password...');
+    setStatus(requestedClientId ? 'Loading client...' : 'Checking password...');
 
     try {
       const response = await fetch('/api/pt-state', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ password, clientId: requestedClientId }),
       });
       const data = await response.json();
 
@@ -56,8 +63,11 @@ export const PTPortal: React.FC = () => {
         return;
       }
 
-      setState(data);
-      setComments(Object.fromEntries((data as WorkoutAppState).workouts.map((workout) => [workout.id, {
+      const loaded = data.state as WorkoutAppState;
+      setClients(data.clients);
+      setClientId(data.clientId);
+      setState(loaded);
+      setComments(Object.fromEntries(loaded.workouts.map((workout) => [workout.id, {
         workoutComment: workout.ptComment || '',
         exerciseComments: Object.fromEntries(workout.exercises.map((exercise) => [exercise.id, exercise.ptComment || ''])),
       }])));
@@ -112,7 +122,7 @@ export const PTPortal: React.FC = () => {
           />
           <button
             type="button"
-            onClick={loadPortal}
+            onClick={() => loadPortal()}
             disabled={!password || isLoading}
             className="w-full py-3 bg-[#d97724] disabled:opacity-50 text-[#0c0a09] font-syne font-bold text-xs rounded-xl flex items-center justify-center gap-2"
           >
@@ -138,6 +148,23 @@ export const PTPortal: React.FC = () => {
           <p className="text-xs text-[#e6a15c] font-syne font-bold uppercase tracking-wider">Workout Recorder</p>
           <h1 className="text-2xl font-serif font-bold">{state.profile.clientName || 'Athlete'} Training Log</h1>
           {state.profile.ptName && <p className="text-sm text-[#a39588]">For {state.profile.ptName}</p>}
+          {clients.length > 1 && (
+            <label className="mt-3 flex items-center gap-2 text-xs text-[#a39588]">
+              Client
+              <select
+                value={clientId ?? ''}
+                disabled={isLoading}
+                onChange={(event) => loadPortal(event.target.value)}
+                className="bg-[#100d0b] border border-[#2b241f] rounded-xl px-2 py-1.5 font-mono text-[#f7f3ee] outline-none focus:ring-1 focus:ring-[#d97724]"
+              >
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.label} · {client.workoutCount} workouts
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
         </header>
 
         <section className="grid gap-4 lg:grid-cols-[320px_1fr]">

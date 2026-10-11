@@ -3,13 +3,18 @@ import { prisma } from '@/src/server/db';
 import { createDefaultAppState, normalizeAppState } from '@/src/utils/driveStorage';
 import { TrainingPlan, Workout, WorkoutAppState } from '@/src/types';
 
-export class ClientLookupError extends Error {}
+export type PtClient = { id: string; label: string; workoutCount: number };
 
-/** The PT portal serves the app's one client; more or fewer than one CLIENT user is an error, not a guess. */
-export async function findClientUserId(db: Pick<Prisma.TransactionClient, 'user'> = prisma): Promise<string | null> {
-  const clients = await db.user.findMany({ where: { role: 'CLIENT' }, select: { id: true }, take: 2 });
-  if (clients.length > 1) throw new ClientLookupError('More than one client user exists.');
-  return clients[0]?.id ?? null;
+/** Every client the PT can view, most workouts first; ties keep the earliest-created client first. */
+export async function listPtClients(): Promise<PtClient[]> {
+  const users = await prisma.user.findMany({
+    where: { role: 'CLIENT' },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true, _count: { select: { workouts: true } } },
+  });
+  return users
+    .map((user) => ({ id: user.id, label: user.id.slice(0, 4), workoutCount: user._count.workouts }))
+    .sort((a, b) => b.workoutCount - a.workoutCount);
 }
 
 export class StateConflictError extends Error {}

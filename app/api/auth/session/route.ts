@@ -6,7 +6,7 @@ import { InvalidGoogleTokenError, verifyGoogleAccessToken } from '@/src/server/g
 export const runtime = 'nodejs';
 
 // Exchanges a Google access token from the browser popup for an app session.
-// Only a Google account already recorded as a user's auth_subject can sign in; nothing is created here.
+// A Google account signing in for the first time gets its own new, empty user.
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   if (typeof body?.accessToken !== 'string' || !body.accessToken) {
@@ -18,8 +18,12 @@ export async function POST(request: Request) {
     if (!grantedDrive) {
       return NextResponse.json({ error: 'Google Drive access is required to sign in. Sign in again and allow Drive.' }, { status: 403 });
     }
-    const user = await prisma.user.findUnique({ where: { authSubject: googleSub }, select: { id: true } });
-    if (!user) return NextResponse.json({ error: 'This Google account does not have access to this app.' }, { status: 403 });
+    const user = await prisma.user.upsert({
+      where: { authSubject: googleSub },
+      create: { authSubject: googleSub, role: 'CLIENT' },
+      update: {},
+      select: { id: true },
+    });
 
     const response = new NextResponse(null, { status: 204 });
     response.cookies.set(SESSION_COOKIE, await createSession(user.id), sessionCookieOptions());

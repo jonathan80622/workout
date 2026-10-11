@@ -158,13 +158,12 @@ test('PT rejects a wrong password without reading or writing the database', asyn
 
 test('PT comment writes only the selected exercise and increments the owner revision', async () => {
   db = fakeDatabase();
-  db.user.findMany = async () => [{ id: 'owner-1' }];
   db.workout.findUniqueOrThrow = async () => ({ id: 'existing-workout' });
   const route = load('app/api/pt-state/route.ts');
-  const response = await route.PATCH(new Request('http://localhost/api/pt-state', { method: 'PATCH', body: JSON.stringify({ password: 'test-only-password', workoutId: 'legacy-workout', exerciseId: 'legacy-exercise', text: 'VU VU' }) }));
+  const response = await route.PATCH(new Request('http://localhost/api/pt-state', { method: 'PATCH', body: JSON.stringify({ password: 'test-only-password', clientId: 'owner-1', workoutId: 'legacy-workout', exerciseId: 'legacy-exercise', text: 'VU VU' }) }));
   assert.equal(response.status, 200);
   assert.deepEqual(db.calls.map((call) => [call.model, call.operation]), [['user', 'update'], ['exerciseLog', 'update']]);
-  assert.deepEqual(db.calls[0].args, { where: { id: 'owner-1' }, data: { stateRevision: { increment: 1 } } });
+  assert.deepEqual(db.calls[0].args, { where: { id: 'owner-1', role: 'CLIENT' }, data: { stateRevision: { increment: 1 } } });
   assert.deepEqual(db.calls[1].args, {
     where: { workoutId_legacyId: { workoutId: 'existing-workout', legacyId: 'legacy-exercise' } }, data: { ptComment: 'VU VU' },
   });
@@ -224,15 +223,37 @@ test('the app reads the signed-in user by id', async () => {
   assert.deepEqual(lookedUp, { id: 'owner-1' });
 });
 
-test('the PT portal reads the one client user and needs no Google session', async () => {
+test('the PT portal shows one client at a time, defaulting to the most workouts, with no Google session', async () => {
   const route = load('app/api/pt-state/route.ts');
-  const ptRead = () => route.POST(new Request('http://localhost/api/pt-state', { method: 'POST', body: JSON.stringify({ password: 'test-only-password' }) }));
-  let lookedUp;
-  db = { user: { findMany: async ({ where }) => { assert.deepEqual(where, { role: 'CLIENT' }); return [{ id: 'owner-1' }]; }, findUnique: async ({ where }) => { lookedUp = where; return null; } } };
-  assert.equal((await ptRead()).status, 200);
-  assert.deepEqual(lookedUp, { id: 'owner-1' });
-  db = { user: { findMany: async () => [{ id: 'owner-1' }, { id: 'owner-2' }] } };
-  assert.equal((await ptRead()).status, 503);
+  const ptRead = (clientId) => route.POST(new Request('http://localhost/api/pt-state', { method: 'POST', body: JSON.stringify({ password: 'test-only-password', clientId }) }));
+  const users = [
+    { id: 'aaaa1111-0000-0000-0000-000000000000', _count: { workouts: 2 } },
+    { id: 'bbbb2222-0000-0000-0000-000000000000', _count: { workouts: 9 } },
+    { id: 'cccc3333-0000-0000-0000-000000000000', _count: { workouts: 0 } },
+  ];
+  const read = [];
+  db = { user: {
+    findMany: async ({ where }) => { assert.deepEqual(where, { role: 'CLIENT' }); return users; },
+    findUnique: async ({ where }) => { read.push(where.id); return null; },
+  } };
+
+  const first = await (await ptRead()).json();
+  assert.equal(first.clientId, 'bbbb2222-0000-0000-0000-000000000000');
+  assert.deepEqual(first.clients.map((client) => [client.label, client.workoutCount]), [['bbbb', 9], ['aaaa', 2], ['cccc', 0]]);
+  assert.deepEqual(Object.keys(first.clients[0]).sort(), ['id', 'label', 'workoutCount']);
+
+  const switched = await (await ptRead('cccc3333-0000-0000-0000-000000000000')).json();
+  assert.equal(switched.clientId, 'cccc3333-0000-0000-0000-000000000000');
+  assert.deepEqual(read, ['bbbb2222-0000-0000-0000-000000000000', 'cccc3333-0000-0000-0000-000000000000']);
+  assert.equal((await ptRead('dddd4444-0000-0000-0000-000000000000')).status, 404);
+});
+
+test('a PT comment must name its client', async () => {
+  db = fakeDatabase();
+  const route = load('app/api/pt-state/route.ts');
+  const response = await route.PATCH(new Request('http://localhost/api/pt-state', { method: 'PATCH', body: JSON.stringify({ password: 'test-only-password', workoutId: 'w', text: 'x' }) }));
+  assert.equal(response.status, 400);
+  assert.equal(db.calls.length, 0);
 });
 
 async function withGoogleTokenInfo(reply, fn) {
@@ -246,23 +267,22 @@ const DRIVE = 'https://www.googleapis.com/auth/drive.file';
 const tokenInfo = (fields) => () => new Response(JSON.stringify({ aud: '123-test.apps.googleusercontent.com', sub: 'google-sub-1', scope: `openid ${DRIVE}`, ...fields }));
 const signInRequest = () => new Request('http://localhost/api/auth/session', { method: 'POST', body: JSON.stringify({ accessToken: 'browser-token' }) });
 
-test('sign-in refuses other apps\' tokens, missing Drive access, and unknown Google accounts', async () => {
+test('sign-in refuses other apps\' tokens and missing Drive access', async () => {
   process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = '123-test.apps.googleusercontent.com';
   const route = load('app/api/auth/session/route.ts');
-  db = { user: { findUnique: async () => null }, session: { create: async () => { throw new Error('must not create a session'); } } };
+  db = { user: { upsert: async () => { throw new Error('must not create a user'); } }, session: { create: async () => { throw new Error('must not create a session'); } } };
   await withGoogleTokenInfo(tokenInfo({ aud: 'other-app.apps.googleusercontent.com' }), async () => assert.equal((await route.POST(signInRequest())).status, 401));
   await withGoogleTokenInfo(() => new Response(JSON.stringify({ error: 'invalid_token' }), { status: 400 }), async () => assert.equal((await route.POST(signInRequest())).status, 401));
   await withGoogleTokenInfo(tokenInfo({ scope: 'openid email' }), async () => assert.equal((await route.POST(signInRequest())).status, 403));
-  await withGoogleTokenInfo(tokenInfo({}), async () => assert.equal((await route.POST(signInRequest())).status, 403));
   assert.equal((await route.POST(new Request('http://localhost/api/auth/session', { method: 'POST', body: '{}' }))).status, 400);
 });
 
-test('sign-in finds the user by Google account ID and starts a session without sending the token in a URL', async () => {
+test('sign-in finds or creates the user for the Google account ID and starts a session without sending the token in a URL', async () => {
   const route = load('app/api/auth/session/route.ts');
   let lookedUp;
   let session;
   db = {
-    user: { findUnique: async ({ where }) => { lookedUp = where; return { id: 'owner-1' }; } },
+    user: { upsert: async (args) => { lookedUp = args; return { id: 'owner-1' }; } },
     session: { create: async ({ data }) => { session = data; } },
   };
   await withGoogleTokenInfo(tokenInfo({}), async (calls) => {
@@ -270,7 +290,10 @@ test('sign-in finds the user by Google account ID and starts a session without s
     assert.equal(response.status, 204);
     assert.equal(calls[0].url, 'https://oauth2.googleapis.com/tokeninfo');
     assert.equal(calls[0].body, 'access_token=browser-token');
-    assert.deepEqual(lookedUp, { authSubject: 'google-sub-1' });
+    assert.deepEqual(lookedUp.where, { authSubject: 'google-sub-1' });
+    // A first-time Google account gets its own empty client; an existing one is left unchanged.
+    assert.deepEqual(lookedUp.create, { authSubject: 'google-sub-1', role: 'CLIENT' });
+    assert.deepEqual(lookedUp.update, {});
     assert.equal(session.userId, 'owner-1');
     const cookie = response.headers.get('set-cookie');
     assert.match(cookie, /workout_session=[^;]+; .*HttpOnly/i);
