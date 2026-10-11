@@ -3,12 +3,12 @@
 import React, { useRef, useState } from 'react';
 import { PlayCircle, UploadCloud, Video } from 'lucide-react';
 import { ExerciseLog, Workout, WorkoutVideo } from '../types';
-import { uploadWorkoutVideo } from '../utils/driveStorage';
+import { getDriveAccessToken, uploadWorkoutVideo } from '../utils/driveStorage';
 
 interface WorkoutVideoRecorderProps {
   workout: Workout;
   exercise: ExerciseLog;
-  accessToken: string | null;
+  isDriveConnected: boolean;
   videos: WorkoutVideo[];
   onVideoUploaded: (video: WorkoutVideo) => void;
 }
@@ -16,7 +16,7 @@ interface WorkoutVideoRecorderProps {
 export const WorkoutVideoRecorder: React.FC<WorkoutVideoRecorderProps> = ({
   workout,
   exercise,
-  accessToken,
+  isDriveConnected,
   videos,
   onVideoUploaded,
 }) => {
@@ -25,7 +25,7 @@ export const WorkoutVideoRecorder: React.FC<WorkoutVideoRecorderProps> = ({
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const openVideoPicker = () => {
-    if (!accessToken) {
+    if (!isDriveConnected) {
       setStatus('Connect Google Drive before uploading a video.');
       return;
     }
@@ -36,13 +36,14 @@ export const WorkoutVideoRecorder: React.FC<WorkoutVideoRecorderProps> = ({
   const handleVideoSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = '';
-    if (!file || !accessToken) return;
+    if (!file) return;
 
     try {
       setIsUploading(true);
       setStatus('Reading video details...');
       const durationSeconds = await getVideoDurationSeconds(file);
       setStatus('Uploading to Drive...');
+      const accessToken = await getDriveAccessToken();
       const video = await uploadWorkoutVideo({ accessToken, workout, exercise, file, durationSeconds });
       onVideoUploaded(video);
       setStatus('Saved to Drive.');

@@ -18,7 +18,7 @@ interface ActiveWorkoutProps {
   onUpdateWorkout: (updated: Workout) => void;
   onFinishWorkout: (completedWorkout: Workout) => void;
   onDiscardWorkout: () => void;
-  driveAccessToken: string | null;
+  isDriveConnected: boolean;
   onTrack?: AnalyticsTrack;
 }
 
@@ -28,7 +28,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   onUpdateWorkout,
   onFinishWorkout,
   onDiscardWorkout,
-  driveAccessToken,
+  isDriveConnected,
   onTrack
 }) => {
   const [isTimerRunning, setIsTimerRunning] = useState<boolean>(true);
@@ -438,7 +438,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
             <WorkoutVideoRecorder
               workout={workout}
               exercise={exercise}
-              accessToken={driveAccessToken}
+              isDriveConnected={isDriveConnected}
               videos={exercise.videos || []}
               onVideoUploaded={(video) => handleExerciseVideoUploaded(exercise.id, video)}
             />

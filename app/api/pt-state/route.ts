@@ -5,7 +5,7 @@ import { prisma } from '@/src/server/db';
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
-  const configuredPassword = process.env.PT_VIEW_PASSWORD || process.env.NEXT_PUBLIC_PT_VIEW_PASSWORD;
+  const configuredPassword = process.env.PT_VIEW_PASSWORD;
 
   if (!configuredPassword) {
     return NextResponse.json({ error: 'PT_VIEW_PASSWORD is not configured.' }, { status: 500 });
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const password = process.env.PT_VIEW_PASSWORD || process.env.NEXT_PUBLIC_PT_VIEW_PASSWORD;
+  const password = process.env.PT_VIEW_PASSWORD;
   const body = await request.json().catch(() => null);
   if (!password || body?.password !== password) return NextResponse.json({ error: 'Incorrect password.' }, { status: 401 });
   if (typeof body.workoutId !== 'string' || typeof body.text !== 'string' || (body.exerciseId != null && typeof body.exerciseId !== 'string')) {

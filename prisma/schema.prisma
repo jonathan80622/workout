@@ -66,8 +66,25 @@ model User {
   bodyWeights       BodyWeightEntry[]  @relation("BodyWeightOwner")
   chatConversations ChatConversation[] @relation("ChatConversationOwner")
   importBatches     ImportBatch[]      @relation("ImportBatchOwner")
+  accounts          Account[]
 
   @@map("users")
+}
+
+// A person who signs in with Google. Kept separate from User, which is the data owner:
+// an account sees data only once it is linked to an owner (scripts/link-owner-account.mjs).
+model Account {
+  id                    String   @id @default(uuid()) @db.Uuid
+  googleSub             String   @unique @map("google_sub")
+  email                 String?
+  encryptedRefreshToken String?  @map("encrypted_refresh_token")
+  ownerUserId           String?  @map("owner_user_id") @db.Uuid
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  owner                 User?    @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
+
+  @@index([ownerUserId])
+  @@map("accounts")
 }
 
 model Profile {

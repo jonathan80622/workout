@@ -3,13 +3,17 @@ import { prisma } from '@/src/server/db';
 import { createDefaultAppState, normalizeAppState } from '@/src/utils/driveStorage';
 import { TrainingPlan, Workout, WorkoutAppState } from '@/src/types';
 
-export const OWNER_AUTH_SUBJECT = process.env.WORKOUT_OWNER_AUTH_SUBJECT || 'legacy-import:workout-data';
+// The imported client's data row. Only the PT portal still addresses it directly; the app
+// itself reaches it through the signed-in account's owner link.
+export const OWNER_AUTH_SUBJECT = 'legacy-import:workout-data';
 
 export class StateConflictError extends Error {}
 
-export async function readWorkoutAppState(): Promise<WorkoutAppState> {
+export async function readWorkoutAppState(
+  owner: Prisma.UserWhereUniqueInput = { authSubject: OWNER_AUTH_SUBJECT }
+): Promise<WorkoutAppState> {
   const user = await prisma.user.findUnique({
-    where: { authSubject: OWNER_AUTH_SUBJECT },
+    where: owner,
     include: {
       profile: true,
       workouts: {
@@ -137,7 +141,7 @@ export async function readWorkoutAppState(): Promise<WorkoutAppState> {
   }), revision: user.stateRevision };
 }
 
-export async function writeWorkoutAppState(input: unknown): Promise<WorkoutAppState> {
+export async function writeWorkoutAppState(input: unknown, ownerId: string): Promise<WorkoutAppState> {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new TypeError('Invalid workout state.');
   const raw = input as WorkoutAppState;
   if (!raw.profile || !Array.isArray(raw.workouts) || !raw.trainingPlan || !Array.isArray(raw.trainingPlan.blocks)
@@ -154,10 +158,9 @@ export async function writeWorkoutAppState(input: unknown): Promise<WorkoutAppSt
   if (!Number.isInteger(revision)) throw new StateConflictError('Reload before saving.');
 
   await prisma.$transaction(async (db) => {
-    const user = await db.user.upsert({
-      where: { authSubject: OWNER_AUTH_SUBJECT },
-      create: { authSubject: OWNER_AUTH_SUBJECT, role: 'CLIENT', displayName: state.profile.clientName || null },
-      update: { displayName: state.profile.clientName || null },
+    const user = await db.user.update({
+      where: { id: ownerId },
+      data: { displayName: state.profile.clientName || null },
     });
 
     const updated = await db.user.updateMany({

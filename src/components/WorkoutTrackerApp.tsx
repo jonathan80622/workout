@@ -15,17 +15,15 @@ import { ProfileModal } from './ProfileModal';
 import { ScheduleCalendarModal } from './ScheduleCalendarModal';
 import { NextSessionBanner } from './NextSessionBanner';
 import {
+  checkDriveConnection,
   combineWorkouts,
-  connectGoogleDrive,
   createDefaultAppState,
-  disconnectGoogleDrive,
   DriveConnection,
-  getDriveConnection,
   saveLocalState,
   splitWorkouts,
 } from '@/src/utils/driveStorage';
 import { isE2EMode, loadE2ESeed, saveE2EState } from '@/src/utils/e2eBridge';
-import { loadStateFromPostgres, saveStateToPostgres } from '@/src/utils/postgresState';
+import { AppStateError, loadStateFromPostgres, saveStateToPostgres } from '@/src/utils/postgresState';
 import { calculateCompletedSets, calculateTotalDistance, calculateWorkoutVolume } from '@/src/utils/formatters';
 
 interface WorkoutTrackerAppProps {
@@ -63,11 +61,8 @@ function WorkoutTrackerAppContent({
   const [trainingPlan, setTrainingPlan] = useState<TrainingPlan>(initialTrainingPlan || createDefaultAppState().trainingPlan);
   const [warmupCheckins, setWarmupCheckins] = useState<WarmupCheckins>(initialWarmupCheckins || {});
   const [scheduledSession, setScheduledSession] = useState<ScheduledSession | null>(initialScheduledSession);
-  const [driveConnection, setDriveConnection] = useState<DriveConnection>({
-    isConfigured: false,
-    isConnected: false,
-    accessToken: null,
-  });
+  const [driveConnection, setDriveConnection] = useState<DriveConnection>('checking');
+  const [authState, setAuthState] = useState<'checking' | 'signed-out' | 'unlinked' | 'ready'>('checking');
   const [syncStatus, setSyncStatus] = useState<string>('Loading workouts...');
   const [portalUrl, setPortalUrl] = useState<string>('');
   // In e2e mode, state is mirrored to the test oracle only after the seed loads,
@@ -99,6 +94,7 @@ function WorkoutTrackerAppContent({
       loadE2ESeed()
         .then((state) => {
           applyLoadedState(state);
+          setAuthState('ready');
           setIsE2ESeeded(true);
           setSyncStatus('Loaded e2e seed.');
         })
@@ -106,12 +102,13 @@ function WorkoutTrackerAppContent({
       return;
     }
 
-    const connection = getDriveConnection();
-    setDriveConnection(connection);
     setPortalUrl(`${window.location.origin}/pt`);
+    const authError = new URLSearchParams(window.location.search).get('auth_error');
 
     loadStateFromPostgres()
       .then((state) => {
+        setAuthState('ready');
+        checkDriveConnection().then(setDriveConnection);
         applyLoadedState(state);
         revision.current = state.revision || 0;
         const { revision: _revision, ...loaded } = state;
@@ -120,6 +117,11 @@ function WorkoutTrackerAppContent({
         setSyncStatus('Loaded from Postgres.');
       })
       .catch((error) => {
+        if (error instanceof AppStateError && (error.status === 401 || error.status === 403)) {
+          setAuthState(error.status === 401 ? 'signed-out' : 'unlinked');
+          setSyncStatus(authError ? 'Google sign-in did not finish. Try again.' : '');
+          return;
+        }
         setSyncStatus(error instanceof Error ? `${error.message} Reload to retry.` : 'Workouts could not be loaded. Reload to retry.');
       });
   }, []);
@@ -314,23 +316,14 @@ function WorkoutTrackerAppContent({
     setScheduledSession(null);
   };
 
-  const handleConnectDrive = async () => {
-    try {
-      setSyncStatus('Opening Google authorization...');
-      const connection = await connectGoogleDrive();
-      setDriveConnection(connection);
-      setSyncStatus('Drive connected for video uploads.');
-      track('drive_connected', {});
-    } catch (error) {
-      setSyncStatus(error instanceof Error ? error.message : 'Unable to connect Google Drive.');
-    }
+  // Drive access is granted with sign-in; reconnecting re-runs it with consent to obtain a fresh grant.
+  const handleConnectDrive = () => {
+    window.location.href = '/api/auth/google?consent=1';
   };
 
-  const handleDisconnectDrive = () => {
-    disconnectGoogleDrive();
-    setDriveConnection(getDriveConnection());
-    setSyncStatus('Drive disconnected. Workout saving remains available.');
-    track('drive_disconnected', {});
+  const handleSignOut = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => undefined);
+    window.location.reload();
   };
 
   const handleUpdateWorkoutTitle = (workoutId: string, newTitle: string) => {
@@ -370,7 +363,7 @@ function WorkoutTrackerAppContent({
     ));
   };
 
-  const isDriveConnected = driveConnection.isConnected && Boolean(driveConnection.accessToken);
+  const isDriveConnected = driveConnection === 'connected';
 
   return (
     <div
@@ -388,7 +381,7 @@ function WorkoutTrackerAppContent({
           onOpenProfileModal={() => setIsProfileModalOpen(true)}
         />
 
-        {!isDriveConnected && (
+        {authState === 'ready' && driveConnection === 'disconnected' && (
           <div className="border-b border-[#545454] bg-[#1a1a1a] px-4 py-2 text-center">
             <p className="font-syne text-[10px] font-bold uppercase tracking-wider text-[#c7c7c7]">
               Connect Drive to upload videos
@@ -398,6 +391,34 @@ function WorkoutTrackerAppContent({
 
         <main className="flex-1 px-4 pt-3 pb-24 overflow-y-auto space-y-4">
           <p role="status" className="text-xs text-[#a39588]">{syncStatus}</p>
+          {(authState === 'signed-out' || authState === 'unlinked') && (
+            <div className="bg-[#181412] border border-[#382f29] rounded-3xl p-6 text-center space-y-4 shadow-xl">
+              <h3 className="text-lg font-serif font-bold text-[#f7f3ee]">
+                {authState === 'signed-out' ? 'Sign in to continue' : 'Account not linked'}
+              </h3>
+              <p className="text-xs text-[#a39588] font-light max-w-xs mx-auto">
+                {authState === 'signed-out'
+                  ? 'Sign in with Google to load your workouts and enable video uploads.'
+                  : 'This Google account is signed in but not linked to workout data yet.'}
+              </p>
+              {authState === 'signed-out' ? (
+                <a
+                  href="/api/auth/google"
+                  className="block w-full py-3.5 bg-gradient-to-r from-[#d97724] via-[#c86d51] to-[#e6a15c] text-[#0c0a09] font-syne font-bold text-xs rounded-2xl shadow-lg shadow-[#d97724]/20"
+                >
+                  Sign in with Google
+                </a>
+              ) : (
+                <button
+                  onClick={handleSignOut}
+                  className="w-full py-3 bg-[#211b18] border border-[#382f29] text-[#c86d51] font-syne font-bold text-xs rounded-2xl"
+                >
+                  Sign out
+                </button>
+              )}
+            </div>
+          )}
+          {(authState === 'checking' || authState === 'ready') && (
           <fieldset disabled={!isPersistenceReady && !isE2ESeeded} className="contents">
           {/* Tab 1: Workout */}
           {activeTab === 'workout' && (
@@ -416,7 +437,7 @@ function WorkoutTrackerAppContent({
                   onUpdateWorkout={handleUpdateActiveWorkout}
                   onFinishWorkout={handleFinishWorkout}
                   onDiscardWorkout={handleDiscardActiveWorkout}
-                  driveAccessToken={driveConnection.accessToken}
+                  isDriveConnected={isDriveConnected}
                   onTrack={track}
                 />
               ) : (
@@ -472,6 +493,7 @@ function WorkoutTrackerAppContent({
           )}
 
           </fieldset>
+          )}
         </main>
 
         <IOSTabBar
@@ -487,7 +509,7 @@ function WorkoutTrackerAppContent({
           onSaveProfile={handleSaveProfile}
           driveConnection={driveConnection}
           onConnectDrive={handleConnectDrive}
-          onDisconnectDrive={handleDisconnectDrive}
+          onSignOut={handleSignOut}
           syncStatus={syncStatus}
           portalUrl={portalUrl}
         />

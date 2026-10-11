@@ -3,50 +3,14 @@ import { ExerciseLog, SetType, WeightUnit, Workout, WorkoutAppState, WorkoutSet,
 import { ScheduledSession } from './calendar';
 import { UserProfile } from './storage';
 
-const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3';
 const ROOT_FOLDER_NAME = 'Workout Recorder';
 const VIDEO_FOLDER_NAME = 'videos';
 const LOCAL_STORAGE_KEY = 'workout-recorder-drive-state';
-const TOKEN_STORAGE_KEY = 'workout-recorder-google-token';
 const CHUNK_SIZE = 8 * 1024 * 1024;
 
-type TokenResponse = {
-  access_token: string;
-  expires_in?: number;
-  scope?: string;
-  token_type?: string;
-  error?: string;
-};
-
-type GoogleTokenClient = {
-  callback: (response: TokenResponse) => void;
-  requestAccessToken: (options?: { prompt?: string }) => void;
-};
-
-declare global {
-  interface Window {
-    google?: {
-      accounts?: {
-        oauth2?: {
-          initTokenClient: (config: {
-            client_id: string;
-            scope: string;
-            callback: (response: TokenResponse) => void;
-          }) => GoogleTokenClient;
-          revoke: (token: string, done: () => void) => void;
-        };
-      };
-    };
-  }
-}
-
-export type DriveConnection = {
-  isConfigured: boolean;
-  isConnected: boolean;
-  accessToken: string | null;
-};
+export type DriveConnection = 'checking' | 'connected' | 'disconnected';
 
 export function createDefaultAppState(): WorkoutAppState {
   return {
@@ -93,59 +57,34 @@ export function saveLocalState(state: WorkoutAppState) {
   window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(normalizeAppState(state)));
 }
 
-export function getDriveConnection(): DriveConnection {
-  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-  const stored = readStoredToken();
+export class DriveNotConnectedError extends Error {}
 
-  return {
-    isConfigured: isGoogleOAuthClientId(clientId),
-    isConnected: Boolean(stored),
-    accessToken: stored,
-  };
+let cachedToken: { accessToken: string; expiresAt: number } | null = null;
+
+// Drive access tokens are minted server-side from the signed-in account's stored Google grant.
+export async function getDriveAccessToken(): Promise<string> {
+  if (cachedToken && Date.now() < cachedToken.expiresAt) return cachedToken.accessToken;
+
+  const response = await fetch('/api/drive/token', { cache: 'no-store' });
+  const data = await response.json().catch(() => null);
+  if (response.status === 401 || response.status === 409) {
+    cachedToken = null;
+    throw new DriveNotConnectedError(data?.error || 'Drive is not connected.');
+  }
+  if (!response.ok || typeof data?.accessToken !== 'string') throw new Error(data?.error || 'Could not reach Google Drive.');
+
+  // Expire a minute early so an upload never starts with a token about to lapse.
+  cachedToken = { accessToken: data.accessToken, expiresAt: Date.now() + (data.expiresIn - 60) * 1000 };
+  return cachedToken.accessToken;
 }
 
-// Google access tokens are short-lived; treat an expired one as disconnected rather than failing on the next Drive call.
-function readStoredToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  const raw = window.sessionStorage.getItem(TOKEN_STORAGE_KEY);
-  if (!raw) return null;
-
+export async function checkDriveConnection(): Promise<DriveConnection> {
   try {
-    const { token, expiresAt } = JSON.parse(raw) as { token?: string; expiresAt?: number };
-    if (token && typeof expiresAt === 'number' && Date.now() < expiresAt) return token;
+    await getDriveAccessToken();
+    return 'connected';
   } catch {
-    // Pre-expiry format (bare token string): drop it and reauthorize.
+    return 'disconnected';
   }
-  window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
-  return null;
-}
-
-export async function connectGoogleDrive(): Promise<DriveConnection> {
-  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-  if (!isGoogleOAuthClientId(clientId)) {
-    throw new Error('Missing or invalid NEXT_PUBLIC_GOOGLE_CLIENT_ID.');
-  }
-
-  await loadGoogleIdentityScript();
-  const { access_token: token, expires_in: expiresIn = 3600 } = await requestAccessToken(clientId);
-  // Expire a minute early so an in-flight upload doesn't start with a token about to lapse.
-  const expiresAt = Date.now() + (expiresIn - 60) * 1000;
-  window.sessionStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify({ token, expiresAt }));
-  return getDriveConnection();
-}
-
-export function isGoogleOAuthClientId(value: unknown): value is string {
-  return typeof value === 'string' &&
-    value !== '[SENSITIVE]' &&
-    /^[0-9a-z-]+\.apps\.googleusercontent\.com$/i.test(value);
-}
-
-export function disconnectGoogleDrive() {
-  const token = readStoredToken();
-  if (token && window.google?.accounts?.oauth2?.revoke) {
-    window.google.accounts.oauth2.revoke(token, () => undefined);
-  }
-  window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
 }
 
 export async function uploadWorkoutVideo(params: {
@@ -518,51 +457,6 @@ async function ensureAnyoneWithLinkReader(accessToken: string, fileId: string): 
 
 function authHeaders(accessToken: string) {
   return { Authorization: `Bearer ${accessToken}` };
-}
-
-async function loadGoogleIdentityScript() {
-  if (window.google?.accounts?.oauth2) return;
-
-  await new Promise<void>((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>('script[src="https://accounts.google.com/gsi/client"]');
-    if (existing) {
-      existing.addEventListener('load', () => resolve(), { once: true });
-      existing.addEventListener('error', () => reject(new Error('Google Identity Services failed to load.')), { once: true });
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Google Identity Services failed to load.'));
-    document.head.appendChild(script);
-  });
-}
-
-async function requestAccessToken(clientId: string): Promise<TokenResponse> {
-  return new Promise((resolve, reject) => {
-    const tokenClient = window.google?.accounts?.oauth2?.initTokenClient({
-      client_id: clientId,
-      scope: DRIVE_SCOPE,
-      callback: (response) => {
-        if (response.error || !response.access_token) {
-          reject(new Error(response.error || 'Google authorization failed.'));
-          return;
-        }
-        resolve(response);
-      },
-    });
-
-    if (!tokenClient) {
-      reject(new Error('Google Identity Services is unavailable.'));
-      return;
-    }
-
-    // Empty prompt: Google shows consent only on first grant, then reuses the existing authorization.
-    tokenClient.requestAccessToken({ prompt: '' });
-  });
 }
 
 async function driveError(response: Response, fallback: string) {

@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "next dev -p 3000 -H 0.0.0.0",
-    "build": "next build",
+    "build": "node scripts/check-auth-env.mjs && next build",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:migrate:dev": "prisma migrate dev",
@@ -13,6 +13,7 @@
     "db:verify": "node scripts/verify-database.mjs",
     "db:import:workout-json": "node scripts/import-workout-json.mjs",
     "db:import:workout-json:apply": "node scripts/import-workout-json.mjs --apply",
+    "db:link-owner-account": "node scripts/link-owner-account.mjs",
     "start": "next start -p 3000 -H 0.0.0.0",
     "lint": "next lint"
   },
