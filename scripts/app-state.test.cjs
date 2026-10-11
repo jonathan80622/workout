@@ -28,10 +28,14 @@ function load(file) {
 const { normalizeAppState, createDefaultAppState, readLocalState } = load('src/utils/driveStorage.ts');
 const { getHistoricalExercises } = load('src/utils/exerciseHistory.ts');
 const { writeWorkoutAppState, readWorkoutAppState, StateConflictError, OWNER_AUTH_SUBJECT } = load('src/server/appStateStore.ts');
-process.env.AUTH_SECRET = 'test-only-auth-secret-at-least-32-characters';
-const { signSession, encryptSecret, decryptSecret } = load('src/server/auth.ts');
+const { createHash } = require('node:crypto');
+const { createSession } = load('src/server/auth.ts');
 const linkedAccount = { id: 'account-1', ownerUserId: 'owner-1' };
-const withSession = (accountId) => ({ cookie: `workout_session=${signSession(accountId)}` });
+// Session tokens are opaque; the fake store maps a token's hash to its account like the real table.
+const sessionRows = (...rows) => ({ findUnique: async ({ where }) => rows.find((row) => row.tokenHash === where.tokenHash) || null });
+const sessionFor = (accountId, token = `token-${accountId}`, expiresAt = new Date(Date.now() + 60_000)) =>
+  ({ token, tokenHash: createHash('sha256').update(token).digest('base64url'), accountId, expiresAt });
+const withSession = (session) => ({ cookie: `workout_session=${session.token}` });
 const accounts = (...rows) => ({ findUnique: async ({ where }) => rows.find((row) => row.id === where.id) || null });
 const seed = JSON.parse(fs.readFileSync(path.join(root, 'e2e/jev-use/seed.json'), 'utf8'));
 const importedSnapshot = JSON.parse(fs.readFileSync(path.join(root, 'data/imports/workout-data.json'), 'utf8'));
@@ -168,9 +172,10 @@ test('PT comment writes only the selected exercise and increments the owner revi
 });
 
 test('body weight reads convert Prisma decimals into UI values', async () => {
-  db = { account: accounts(linkedAccount), bodyWeightEntry: { findMany: async ({ where }) => where.ownerId !== 'owner-1' ? [] : [{ legacyId: 'weight-1', date: new Date('2026-10-11'), weightKg: { toNumber: () => 80 }, sourceValue: { toNumber: () => 80 }, sourceUnit: 'kg' }] } };
+  const session = sessionFor('account-1');
+  db = { session: sessionRows(session), account: accounts(linkedAccount), bodyWeightEntry: { findMany: async ({ where }) => where.ownerId !== 'owner-1' ? [] : [{ legacyId: 'weight-1', date: new Date('2026-10-11'), weightKg: { toNumber: () => 80 }, sourceValue: { toNumber: () => 80 }, sourceUnit: 'kg' }] } };
   const route = load('app/api/body-weights/route.ts');
-  const response = await route.GET(new Request('http://localhost/api/body-weights', { headers: withSession('account-1') }));
+  const response = await route.GET(new Request('http://localhost/api/body-weights', { headers: withSession(session) }));
   assert.equal(response.status, 200);
   assert.deepEqual((await response.json()).entries[0], { schemaVersion: 1, id: 'weight-1', date: '2026-10-11', weightKg: 80, sourceValue: 80, sourceUnit: 'kg' });
 });
@@ -185,31 +190,43 @@ test('invalid body weights are rejected before database writes', async () => {
 test('workout and weight routes require a signed-in account linked to an owner', async () => {
   const appState = load('app/api/app-state/route.ts');
   const weights = load('app/api/body-weights/route.ts');
-  db = { account: accounts(linkedAccount, { id: 'account-2', ownerUserId: null }) };
+  const linked = sessionFor('account-1');
+  const unlinked = sessionFor('account-2');
+  const orphan = sessionFor('missing-account');
+  db = { session: sessionRows(linked, unlinked, orphan), account: accounts(linkedAccount, { id: 'account-2', ownerUserId: null }) };
   const get = (headers) => new Request('http://localhost/api/app-state', { headers });
   assert.equal((await appState.GET(get({}))).status, 401);
-  assert.equal((await appState.GET(get(withSession('account-2')))).status, 403);
-  assert.equal((await appState.GET(get(withSession('missing-account')))).status, 401);
+  assert.equal((await appState.GET(get({ cookie: 'workout_session=made-up-token' }))).status, 401);
+  assert.equal((await appState.GET(get(withSession(unlinked)))).status, 403);
+  assert.equal((await appState.GET(get(withSession(orphan)))).status, 401);
   assert.equal((await appState.PUT(new Request('http://localhost/api/app-state', { method: 'PUT', body: '{}' }))).status, 401);
   assert.equal((await weights.GET(new Request('http://localhost/api/body-weights'))).status, 401);
   assert.equal((await weights.DELETE(new Request('http://localhost/api/body-weights', { method: 'DELETE', body: JSON.stringify({ id: 'weight-1' }) }))).status, 401);
 });
 
-test('a tampered or expired session is rejected', async () => {
+test('an expired session is rejected', async () => {
   const route = load('app/api/app-state/route.ts');
-  db = { account: accounts(linkedAccount, { id: 'account-9', ownerUserId: 'owner-9' }) };
-  const [, expires, signature] = signSession('account-1').split('.');
-  const forged = `workout_session=account-9.${expires}.${signature}`;
-  assert.equal((await route.GET(new Request('http://localhost/api/app-state', { headers: { cookie: forged } }))).status, 401);
-  const expired = `workout_session=${signSession('account-1', Date.now() - 91 * 24 * 60 * 60 * 1000)}`;
-  assert.equal((await route.GET(new Request('http://localhost/api/app-state', { headers: { cookie: expired } }))).status, 401);
+  const expired = sessionFor('account-1', 'old-token', new Date(Date.now() - 1000));
+  db = { session: sessionRows(expired), account: accounts(linkedAccount) };
+  assert.equal((await route.GET(new Request('http://localhost/api/app-state', { headers: withSession(expired) }))).status, 401);
+});
+
+test('sessions store only a hash of the cookie token', async () => {
+  let stored;
+  db = { session: { create: async ({ data }) => { stored = data; } } };
+  const token = await createSession('account-1');
+  assert.equal(stored.accountId, 'account-1');
+  assert.notEqual(stored.tokenHash, token);
+  assert.equal(stored.tokenHash, createHash('sha256').update(token).digest('base64url'));
+  assert.ok(stored.expiresAt.getTime() > Date.now());
 });
 
 test('the app reads the linked owner by id', async () => {
   const route = load('app/api/app-state/route.ts');
+  const session = sessionFor('account-1');
   let lookedUp;
-  db = { account: accounts(linkedAccount), user: { findUnique: async ({ where }) => { lookedUp = where; return null; } } };
-  assert.equal((await route.GET(new Request('http://localhost/api/app-state', { headers: withSession('account-1') }))).status, 200);
+  db = { session: sessionRows(session), account: accounts(linkedAccount), user: { findUnique: async ({ where }) => { lookedUp = where; return null; } } };
+  assert.equal((await route.GET(new Request('http://localhost/api/app-state', { headers: withSession(session) }))).status, 200);
   assert.deepEqual(lookedUp, { id: 'owner-1' });
 });
 
@@ -223,61 +240,56 @@ test('the PT portal still reads the imported owner and needs no Google session',
   assert.equal(OWNER_AUTH_SUBJECT, 'legacy-import:workout-data');
 });
 
-test('refresh tokens are encrypted and tamper-evident', () => {
-  const stored = encryptSecret('refresh-token-value');
-  assert.doesNotMatch(stored, /refresh-token-value/);
-  assert.equal(decryptSecret(stored), 'refresh-token-value');
-  const [iv, tag, data] = stored.split('.');
-  assert.throws(() => decryptSecret([iv, tag, data.slice(0, -2) + (data.endsWith('A') ? 'B' : 'A')].join('.')));
-});
+async function withGoogleTokenInfo(reply, fn) {
+  const originalFetch = global.fetch;
+  const calls = [];
+  global.fetch = async (url, init) => { calls.push({ url: String(url), body: String(init?.body) }); return reply(); };
+  try { return await fn(calls); } finally { global.fetch = originalFetch; }
+}
 
-test('sign-in sends the user to Google with PKCE, offline access and the Drive scope', async () => {
+test('sign-in accepts only Google tokens issued to this client ID', async () => {
   process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = '123-test.apps.googleusercontent.com';
-  process.env.GOOGLE_CLIENT_SECRET = 'test-only-client-secret';
-  db = { account: accounts() };
-  const route = load('app/api/auth/google/route.ts');
-  const response = await route.GET(new Request('https://workout.example/api/auth/google'));
-  const location = new URL(response.headers.get('location'));
-  assert.equal(location.origin, 'https://accounts.google.com');
-  assert.equal(location.searchParams.get('redirect_uri'), 'https://workout.example/api/auth/google/callback');
-  assert.equal(location.searchParams.get('access_type'), 'offline');
-  assert.equal(location.searchParams.get('code_challenge_method'), 'S256');
-  assert.match(location.searchParams.get('scope'), /drive\.file/);
-  assert.equal(location.searchParams.has('prompt'), false);
-  assert.match(response.headers.get('set-cookie'), /workout_oauth=.*HttpOnly/i);
+  const route = load('app/api/auth/session/route.ts');
+  const signIn = () => route.POST(new Request('http://localhost/api/auth/session', { method: 'POST', body: JSON.stringify({ accessToken: 'browser-token' }) }));
+  db = { account: { upsert: async () => { throw new Error('must not create an account'); } } };
+  await withGoogleTokenInfo(() => new Response(JSON.stringify({ aud: 'other-app.apps.googleusercontent.com', sub: 'google-sub-1' })), async () => {
+    assert.equal((await signIn()).status, 401);
+  });
+  await withGoogleTokenInfo(() => new Response(JSON.stringify({ error: 'invalid_token' }), { status: 400 }), async () => {
+    assert.equal((await signIn()).status, 401);
+  });
+  assert.equal((await route.POST(new Request('http://localhost/api/auth/session', { method: 'POST', body: '{}' }))).status, 400);
 });
 
-test('sign-in callback rejects a mismatched state without calling Google', async () => {
-  const route = load('app/api/auth/google/callback/route.ts');
-  const originalFetch = global.fetch;
-  global.fetch = async () => { throw new Error('Google must not be called'); };
-  try {
-    const response = await route.GET(new Request('https://workout.example/api/auth/google/callback?code=c&state=attacker', { headers: { cookie: 'workout_oauth=expected.verifier.0' } }));
-    assert.equal(new URL(response.headers.get('location')).searchParams.get('auth_error'), 'state');
-  } finally {
-    global.fetch = originalFetch;
-  }
-});
-
-test('sign-in callback stores the encrypted refresh token and starts a session', async () => {
-  const route = load('app/api/auth/google/callback/route.ts');
-  const idToken = ['header', Buffer.from(JSON.stringify({ iss: 'https://accounts.google.com', aud: '123-test.apps.googleusercontent.com', sub: 'google-sub-1', email: 'me@example.com', exp: Math.floor(Date.now() / 1000) + 300 })).toString('base64url'), 'sig'].join('.');
-  let tokenRequest;
-  let saved;
-  const originalFetch = global.fetch;
-  global.fetch = async (url, init) => {
-    tokenRequest = Object.fromEntries(new URLSearchParams(init.body));
-    return new Response(JSON.stringify({ id_token: idToken, refresh_token: 'refresh-1', scope: 'openid https://www.googleapis.com/auth/drive.file' }));
+test('sign-in creates the account and a session cookie without sending the token in a URL', async () => {
+  const route = load('app/api/auth/session/route.ts');
+  let account;
+  let session;
+  db = {
+    account: { upsert: async (args) => { account = args; return { id: 'account-1', ownerUserId: null }; } },
+    session: { create: async ({ data }) => { session = data; } },
   };
-  db = { account: { upsert: async (args) => { saved = args; return { id: 'account-1', encryptedRefreshToken: args.create.encryptedRefreshToken }; } } };
-  try {
-    const response = await route.GET(new Request('https://workout.example/api/auth/google/callback?code=c&state=s1', { headers: { cookie: 'workout_oauth=s1.verifier-1.0' } }));
-    assert.equal(new URL(response.headers.get('location')).pathname, '/');
-    assert.equal(tokenRequest.code_verifier, 'verifier-1');
-    assert.equal(saved.where.googleSub, 'google-sub-1');
-    assert.equal(decryptSecret(saved.create.encryptedRefreshToken), 'refresh-1');
-    assert.match(response.headers.get('set-cookie'), /workout_session=account-1\./);
-  } finally {
-    global.fetch = originalFetch;
-  }
+  await withGoogleTokenInfo(() => new Response(JSON.stringify({ aud: '123-test.apps.googleusercontent.com', sub: 'google-sub-1', email: 'me@example.com' })), async (calls) => {
+    const response = await route.POST(new Request('http://localhost/api/auth/session', { method: 'POST', body: JSON.stringify({ accessToken: 'browser-token' }) }));
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { linked: false });
+    assert.equal(calls[0].url, 'https://oauth2.googleapis.com/tokeninfo');
+    assert.equal(calls[0].body, 'access_token=browser-token');
+    assert.deepEqual(account.where, { googleSub: 'google-sub-1' });
+    assert.equal(session.accountId, 'account-1');
+    const cookie = response.headers.get('set-cookie');
+    assert.match(cookie, /workout_session=[^;]+; .*HttpOnly/i);
+    assert.equal(createHash('sha256').update(cookie.split(';')[0].split('=')[1]).digest('base64url'), session.tokenHash);
+  });
+});
+
+test('sign-out deletes the session row and clears the cookie', async () => {
+  const route = load('app/api/auth/logout/route.ts');
+  let deleted;
+  db = { session: { deleteMany: async ({ where }) => { deleted = where; } } };
+  const session = sessionFor('account-1');
+  const response = await route.POST(new Request('http://localhost/api/auth/logout', { method: 'POST', headers: withSession(session) }));
+  assert.equal(response.status, 204);
+  assert.deepEqual(deleted, { tokenHash: session.tokenHash });
+  assert.match(response.headers.get('set-cookie'), /workout_session=;/);
 });

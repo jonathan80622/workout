@@ -15,10 +15,13 @@ import { ProfileModal } from './ProfileModal';
 import { ScheduleCalendarModal } from './ScheduleCalendarModal';
 import { NextSessionBanner } from './NextSessionBanner';
 import {
-  checkDriveConnection,
   combineWorkouts,
   createDefaultAppState,
   DriveConnection,
+  forgetGoogleAccessToken,
+  hasDriveAccessToken,
+  requestGoogleAccessToken,
+  signInWithGoogle,
   saveLocalState,
   splitWorkouts,
 } from '@/src/utils/driveStorage';
@@ -108,7 +111,7 @@ function WorkoutTrackerAppContent({
     loadStateFromPostgres()
       .then((state) => {
         setAuthState('ready');
-        checkDriveConnection().then(setDriveConnection);
+        setDriveConnection(hasDriveAccessToken() ? 'connected' : 'disconnected');
         applyLoadedState(state);
         revision.current = state.revision || 0;
         const { revision: _revision, ...loaded } = state;
@@ -316,12 +319,30 @@ function WorkoutTrackerAppContent({
     setScheduledSession(null);
   };
 
-  // Drive access is granted with sign-in; reconnecting re-runs it with consent to obtain a fresh grant.
-  const handleConnectDrive = () => {
-    window.location.href = '/api/auth/google?consent=1';
+  const handleSignIn = async () => {
+    try {
+      setSyncStatus('Opening Google sign-in...');
+      await signInWithGoogle();
+      window.location.reload();
+    } catch (error) {
+      setSyncStatus(error instanceof Error ? error.message : 'Sign-in failed. Try again.');
+    }
+  };
+
+  const handleConnectDrive = async () => {
+    try {
+      setSyncStatus('Opening Google authorization...');
+      await requestGoogleAccessToken();
+      setDriveConnection('connected');
+      setSyncStatus('Drive connected for video uploads.');
+      track('drive_connected', {});
+    } catch (error) {
+      setSyncStatus(error instanceof Error ? error.message : 'Unable to connect Google Drive.');
+    }
   };
 
   const handleSignOut = async () => {
+    forgetGoogleAccessToken();
     await fetch('/api/auth/logout', { method: 'POST' }).catch(() => undefined);
     window.location.reload();
   };
@@ -402,12 +423,12 @@ function WorkoutTrackerAppContent({
                   : 'This Google account is signed in but not linked to workout data yet.'}
               </p>
               {authState === 'signed-out' ? (
-                <a
-                  href="/api/auth/google"
+                <button
+                  onClick={handleSignIn}
                   className="block w-full py-3.5 bg-gradient-to-r from-[#d97724] via-[#c86d51] to-[#e6a15c] text-[#0c0a09] font-syne font-bold text-xs rounded-2xl shadow-lg shadow-[#d97724]/20"
                 >
                   Sign in with Google
-                </a>
+                </button>
               ) : (
                 <button
                   onClick={handleSignOut}
@@ -437,7 +458,6 @@ function WorkoutTrackerAppContent({
                   onUpdateWorkout={handleUpdateActiveWorkout}
                   onFinishWorkout={handleFinishWorkout}
                   onDiscardWorkout={handleDiscardActiveWorkout}
-                  isDriveConnected={isDriveConnected}
                   onTrack={track}
                 />
               ) : (

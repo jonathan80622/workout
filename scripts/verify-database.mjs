@@ -18,6 +18,7 @@ const expectedTables = [
   'chat_messages',
   'import_batches',
   'accounts',
+  'sessions',
 ];
 
 const expectedConstraints = [

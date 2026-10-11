@@ -3,12 +3,11 @@
 import React, { useRef, useState } from 'react';
 import { PlayCircle, UploadCloud, Video } from 'lucide-react';
 import { ExerciseLog, Workout, WorkoutVideo } from '../types';
-import { getDriveAccessToken, uploadWorkoutVideo } from '../utils/driveStorage';
+import { getDriveAccessToken, hasDriveAccessToken, requestGoogleAccessToken, uploadWorkoutVideo } from '../utils/driveStorage';
 
 interface WorkoutVideoRecorderProps {
   workout: Workout;
   exercise: ExerciseLog;
-  isDriveConnected: boolean;
   videos: WorkoutVideo[];
   onVideoUploaded: (video: WorkoutVideo) => void;
 }
@@ -16,7 +15,6 @@ interface WorkoutVideoRecorderProps {
 export const WorkoutVideoRecorder: React.FC<WorkoutVideoRecorderProps> = ({
   workout,
   exercise,
-  isDriveConnected,
   videos,
   onVideoUploaded,
 }) => {
@@ -24,13 +22,21 @@ export const WorkoutVideoRecorder: React.FC<WorkoutVideoRecorderProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const openVideoPicker = () => {
-    if (!isDriveConnected) {
-      setStatus('Connect Google Drive before uploading a video.');
+  // Google's popup must open from this click, so an expired Drive token is renewed first
+  // and the picker opens on the next tap.
+  const openVideoPicker = async () => {
+    if (hasDriveAccessToken()) {
+      inputRef.current?.click();
       return;
     }
 
-    inputRef.current?.click();
+    try {
+      setStatus('Connecting Google Drive...');
+      await requestGoogleAccessToken();
+      setStatus('Drive connected. Tap again to choose a video.');
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Could not connect Google Drive.');
+    }
   };
 
   const handleVideoSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
