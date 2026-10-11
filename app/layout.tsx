@@ -3,7 +3,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Workout Tracker & PT Report Studio',
-  description: 'Log machine settings, reps, and muscle feel. Export high-res PT report cards.',
+  description: 'Log exercises, setup, sets, and reps. Export high-res PT report cards.',
 };
 
 export default function RootLayout({

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { Workout, MachinePreset, ActiveTab, WorkoutAppState, TrainingPlan, WarmupCheckins } from '@/src/types';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Workout, ActiveTab, WorkoutAppState, TrainingPlan, WarmupCheckins } from '@/src/types';
 import { UserProfile } from '@/src/utils/storage';
 import { ScheduledSession } from '@/src/utils/calendar';
 import { AnalyticsProvider, useAnalytics } from '@/src/analytics/AnalyticsProvider';
@@ -9,7 +9,6 @@ import { IOSHeader } from './IOSHeader';
 import { IOSTabBar } from './IOSTabBar';
 import { ActiveWorkout } from './ActiveWorkout';
 import { WorkoutHistory } from './WorkoutHistory';
-import { MachineLibrary } from './MachineLibrary';
 import { TrainingPlanView } from './TrainingPlanView';
 import WeightTrackingPage from '@/app/weight-tracking/page';
 import { ProfileModal } from './ProfileModal';
@@ -22,21 +21,17 @@ import {
   disconnectGoogleDrive,
   DriveConnection,
   getDriveConnection,
-  getDriveSyncTarget,
-  loadStateFromDrive,
-  readLocalState,
   saveLocalState,
-  saveStateToDrive,
   splitWorkouts,
 } from '@/src/utils/driveStorage';
 import { isE2EMode, loadE2ESeed, saveE2EState } from '@/src/utils/e2eBridge';
+import { loadStateFromPostgres, saveStateToPostgres } from '@/src/utils/postgresState';
 import { calculateCompletedSets, calculateTotalDistance, calculateWorkoutVolume } from '@/src/utils/formatters';
 
 interface WorkoutTrackerAppProps {
   initialProfile: UserProfile;
   initialWorkouts: Workout[];
   initialActiveWorkout: Workout | null;
-  initialMachines: MachinePreset[];
   initialScheduledSession: ScheduledSession | null;
   initialTrainingPlan?: TrainingPlan;
   initialWarmupCheckins?: WarmupCheckins;
@@ -55,7 +50,6 @@ function WorkoutTrackerAppContent({
   initialProfile,
   initialWorkouts,
   initialActiveWorkout,
-  initialMachines,
   initialScheduledSession,
   initialTrainingPlan,
   initialWarmupCheckins,
@@ -66,7 +60,6 @@ function WorkoutTrackerAppContent({
   const [profile, setProfile] = useState<UserProfile>(initialProfile);
   const [workouts, setWorkouts] = useState<Workout[]>(initialWorkouts);
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(initialActiveWorkout);
-  const [machines, setMachines] = useState<MachinePreset[]>(initialMachines);
   const [trainingPlan, setTrainingPlan] = useState<TrainingPlan>(initialTrainingPlan || createDefaultAppState().trainingPlan);
   const [warmupCheckins, setWarmupCheckins] = useState<WarmupCheckins>(initialWarmupCheckins || {});
   const [scheduledSession, setScheduledSession] = useState<ScheduledSession | null>(initialScheduledSession);
@@ -75,11 +68,16 @@ function WorkoutTrackerAppContent({
     isConnected: false,
     accessToken: null,
   });
-  const [syncStatus, setSyncStatus] = useState<string>('Local starter data loaded.');
+  const [syncStatus, setSyncStatus] = useState<string>('Loading workouts...');
   const [portalUrl, setPortalUrl] = useState<string>('');
   // In e2e mode, state is mirrored to the test oracle only after the seed loads,
   // so the default starter state never overwrites it.
   const [isE2ESeeded, setIsE2ESeeded] = useState<boolean>(false);
+  const [isPersistenceReady, setIsPersistenceReady] = useState<boolean>(false);
+  const revision = useRef(0);
+  const saveQueue = useRef(Promise.resolve());
+  const persistenceBlocked = useRef(false);
+  const lastSaved = useRef('');
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState<boolean>(false);
@@ -88,13 +86,12 @@ function WorkoutTrackerAppContent({
     () => ({
       version: 1,
       profile,
-      machines,
       workouts: combineWorkouts(workouts, activeWorkout),
       trainingPlan,
       warmupCheckins,
       scheduledSession,
     }),
-    [activeWorkout, machines, profile, scheduledSession, trainingPlan, warmupCheckins, workouts]
+    [activeWorkout, profile, scheduledSession, trainingPlan, warmupCheckins, workouts]
   );
 
   useEffect(() => {
@@ -111,21 +108,20 @@ function WorkoutTrackerAppContent({
 
     const connection = getDriveConnection();
     setDriveConnection(connection);
-    const localState = readLocalState();
-    applyLoadedState(localState);
-    setSyncStatus(connection.isConnected ? 'Drive token restored for this session.' : 'Saved locally until Drive is connected.');
+    setPortalUrl(`${window.location.origin}/pt`);
 
-    if (connection.accessToken) {
-      loadStateFromDrive(connection.accessToken)
-        .then((state) => {
-          applyLoadedState(state);
-          setSyncStatus('Loaded from Google Drive.');
-        })
-        .catch((error) => setSyncStatus(error instanceof Error ? error.message : 'Drive load failed.'));
-      getDriveSyncTarget(connection.accessToken)
-        .then((target) => setPortalUrl(target.portalUrl))
-        .catch(() => undefined);
-    }
+    loadStateFromPostgres()
+      .then((state) => {
+        applyLoadedState(state);
+        revision.current = state.revision || 0;
+        const { revision: _revision, ...loaded } = state;
+        lastSaved.current = JSON.stringify(loaded);
+        setIsPersistenceReady(true);
+        setSyncStatus('Loaded from Postgres.');
+      })
+      .catch((error) => {
+        setSyncStatus(error instanceof Error ? `${error.message} Reload to retry.` : 'Workouts could not be loaded. Reload to retry.');
+      });
   }, []);
 
   useEffect(() => {
@@ -134,27 +130,36 @@ function WorkoutTrackerAppContent({
       if (isE2ESeeded) saveE2EState(appState).catch(() => undefined);
       return;
     }
+    if (!isPersistenceReady) return;
     saveLocalState(appState);
-  }, [appState, isE2ESeeded]);
+  }, [appState, isE2ESeeded, isPersistenceReady]);
 
   useEffect(() => {
-    if (!driveConnection.accessToken) return;
+    if (!isPersistenceReady || isE2EMode()) return;
 
     const timer = window.setTimeout(() => {
-      saveStateToDrive(driveConnection.accessToken!, appState)
-        .then(() => setSyncStatus('Synced to Google Drive.'))
-        .catch((error) => setSyncStatus(error instanceof Error ? error.message : 'Drive sync failed.'));
+      saveQueue.current = saveQueue.current.then(async () => {
+        if (persistenceBlocked.current || JSON.stringify(appState) === lastSaved.current) return;
+        try {
+          const saved = await saveStateToPostgres({ ...appState, revision: revision.current });
+          revision.current = saved.revision!;
+          lastSaved.current = JSON.stringify(appState);
+          setSyncStatus('Saved.');
+        } catch (error) {
+          persistenceBlocked.current = true;
+          setSyncStatus(error instanceof Error ? error.message : 'Save failed. Reload before saving.');
+        }
+      });
     }, 900);
 
     return () => window.clearTimeout(timer);
-  }, [appState, driveConnection.accessToken]);
+  }, [appState, isPersistenceReady]);
 
   const applyLoadedState = (state: WorkoutAppState) => {
     const split = splitWorkouts(state.workouts);
     setProfile(state.profile);
     setWorkouts(split.completedWorkouts);
     setActiveWorkout(split.activeWorkout);
-    setMachines(state.machines);
     setTrainingPlan(state.trainingPlan);
     setWarmupCheckins(state.warmupCheckins);
     setScheduledSession(state.scheduledSession);
@@ -224,7 +229,7 @@ function WorkoutTrackerAppContent({
       isCompleted: false,
       exercises: workout.exercises.map((ex, idx) => ({
         id: `ex-${Date.now()}-${idx}`,
-        machineName: ex.machineName,
+        exerciseName: ex.exerciseName,
         category: ex.category,
         seatSettings: ex.seatSettings || '',
         sets: ex.sets.map((s, sIdx) => ({
@@ -309,96 +314,12 @@ function WorkoutTrackerAppContent({
     setScheduledSession(null);
   };
 
-  const handleSaveMachines = (updatedMachines: MachinePreset[]) => {
-    setMachines(updatedMachines);
-  };
-
-  const handleSelectMachineToLog = (machine: MachinePreset) => {
-    if (activeWorkout) {
-      const newExercise = {
-        id: `ex-${Date.now()}`,
-        machineName: machine.name,
-        category: machine.category,
-        seatSettings: machine.defaultSeatSettings || '',
-        sets: [
-          {
-            id: `s-${Date.now()}-1`,
-            setNumber: 1,
-            type: 'working' as const,
-            weight: 100,
-            weightUnit: 'lbs' as const,
-            reps: 10,
-            completed: false,
-          },
-        ],
-      };
-      const updated = {
-        ...activeWorkout,
-        exercises: [...activeWorkout.exercises, newExercise],
-      };
-      setActiveWorkout(updated);
-    } else {
-      const newWorkout: Workout = {
-        id: `w-${Date.now()}`,
-        title: `${machine.name} Session`,
-        date: new Date().toISOString(),
-        durationMinutes: 0,
-        unit: 'lbs',
-        clientName: profile.clientName,
-        ptName: profile.ptName,
-        ptNotes: '',
-        isCompleted: false,
-        exercises: [
-          {
-            id: `ex-${Date.now()}`,
-            machineName: machine.name,
-            category: machine.category,
-            seatSettings: machine.defaultSeatSettings || '',
-            sets: [
-              {
-                id: `s-${Date.now()}-1`,
-                setNumber: 1,
-                type: 'working' as const,
-                weight: 100,
-                weightUnit: 'lbs' as const,
-                reps: 10,
-                completed: false,
-              },
-            ],
-          },
-        ],
-      };
-      setActiveWorkout(newWorkout);
-    }
-    setActiveTab('workout');
-    track('exercise_added', {
-      source: 'machine_library',
-      category: machine.category,
-      exercise_count: activeWorkout ? activeWorkout.exercises.length + 1 : 1,
-    });
-    if (!activeWorkout) {
-      track('workout_started', {
-        source: 'machine_library',
-        exercise_count: 1,
-      });
-    }
-  };
-
-  const handleResetData = () => {
-    applyLoadedState(createDefaultAppState());
-    setSyncStatus('Starter data restored.');
-  };
-
   const handleConnectDrive = async () => {
     try {
       setSyncStatus('Opening Google authorization...');
       const connection = await connectGoogleDrive();
       setDriveConnection(connection);
-      const loaded = await loadStateFromDrive(connection.accessToken!);
-      applyLoadedState(loaded);
-      const target = await getDriveSyncTarget(connection.accessToken!);
-      setPortalUrl(target.portalUrl);
-      setSyncStatus('Connected and loaded from Google Drive.');
+      setSyncStatus('Drive connected for video uploads.');
       track('drive_connected', {});
     } catch (error) {
       setSyncStatus(error instanceof Error ? error.message : 'Unable to connect Google Drive.');
@@ -408,8 +329,7 @@ function WorkoutTrackerAppContent({
   const handleDisconnectDrive = () => {
     disconnectGoogleDrive();
     setDriveConnection(getDriveConnection());
-    setPortalUrl('');
-    setSyncStatus('Drive disconnected. Changes stay in this browser.');
+    setSyncStatus('Drive disconnected. Workout saving remains available.');
     track('drive_disconnected', {});
   };
 
@@ -471,12 +391,14 @@ function WorkoutTrackerAppContent({
         {!isDriveConnected && (
           <div className="border-b border-[#545454] bg-[#1a1a1a] px-4 py-2 text-center">
             <p className="font-syne text-[10px] font-bold uppercase tracking-wider text-[#c7c7c7]">
-              Drive disconnected · local-only mode
+              Connect Drive to upload videos
             </p>
           </div>
         )}
 
         <main className="flex-1 px-4 pt-3 pb-24 overflow-y-auto space-y-4">
+          <p role="status" className="text-xs text-[#a39588]">{syncStatus}</p>
+          <fieldset disabled={!isPersistenceReady && !isE2ESeeded} className="contents">
           {/* Tab 1: Workout */}
           {activeTab === 'workout' && (
             <div className="space-y-4">
@@ -505,7 +427,7 @@ function WorkoutTrackerAppContent({
                   <div>
                     <h3 className="text-lg font-serif font-bold text-[#f7f3ee]">No Active Session</h3>
                     <p className="text-xs text-[#a39588] font-light max-w-xs mx-auto mt-1">
-                      Start a workout from scratch, pick from machine library, or repeat a past training session.
+                      Start a workout or repeat a past training session.
                     </p>
                   </div>
                   <button
@@ -549,15 +471,7 @@ function WorkoutTrackerAppContent({
             </div>
           )}
 
-          {/* Tab 5: Machines */}
-          {activeTab === 'machines' && (
-            <MachineLibrary
-              machines={machines}
-              onUpdateMachines={handleSaveMachines}
-              onSelectMachineToLog={handleSelectMachineToLog}
-            />
-          )}
-
+          </fieldset>
         </main>
 
         <IOSTabBar
@@ -571,7 +485,6 @@ function WorkoutTrackerAppContent({
           isOpen={isProfileModalOpen}
           onClose={() => setIsProfileModalOpen(false)}
           onSaveProfile={handleSaveProfile}
-          onResetData={handleResetData}
           driveConnection={driveConnection}
           onConnectDrive={handleConnectDrive}
           onDisconnectDrive={handleDisconnectDrive}

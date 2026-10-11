@@ -2,14 +2,15 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { Plus, Play, Pause, CheckCircle2, Trash2, Compass, Clock, Settings, Feather, Calendar } from 'lucide-react';
-import { Workout, ExerciseLog, WorkoutSet, MachinePreset, MuscleGroup } from '../types';
+import { Plus, Play, Pause, CheckCircle2, Trash2, Dumbbell, Clock, Settings, Feather, Calendar } from 'lucide-react';
+import { Workout, ExerciseLog, WorkoutSet, MuscleGroup } from '../types';
 import { formatWorkoutDate } from '../utils/formatters';
 import { SetRow } from './SetRow';
 import { WorkoutVideoRecorder } from './WorkoutVideoRecorder';
 import { ExerciseLoadHistory } from './ExerciseLoadHistory';
 import { calculateWorkoutVolume, calculateCompletedSets, calculateTotalDistance, calculateTotalRunningTime, calculateAveragePace } from '../utils/formatters';
 import type { AnalyticsTrack } from '../analytics/events';
+import { getHistoricalExercises, HistoricalExerciseOption } from '../utils/exerciseHistory';
 
 interface ActiveWorkoutProps {
   workout: Workout;
@@ -32,31 +33,11 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
 }) => {
   const [isTimerRunning, setIsTimerRunning] = useState<boolean>(true);
   const [timerSeconds, setTimerSeconds] = useState<number>(workout.durationMinutes ? workout.durationMinutes * 60 : 0);
-  const [isAddMachineModalOpen, setIsAddMachineModalOpen] = useState<boolean>(false);
-  const [customMachineName, setCustomMachineName] = useState<string>('');
+  const [isAddExerciseModalOpen, setIsAddExerciseModalOpen] = useState<boolean>(false);
+  const [customExerciseName, setCustomExerciseName] = useState<string>('');
   const [customCategory, setCustomCategory] = useState<MuscleGroup>('Quads');
 
-  const historicalExercises = useMemo(() => {
-    const seen = new Map<string, MachinePreset>();
-    [...workoutHistory]
-      .filter((pastWorkout) => pastWorkout.isCompleted)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .forEach((pastWorkout) => pastWorkout.exercises.forEach((exercise) => {
-        const name = exercise.machineName.trim();
-        const key = name.toLocaleLowerCase();
-        if (name && !seen.has(key)) {
-          seen.set(key, {
-            id: `history-${exercise.id}`,
-            name,
-            category: exercise.category,
-            defaultSeatSettings: exercise.seatSettings || '',
-            equipmentType: 'Machine',
-            targetDescription: 'Previously logged exercise.',
-          });
-        }
-      }));
-    return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
-  }, [workoutHistory]);
+  const historicalExercises = useMemo(() => getHistoricalExercises(workoutHistory), [workoutHistory]);
 
   const getPriorFeedback = (exerciseName: string) => {
     const normalizedName = exerciseName.trim().toLocaleLowerCase();
@@ -65,7 +46,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       .filter((pastWorkout) => pastWorkout.isCompleted)
       .flatMap((pastWorkout) => pastWorkout.exercises
         .filter((pastExercise) =>
-          pastExercise.machineName.trim().toLocaleLowerCase() === normalizedName &&
+          pastExercise.exerciseName.trim().toLocaleLowerCase() === normalizedName &&
           Boolean(pastExercise.ptComment?.trim())
         )
         .map((pastExercise) => ({
@@ -114,12 +95,12 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     onUpdateWorkout({ ...workout, ptNotes: note });
   };
 
-  const handleAddExerciseFromPreset = (preset: MachinePreset) => {
+  const handleAddExerciseFromHistory = (historicalExercise: HistoricalExerciseOption) => {
     const newExercise: ExerciseLog = {
       id: 'ex-' + Date.now() + Math.random().toString(36).substr(2, 4),
-      machineName: preset.name,
-      category: preset.category,
-      seatSettings: preset.defaultSeatSettings || '',
+      exerciseName: historicalExercise.name,
+      category: historicalExercise.category,
+      seatSettings: historicalExercise.seatSettings,
       sets: [
         { id: 's-' + Date.now() + '-1', setNumber: 1, type: 'warmup', weight: 80, weightUnit: 'lbs', reps: 12, completed: false },
         { id: 's-' + Date.now() + '-2', setNumber: 2, type: 'working', weight: 120, weightUnit: 'lbs', reps: 10, completed: false },
@@ -133,18 +114,18 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     });
     onTrack?.('exercise_added', {
       source: 'active_workout',
-      category: preset.category,
+      category: historicalExercise.category,
       exercise_count: workout.exercises.length + 1,
     });
-    setIsAddMachineModalOpen(false);
+    setIsAddExerciseModalOpen(false);
   };
 
   const handleAddCustomExercise = () => {
-    if (!customMachineName.trim()) return;
+    if (!customExerciseName.trim()) return;
 
     const newExercise: ExerciseLog = {
       id: 'ex-' + Date.now() + Math.random().toString(36).substr(2, 4),
-      machineName: customMachineName.trim(),
+      exerciseName: customExerciseName.trim(),
       category: customCategory,
       seatSettings: '',
       sets: [
@@ -161,8 +142,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       category: customCategory,
       exercise_count: workout.exercises.length + 1,
     });
-    setCustomMachineName('');
-    setIsAddMachineModalOpen(false);
+    setCustomExerciseName('');
+    setIsAddExerciseModalOpen(false);
   };
 
   const handleRemoveExercise = (exId: string) => {
@@ -344,7 +325,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
             key={exercise.id}
             className="bg-[#181412]/90 border border-[#382f29] rounded-3xl p-4 shadow-xl space-y-4"
           >
-            {/* Machine Name & Seat Settings Header */}
+            {/* Exercise Name & Seat Settings Header */}
             <div className="flex items-start justify-between border-b border-[#2b241f] pb-3">
               <div className="flex items-start gap-2.5">
                 <span className="w-7 h-7 rounded-full bg-[#d97724]/20 text-[#e6a15c] border border-[#d97724]/30 font-mono font-bold text-xs flex items-center justify-center shrink-0">
@@ -353,12 +334,12 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                 <div className="flex-1">
                   <input
                     type="text"
-                    value={exercise.machineName}
+                    value={exercise.exerciseName}
                     onChange={(e) =>
-                      handleUpdateExercise({ ...exercise, machineName: e.target.value })
+                      handleUpdateExercise({ ...exercise, exerciseName: e.target.value })
                     }
                     className="text-base font-serif font-bold text-[#f7f3ee] bg-transparent outline-none focus:border-b focus:border-[#d97724] w-full"
-                    placeholder="Machine Name..."
+                    placeholder="Exercise Name..."
                   />
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-[10px] font-syne font-semibold bg-[#211b18] text-[#c8b8a8] px-2.5 py-0.5 rounded-full border border-[#382f29]">
@@ -371,7 +352,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
               <button
                 onClick={() => handleRemoveExercise(exercise.id)}
                 className="p-1.5 rounded-lg text-[#6b5e54] hover:text-[#c86d51] hover:bg-[#c86d51]/10 transition-colors"
-                title="Remove machine"
+                title="Remove exercise"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -393,7 +374,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
             </div>
 
             {(() => {
-              const priorFeedback = getPriorFeedback(exercise.machineName);
+              const priorFeedback = getPriorFeedback(exercise.exerciseName);
               return priorFeedback.length > 0 ? (
                 <div className="bg-[#d97724]/10 border border-[#d97724]/25 rounded-2xl p-3 space-y-2 text-xs">
                   <p className="font-syne font-bold text-[#f5c999]">🔥 PT Feedback from prior workouts</p>
@@ -465,13 +446,13 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         ))}
       </div>
 
-      {/* Add Machine Button */}
+      {/* Add Exercise Button */}
       <button
-        onClick={() => setIsAddMachineModalOpen(true)}
+        onClick={() => setIsAddExerciseModalOpen(true)}
         className="w-full py-3.5 bg-[#181412] hover:bg-[#211b18] border border-dashed border-[#d97724]/50 hover:border-[#d97724] text-[#f5c999] font-syne font-bold text-xs rounded-2xl flex items-center justify-center gap-2 shadow-lg transition-all"
       >
         <Plus className="w-4 h-4 text-[#e6a15c]" />
-        Add Exercise Machine
+        Add Exercise
       </button>
 
       {/* Direct Trainer Note Box */}
@@ -511,16 +492,16 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         </div>
       </div>
 
-      {/* Add Machine Modal Overlay */}
-      {isAddMachineModalOpen && (
+      {/* Add Exercise Modal Overlay */}
+      {isAddExerciseModalOpen && (
         <div className="fixed inset-0 z-50 bg-[#0c0a09]/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-[#181412] border border-[#382f29] rounded-3xl p-5 w-full max-w-md max-h-[85vh] overflow-y-auto space-y-4">
             <div className="flex items-center justify-between border-b border-[#2b241f] pb-3">
               <h3 className="text-base font-serif font-bold text-[#f7f3ee] flex items-center gap-2">
-                <Compass className="w-5 h-5 text-[#e6a15c]" /> Select Exercise Machine
+                <Dumbbell className="w-5 h-5 text-[#e6a15c]" /> Select Exercise
               </h3>
               <button
-                onClick={() => setIsAddMachineModalOpen(false)}
+                onClick={() => setIsAddExerciseModalOpen(false)}
                 className="text-[#8c7e72] hover:text-[#f7f3ee]"
               >
                 ✕
@@ -531,16 +512,16 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
             <div>
               <span className="text-xs font-serif italic text-[#c8b8a8] block mb-2">Previously Logged Exercises</span>
               <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
-                {historicalExercises.map((machine) => (
+                {historicalExercises.map((exercise) => (
                   <button
-                    key={machine.id}
-                    onClick={() => handleAddExerciseFromPreset(machine)}
-                    aria-label={`Add ${machine.name} (${machine.category})`}
+                    key={exercise.id}
+                    onClick={() => handleAddExerciseFromHistory(exercise)}
+                    aria-label={`Add ${exercise.name} (${exercise.category})`}
                     className="w-full text-left p-2.5 rounded-2xl bg-[#100d0b] hover:bg-[#211b18] border border-[#2b241f] hover:border-[#d97724]/50 flex items-center justify-between transition-all"
                   >
                     <div>
-                      <span className="text-xs font-bold text-[#f7f3ee] block">{machine.name}</span>
-                      <span className="text-[10px] text-[#8c7e72]">{machine.category}</span>
+                      <span className="text-xs font-bold text-[#f7f3ee] block">{exercise.name}</span>
+                      <span className="text-[10px] text-[#8c7e72]">{exercise.category}</span>
                     </div>
                     <Plus className="w-4 h-4 text-[#e6a15c]" />
                   </button>
@@ -551,13 +532,13 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
               </div>
             </div>
 
-            {/* Add Custom Machine */}
+            {/* Add Custom Exercise */}
             <div className="pt-3 border-t border-[#2b241f] space-y-2">
-              <span className="text-xs font-serif italic text-[#c8b8a8] block">Or Type Custom Machine / Exercise</span>
+              <span className="text-xs font-serif italic text-[#c8b8a8] block">Or Type Custom Exercise</span>
               <input
                 type="text"
-                value={customMachineName}
-                onChange={(e) => setCustomMachineName(e.target.value)}
+                value={customExerciseName}
+                onChange={(e) => setCustomExerciseName(e.target.value)}
                 placeholder="e.g. Incline Iso-Lateral Chest Press"
                 className="w-full bg-[#100d0b] border border-[#2b241f] rounded-xl p-2.5 text-xs text-[#f7f3ee] placeholder-[#6b5e54] outline-none focus:ring-1 focus:ring-[#d97724]"
               />
@@ -582,7 +563,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
 
                 <button
                   onClick={handleAddCustomExercise}
-                  disabled={!customMachineName.trim()}
+                  disabled={!customExerciseName.trim()}
                   className="px-4 py-2.5 bg-[#d97724] hover:bg-[#e6a15c] disabled:opacity-50 text-[#0c0a09] text-xs font-bold rounded-xl"
                 >
                   Add Custom

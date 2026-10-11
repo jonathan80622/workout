@@ -21,7 +21,7 @@ export type AnalyticsEventName =
 export type AnalyticsPropertiesByEvent = {
   tab_viewed: { tab: ActiveTab };
   workout_started: {
-    source: 'scratch' | 'machine_library' | 'history' | 'scheduled';
+    source: 'scratch' | 'history' | 'scheduled';
     has_scheduled_session?: boolean;
     exercise_count?: number;
   };
@@ -44,7 +44,7 @@ export type AnalyticsPropertiesByEvent = {
     completed_set_count: number;
   };
   exercise_added: {
-    source: 'active_workout' | 'custom' | 'machine_library';
+    source: 'active_workout' | 'custom';
     category: MuscleGroup;
     exercise_count: number;
   };

@@ -1,6 +1,4 @@
-import { DEFAULT_MACHINES } from '../data/defaultMachines';
 import { DEFAULT_TRAINING_PLAN } from '../data/defaultTrainingPlan';
-import { SAMPLE_WORKOUTS } from '../data/sampleWorkouts';
 import { ExerciseLog, SetType, WeightUnit, Workout, WorkoutAppState, WorkoutSet, WorkoutVideo } from '../types';
 import { ScheduledSession } from './calendar';
 import { UserProfile } from './storage';
@@ -66,8 +64,7 @@ export function createDefaultAppState(): WorkoutAppState {
       appTitle: 'Workout Studio',
       themeColor: 'ios-blue',
     },
-    machines: DEFAULT_MACHINES,
-    workouts: SAMPLE_WORKOUTS,
+    workouts: [],
     trainingPlan: DEFAULT_TRAINING_PLAN,
     warmupCheckins: {},
     scheduledSession: null,
@@ -200,7 +197,7 @@ export async function uploadWorkoutVideo(params: {
   const extension = getFileExtension(file);
   const workoutDate = getDatePart(workout.date);
   const titleSlug = slugify(workout.title || 'workout');
-  const exerciseSlug = slugify(exercise.machineName || 'exercise');
+  const exerciseSlug = slugify(exercise.exerciseName || 'exercise');
   const videoNumber = (exercise.videos?.length || 0) + 1;
   const name = `${workoutDate}_${titleSlug}_${exerciseSlug}_video-${String(videoNumber).padStart(2, '0')}.${extension}`;
 
@@ -296,7 +293,6 @@ export function normalizeAppState(value: Partial<WorkoutAppState>): WorkoutAppSt
   return {
     version: 1,
     profile: { ...defaults.profile, ...(value.profile || {}) },
-    machines: Array.isArray(value.machines) && value.machines.length > 0 ? value.machines : defaults.machines,
     workouts: normalizedWorkouts,
     trainingPlan: normalizeTrainingPlan(value.trainingPlan, defaults.trainingPlan),
     warmupCheckins: normalizeWarmupCheckins(value.warmupCheckins),
@@ -333,10 +329,11 @@ function normalizeWorkout(value: unknown): Workout | null {
 function normalizeExercise(value: unknown): ExerciseLog | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
 
-  const exercise = value as Partial<ExerciseLog>;
+  const { machineName, ...current } = value as Partial<ExerciseLog> & { machineName?: string };
+  const exercise = { ...current, exerciseName: current.exerciseName ?? machineName };
   if (
     typeof exercise.id !== 'string' ||
-    typeof exercise.machineName !== 'string' ||
+    typeof exercise.exerciseName !== 'string' ||
     typeof exercise.category !== 'string' ||
     !Array.isArray(exercise.sets)
   ) {
@@ -490,7 +487,7 @@ async function getOrCreateExerciseVideoFolder(
     slugify(workout.title || 'workout'),
     'workout video'
   );
-  return getOrCreateChildFolder(accessToken, workoutFolderId, slugify(exercise.machineName || 'exercise'), 'exercise video');
+  return getOrCreateChildFolder(accessToken, workoutFolderId, slugify(exercise.exerciseName || 'exercise'), 'exercise video');
 }
 
 async function getOrCreateChildFolder(

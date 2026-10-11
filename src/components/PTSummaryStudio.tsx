@@ -238,7 +238,7 @@ export const PTSummaryStudio: React.FC<PTSummaryStudioProps> = ({
         {/* Seat Settings Checkbox */}
         <div className="flex items-center justify-between pt-2 border-t border-[#2b241f]">
           <span className="font-serif italic text-[#c8b8a8]">
-            {isZh ? '顯示器材角度與座椅位置設定:' : 'Include Machine Seat & Alignment Settings:'}
+            {isZh ? '顯示器材角度與座椅位置設定:' : 'Include Seat & Alignment Settings:'}
           </span>
           <input
             type="checkbox"

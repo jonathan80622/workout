@@ -22,7 +22,7 @@
       "exercises": [
         {
           "id": "ex-e2e-0924-legpress",
-          "machineName": "Leg Press",
+          "exerciseName": "Leg Press",
           "category": "Quads",
           "seatSettings": "Seat notch 4",
           "ptComment": "Knees caved in on the last set at 200 lb. Next session drop the working sets to 180 lb and move the seat back to notch 5 so you reach full depth. Pause 1 second at the bottom of every rep.",
@@ -35,7 +35,7 @@
         },
         {
           "id": "ex-e2e-0924-curl",
-          "machineName": "Seated Leg Curl",
+          "exerciseName": "Seated Leg Curl",
           "category": "Hamstrings",
           "seatSettings": "Back pad 3",
           "ptComment": "Good tempo. Add 10 lb next time and keep the hips pinned to the pad.",
@@ -60,7 +60,7 @@
       "exercises": [
         {
           "id": "ex-e2e-0917-legpress",
-          "machineName": "Leg Press",
+          "exerciseName": "Leg Press",
           "category": "Quads",
           "seatSettings": "Seat notch 4",
           "sets": [

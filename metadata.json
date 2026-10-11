@@ -1,6 +1,6 @@
 {
   "name": "Workout Tracker & PT Report",
-  "description": "Othership-inspired workout logger for tracking exercise machines, seat adjustments, sets, reps, and muscle feel feedback, with 1-click PNG export cards for your Personal Trainer.",
+  "description": "Workout logger for tracking exercises, setup, sets, reps, and feedback, with PNG export cards for your Personal Trainer.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

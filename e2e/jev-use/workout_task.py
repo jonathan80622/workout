@@ -48,8 +48,8 @@ GOAL = (
 )
 
 START_BUTTON = "+ Start New Workout Session"
-ADD_EXERCISE_BUTTON = "Add Exercise Machine"
-PICKER_HEADING = "Select Exercise Machine"
+ADD_EXERCISE_BUTTON = "Add Exercise"
+PICKER_HEADING = "Select Exercise"
 SEAT_FIELD = "Seat settings"
 NOTE_FIELD = "Note for your trainer"
 LOAD_FIELD = re.compile(r"^Set (\d+) load \((lbs|kg)\)$")
@@ -185,7 +185,7 @@ def exercise_in(workout: Mapping[str, Any] | None, name: str) -> Mapping[str, An
         return None
     wanted = name.casefold()
     return next(
-        (ex for ex in workout.get("exercises") or [] if str(ex.get("machineName", "")).strip().casefold() == wanted),
+        (ex for ex in workout.get("exercises") or [] if str(ex.get("exerciseName", "")).strip().casefold() == wanted),
         None,
     )
 
@@ -315,7 +315,7 @@ class WorkoutStudioTask:
             else:
                 add = find_ref(page, "button", ADD_EXERCISE_BUTTON)
                 if add is not None:
-                    out.append(_click(page, add, "open-add-exercise", "Open the exercise picker to add a machine."))
+                    out.append(_click(page, add, "open-add-exercise", "Open the exercise picker to add an exercise."))
             return out + _reserved()
 
         if self.audit is None:

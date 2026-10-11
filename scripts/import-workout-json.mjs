@@ -3,14 +3,6 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { PrismaClient } from '@prisma/client';
 
-const EQUIPMENT_TYPES = {
-  Machine: 'MACHINE',
-  Cable: 'CABLE',
-  'Free Weight': 'FREE_WEIGHT',
-  'Smith Machine': 'SMITH_MACHINE',
-  'Cardio / Treadmill': 'CARDIO_TREADMILL',
-};
-
 const args = process.argv.slice(2);
 const apply = args.includes('--apply');
 const fileArgIndex = args.indexOf('--file');
@@ -52,7 +44,6 @@ try {
 
     // This owner is reserved for this snapshot; replacing its roots makes retries idempotent.
     await db.workout.deleteMany({ where: { ownerId: user.id } });
-    await db.machinePreset.deleteMany({ where: { ownerId: user.id } });
     await db.trainingPlan.deleteMany({ where: { ownerId: user.id } });
     await db.warmupCheckin.deleteMany({ where: { ownerId: user.id } });
     await db.scheduledSession.deleteMany({ where: { ownerId: user.id } });
@@ -61,19 +52,6 @@ try {
       where: { userId: user.id },
       create: profileData(user.id, normalized.profile),
       update: profileData(user.id, normalized.profile),
-    });
-
-    await db.machinePreset.createMany({
-      data: normalized.machines.map((machine, position) => ({
-        ownerId: user.id,
-        legacyId: machine.id,
-        position,
-        name: machine.name,
-        category: machine.category,
-        equipmentType: EQUIPMENT_TYPES[machine.equipmentType],
-        defaultSeatSettings: optionalText(machine.defaultSeatSettings),
-        targetDescription: machine.targetDescription,
-      })),
     });
 
     for (const workout of normalized.workouts) {
@@ -95,7 +73,7 @@ try {
             create: workout.exercises.map((exercise, position) => ({
               legacyId: exercise.id,
               position,
-              machineName: exercise.machineName,
+              exerciseName: exercise.exerciseName,
               category: exercise.category,
               seatSettings: optionalText(exercise.seatSettings),
               notes: optionalText(exercise.notes),
@@ -222,8 +200,7 @@ function profileData(userId, profile) {
 }
 
 async function countImportedRecords(prisma, ownerId) {
-  const [machines, workouts, exercises, sets, videos, planBlocks, planExercises, warmupMoves, warmupCheckins, sessions] = await Promise.all([
-    prisma.machinePreset.count({ where: { ownerId } }),
+  const [workouts, exercises, sets, videos, planBlocks, planExercises, warmupMoves, warmupCheckins, sessions] = await Promise.all([
     prisma.workout.count({ where: { ownerId } }),
     prisma.exerciseLog.count({ where: { workout: { ownerId } } }),
     prisma.workoutSet.count({ where: { exercise: { workout: { ownerId } } } }),
@@ -234,7 +211,7 @@ async function countImportedRecords(prisma, ownerId) {
     prisma.warmupCheckin.count({ where: { ownerId } }),
     prisma.scheduledSession.count({ where: { ownerId } }),
   ]);
-  return { machines, workouts, exercises, sets, videos, planBlocks, planExercises, warmupMoves, warmupCheckins, sessions };
+  return { workouts, exercises, sets, videos, planBlocks, planExercises, warmupMoves, warmupCheckins, sessions };
 }
 
 function sameCounts(report, actual) {
@@ -247,7 +224,6 @@ function summarize(data, checksum) {
   return {
     checksum,
     counts: {
-      machines: data.machines.length,
       workouts: data.workouts.length,
       exercises: exercises.length,
       sets: exercises.reduce((total, exercise) => total + exercise.sets.length, 0),
@@ -258,14 +234,13 @@ function summarize(data, checksum) {
       warmupCheckins: Object.values(data.warmupCheckins).reduce((total, moves) => total + Object.keys(moves).length, 0),
       sessions: data.scheduledSession ? 1 : 0,
     },
-    ignored: ['muscleFeeling'],
+    ignored: ['muscleFeeling', 'machines'],
   };
 }
 
 function validateAndNormalize(value) {
   assertObject(value, 'root');
   const profile = object(value.profile, 'profile');
-  const machines = array(value.machines, 'machines').map((machine, index) => validateMachine(object(machine, `machines[${index}]`)));
   const workouts = array(value.workouts, 'workouts').map((workout, index) => validateWorkout(object(workout, `workouts[${index}]`)));
   const trainingPlan = validatePlan(object(value.trainingPlan, 'trainingPlan'));
   const warmupCheckins = validateCheckins(value.warmupCheckins);
@@ -277,18 +252,11 @@ function validateAndNormalize(value) {
       appTitle: string(profile.appTitle, 'profile.appTitle', true),
       themeColor: string(profile.themeColor, 'profile.themeColor', true),
     },
-    machines,
     workouts,
     trainingPlan,
     warmupCheckins,
     scheduledSession,
   };
-}
-
-function validateMachine(value) {
-  const equipmentType = string(value.equipmentType, 'machine.equipmentType');
-  if (!EQUIPMENT_TYPES[equipmentType]) fail(`Unsupported equipment type: ${equipmentType}.`);
-  return { id: string(value.id, 'machine.id'), name: string(value.name, 'machine.name'), category: string(value.category, 'machine.category'), equipmentType, defaultSeatSettings: string(value.defaultSeatSettings, 'machine.defaultSeatSettings', true), targetDescription: string(value.targetDescription, 'machine.targetDescription') };
 }
 
 function validateWorkout(value) {
@@ -304,7 +272,7 @@ function validateWorkout(value) {
 
 function validateExercise(value) {
   return {
-    id: string(value.id, 'exercise.id'), machineName: string(value.machineName, 'exercise.machineName'), category: string(value.category, 'exercise.category'),
+    id: string(value.id, 'exercise.id'), exerciseName: string(value.exerciseName ?? value.machineName, 'exercise.exerciseName'), category: string(value.category, 'exercise.category'),
     seatSettings: string(value.seatSettings, 'exercise.seatSettings', true), notes: string(value.notes, 'exercise.notes', true), ptComment: string(value.ptComment, 'exercise.ptComment', true),
     distance: optionalNumber(value.distance, 'exercise.distance'), runningTimeMinutes: optionalNumber(value.runningTimeMinutes, 'exercise.runningTimeMinutes'),
     sets: array(value.sets, 'exercise.sets').map((set, index) => validateSet(object(set, `set[${index}]`))),

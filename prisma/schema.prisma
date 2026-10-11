@@ -24,14 +24,6 @@ enum SetType {
   failure
 }
 
-enum EquipmentType {
-  MACHINE
-  CABLE
-  FREE_WEIGHT
-  SMITH_MACHINE
-  CARDIO_TREADMILL
-}
-
 enum ScheduledSessionStatus {
   scheduled
   completed
@@ -68,12 +60,12 @@ enum ImportBatchStatus {
 model User {
   id                String             @id @default(uuid()) @db.Uuid
   authSubject       String             @unique @map("auth_subject")
+  stateRevision     Int                @default(0) @map("state_revision")
   role              UserRole
   displayName       String?            @map("display_name")
   createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   profile           Profile?
   workouts          Workout[]          @relation("WorkoutOwner")
-  machinePresets    MachinePreset[]    @relation("MachinePresetOwner")
   trainingPlans     TrainingPlan[]     @relation("TrainingPlanOwner")
   warmupCheckins    WarmupCheckin[]    @relation("WarmupCheckinOwner")
   scheduledSessions ScheduledSession[] @relation("ScheduledSessionOwner")
@@ -125,7 +117,7 @@ model ExerciseLog {
   workoutId          String            @map("workout_id") @db.Uuid
   legacyId           String?           @map("legacy_id")
   position           Int
-  machineName        String            @map("machine_name")
+  exerciseName       String            @map("exercise_name")
   category           String
   seatSettings       String?           @map("seat_settings")
   notes              String?
@@ -162,23 +154,6 @@ model WorkoutSet {
   @@unique([exerciseLogId, legacyId])
   @@index([exerciseLogId, position])
   @@map("workout_sets")
-}
-
-model MachinePreset {
-  id                  String        @id @default(uuid()) @db.Uuid
-  ownerId             String        @map("owner_id") @db.Uuid
-  legacyId            String?       @map("legacy_id")
-  name                String
-  category            String
-  equipmentType       EquipmentType @map("equipment_type")
-  defaultSeatSettings String?       @map("default_seat_settings")
-  targetDescription   String        @map("target_description")
-  position            Int
-  owner               User          @relation("MachinePresetOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-
-  @@unique([ownerId, legacyId])
-  @@index([ownerId, position])
-  @@map("machine_presets")
 }
 
 model TrainingPlan {

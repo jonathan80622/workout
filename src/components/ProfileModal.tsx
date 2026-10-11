@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Compass, X, Check, RefreshCw, LogIn, LogOut, User as UserIcon } from 'lucide-react';
+import { X, Check, LogIn, LogOut, User as UserIcon } from 'lucide-react';
 import { UserProfile } from '../utils/storage';
 import { DriveConnection } from '../utils/driveStorage';
 
@@ -10,7 +10,6 @@ interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSaveProfile: (profile: UserProfile) => void;
-  onResetData: () => void;
   driveConnection: DriveConnection;
   onConnectDrive: () => void;
   onDisconnectDrive: () => void;
@@ -23,7 +22,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   isOpen,
   onClose,
   onSaveProfile,
-  onResetData,
   driveConnection,
   onConnectDrive,
   onDisconnectDrive,
@@ -51,7 +49,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       <div className="bg-[#181412] border border-[#382f29] rounded-3xl p-5 w-full max-w-md space-y-4 shadow-2xl">
         <div className="flex items-center justify-between border-b border-[#2b241f] pb-3">
           <h3 className="text-base font-serif font-bold text-[#f7f3ee] flex items-center gap-2">
-            <Compass className="w-5 h-5 text-[#e6a15c]" /> Athlete & Trainer Settings
+            <UserIcon className="w-5 h-5 text-[#e6a15c]" /> Athlete & Trainer Settings
           </h3>
           <button onClick={onClose} className="text-[#8c7e72] hover:text-[#f7f3ee]">
             <X className="w-5 h-5" />
@@ -78,8 +76,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           {driveConnection.isConnected ? (
             <div className="flex items-center justify-between pt-1">
               <div className="text-xs text-[#f7f3ee] truncate max-w-[200px]">
-                <p className="font-medium truncate">Drive sync enabled</p>
-                <p className="text-[10px] text-[#8c7e72] truncate">JSON and videos in your Workout Recorder folder</p>
+                <p className="font-medium truncate">Video uploads enabled</p>
+                <p className="text-[10px] text-[#8c7e72] truncate">Videos in your Workout Recorder folder</p>
               </div>
               <button
                 onClick={onDisconnectDrive}
@@ -91,7 +89,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           ) : (
             <div className="pt-1 flex items-center justify-between">
               <p className="text-[11px] text-[#a39588]">
-                Authorize Drive to sync workout-data.json and upload videos directly.
+                Connect Drive for video uploads.
               </p>
               <button
                 onClick={onConnectDrive}
@@ -112,7 +110,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             </div>
           )}
           {!driveConnection.isConfigured && (
-            <p className="text-[10px] text-[#c86d51]">Set NEXT_PUBLIC_GOOGLE_CLIENT_ID to enable Drive sync.</p>
+            <p className="text-[10px] text-[#c86d51]">Video uploads are unavailable.</p>
           )}
         </div>
 
@@ -156,19 +154,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             />
           </div>
 
-          <div className="pt-3 border-t border-[#2b241f]">
-            <button
-              onClick={() => {
-                if (window.confirm('Reset sample workouts and restore starter data?')) {
-                  onResetData();
-                  onClose();
-                }
-              }}
-              className="text-[#c86d51] hover:text-[#d97724] flex items-center gap-1 font-syne font-semibold"
-            >
-              <RefreshCw className="w-3.5 h-3.5" /> Restore Sample Sessions
-            </button>
-          </div>
         </div>
 
         <button

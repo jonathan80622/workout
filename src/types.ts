@@ -32,7 +32,7 @@ export interface WorkoutSet {
 
 export interface ExerciseLog {
   id: string;
-  machineName: string;
+  exerciseName: string;
   category: MuscleGroup;
   seatSettings?: string; // e.g., "Seat: 4, Lever: B"
   sets: WorkoutSet[];
@@ -120,6 +120,7 @@ export type WarmupCheckins = Record<string, Record<string, boolean>>;
 
 export interface WorkoutAppState {
   version: 1;
+  revision?: number;
   profile: {
     clientName: string;
     ptName: string;
@@ -127,7 +128,6 @@ export interface WorkoutAppState {
     preferredUnit?: WeightUnit; // Legacy only. Workout weights are scoped by Workout.unit.
     themeColor: 'ios-blue' | 'ios-emerald' | 'ios-purple' | 'ios-orange';
   };
-  machines: MachinePreset[];
   workouts: Workout[];
   trainingPlan: TrainingPlan;
   warmupCheckins: WarmupCheckins;
@@ -135,13 +135,4 @@ export interface WorkoutAppState {
   videos?: WorkoutVideo[]; // Legacy top-level video list, migrated into ExerciseLog.videos on load.
 }
 
-export interface MachinePreset {
-  id: string;
-  name: string;
-  category: MuscleGroup;
-  defaultSeatSettings?: string;
-  equipmentType: 'Machine' | 'Cable' | 'Free Weight' | 'Smith Machine' | 'Cardio / Treadmill';
-  targetDescription: string;
-}
-
-export type ActiveTab = 'workout' | 'plan' | 'history' | 'weight' | 'machines';
+export type ActiveTab = 'workout' | 'plan' | 'history' | 'weight';

@@ -39,8 +39,8 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
     const matchesTitle = w.title.toLowerCase().includes(query);
-    const matchesMachine = w.exercises.some((e) =>
-      e.machineName.toLowerCase().includes(query)
+    const matchesExercise = w.exercises.some((e) =>
+      e.exerciseName.toLowerCase().includes(query)
     );
     const matchesNotes = w.exercises.some((e) =>
       e.notes?.toLowerCase().includes(query) ||
@@ -48,7 +48,7 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
       w.ptNotes?.toLowerCase().includes(query) ||
       w.ptComment?.toLowerCase().includes(query)
     );
-    return matchesTitle || matchesMachine || matchesNotes;
+    return matchesTitle || matchesExercise || matchesNotes;
   });
 
   useEffect(() => {
@@ -104,7 +104,7 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search by title, machine name, note, or PT feedback..."
+          placeholder="Search by title, exercise name, note, or PT feedback..."
           className="w-full bg-[#181412] border border-[#382f29] rounded-2xl pl-10 pr-4 py-2.5 text-xs text-[#f7f3ee] placeholder-[#6b5e54] focus:outline-none focus:ring-1 focus:ring-[#d97724]"
         />
       </div>
@@ -240,10 +240,10 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                   );
                 })()}
 
-                {/* Machines Summaries */}
+                {/* Exercise summaries */}
                 <div className="space-y-1.5 pt-1">
                   <span className="text-[10px] font-syne font-bold text-[#a39588] uppercase tracking-wider block">
-                    Exercises & Machines
+                    Exercises
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {workout.exercises.map((ex, exIdx) => (
@@ -252,7 +252,7 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                         className="bg-[#100d0b] text-[#c8b8a8] border border-[#2b241f] px-2.5 py-1 rounded-xl text-xs font-medium flex items-center gap-1"
                       >
                         <Compass className="w-3 h-3 text-[#e6a15c]" />
-                        {ex.machineName} ({ex.sets.filter(s => s.completed).length} sets)
+                        {ex.exerciseName} ({ex.sets.filter(s => s.completed).length} sets)
                       </span>
                     ))}
                   </div>
@@ -267,7 +267,7 @@ export const WorkoutHistory: React.FC<WorkoutHistoryProps> = ({
                       <div key={exercise.id || exerciseIndex} className="bg-[#100d0b] border border-[#2b241f] rounded-2xl p-3 space-y-1.5">
                         <label htmlFor={`pt-feedback-${workout.id}-${exercise.id}`} className="text-xs font-bold text-[#f7f3ee] flex items-center gap-1.5">
                           <MessageSquareText className="w-3.5 h-3.5 text-[#e6a15c]" />
-                          {exercise.machineName}
+                          {exercise.exerciseName}
                         </label>
                         <textarea
                           id={`pt-feedback-${workout.id}-${exercise.id}`}

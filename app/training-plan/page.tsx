@@ -10,7 +10,6 @@ export default function TrainingPlanPage() {
       initialProfile={state.profile}
       initialWorkouts={data.completedWorkouts}
       initialActiveWorkout={data.activeWorkout}
-      initialMachines={state.machines}
       initialScheduledSession={state.scheduledSession}
       initialTrainingPlan={state.trainingPlan}
       initialWarmupCheckins={state.warmupCheckins}

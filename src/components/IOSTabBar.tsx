@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Dumbbell, Flame, History, Compass, Scale } from 'lucide-react';
+import { Dumbbell, Flame, History, Scale } from 'lucide-react';
 import { ActiveTab } from '../types';
 
 interface IOSTabBarProps {
@@ -36,11 +36,6 @@ export const IOSTabBar: React.FC<IOSTabBarProps> = ({
       id: 'weight' as ActiveTab,
       label: 'Weight',
       icon: Scale
-    },
-    {
-      id: 'machines' as ActiveTab,
-      label: 'Machines',
-      icon: Compass
     }
   ];
 

@@ -6,7 +6,6 @@ const expectedTables = [
   'workouts',
   'exercise_logs',
   'workout_sets',
-  'machine_presets',
   'training_plans',
   'training_plan_blocks',
   'training_plan_exercises',
@@ -64,6 +63,15 @@ try {
   `;
 
   const errors = [];
+  const columns = await prisma.$queryRaw`
+    SELECT column_name FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'exercise_logs'
+  `;
+  const columnNames = new Set(columns.map((row) => row.column_name));
+  if (!columnNames.has('exercise_name') || columnNames.has('machine_name')) {
+    errors.push('ExerciseLog column rename has not been applied.');
+  }
+  if (tableNames.has('machine_presets')) errors.push('Obsolete machine_presets table still exists.');
   if (missingTables.length > 0) {
     errors.push(`Missing tables: ${missingTables.join(', ')}`);
   }

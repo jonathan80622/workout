@@ -6,8 +6,6 @@ import { BodyWeightEntry, BodyWeightStore, WeightUnit } from '@/src/types';
 import {
   createBodyWeightEntry,
   formatBodyWeight,
-  parseBodyWeightStore,
-  serializeBodyWeightStore,
   weightFromKg,
 } from '@/src/utils/bodyWeight';
 
@@ -21,27 +19,6 @@ const rangeOptions: { key: RangeKey; days: number | null }[] = [
   { key: '1Y', days: 365 },
   { key: 'All', days: null },
 ];
-
-const storageKey = 'workout-recorder-weight-entries';
-
-const seedStore = (): BodyWeightStore => {
-  const today = new Date();
-  const valuesLbs = [187.8, 187.1, 186.9, 186.2, 185.7, 185.4, 184.9, 184.5, 184.1, 183.8, 183.2, 182.9];
-
-  return {
-    version: 1,
-    entries: valuesLbs.map((value, index) => {
-      const date = new Date(today);
-      date.setDate(today.getDate() - (valuesLbs.length - index - 1) * 7);
-      return createBodyWeightEntry({
-        id: `seed-${index}`,
-        date: toDateInputValue(date),
-        value,
-        unit: 'lbs',
-      });
-    }),
-  };
-};
 
 const toDateInputValue = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -57,18 +34,19 @@ export default function WeightTrackingPage() {
   const [panOffset, setPanOffset] = useState(0);
   const [date, setDate] = useState(() => toDateInputValue(new Date()));
   const [weight, setWeight] = useState('');
+  const [status, setStatus] = useState('Loading weights...');
+  const [ready, setReady] = useState(false);
+  const [saving, setSaving] = useState(false);
   const dragStartRef = useRef<{ x: number } | null>(null);
 
   useEffect(() => {
-    const parsed = parseBodyWeightStore(window.localStorage.getItem(storageKey));
-    const nextStore = parsed || seedStore();
-    setStore(nextStore);
-    window.localStorage.setItem(storageKey, serializeBodyWeightStore(nextStore));
+    fetch('/api/body-weights', { cache: 'no-store' }).then(async (response) => {
+      if (!response.ok) throw new Error('Could not load weights. Reload to retry.');
+      setStore(await response.json());
+      setReady(true);
+      setStatus('');
+    }).catch((error) => setStatus(error.message));
   }, []);
-
-  useEffect(() => {
-    window.localStorage.setItem(storageKey, serializeBodyWeightStore(store));
-  }, [store]);
 
   const sortedEntries = useMemo(
     () => [...store.entries].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
@@ -108,7 +86,8 @@ export default function WeightTrackingPage() {
       ? windowedEntries.reduce((sum, entry) => sum + entry.weightKg, 0) / windowedEntries.length
       : 0;
 
-  const addEntry = () => {
+  const addEntry = async () => {
+    if (!ready || saving) return;
     const parsedWeight = Number(weight);
     if (!date || !Number.isFinite(parsedWeight) || parsedWeight <= 0) return;
 
@@ -119,18 +98,33 @@ export default function WeightTrackingPage() {
       unit: displayUnit,
     });
 
-    setStore((current) => ({
+    setSaving(true);
+    try {
+      const response = await fetch('/api/body-weights', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(nextEntry) });
+      if (!response.ok) throw new Error('Weight not saved. Try again.');
+      setStore((current) => ({
       ...current,
       entries: [...current.entries.filter((entry) => entry.date !== date), nextEntry],
     }));
     setWeight('');
+      setStatus('Saved.');
+    } catch (error) { setStatus(error instanceof Error ? error.message : 'Weight not saved.'); }
+    finally { setSaving(false); }
   };
 
-  const deleteEntry = (entryId: string) => {
+  const deleteEntry = async (entryId: string) => {
+    if (!ready || saving) return;
+    setSaving(true);
+    try {
+      const response = await fetch('/api/body-weights', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: entryId }) });
+      if (!response.ok) throw new Error('Weight not deleted. Try again.');
     setStore((current) => ({
       ...current,
       entries: current.entries.filter((entry) => entry.id !== entryId),
     }));
+      setStatus('Deleted.');
+    } catch (error) { setStatus(error instanceof Error ? error.message : 'Weight not deleted.'); }
+    finally { setSaving(false); }
   };
 
   const visibleCount = Math.max(2, Math.ceil(filteredEntries.length / zoomLevel));
@@ -140,6 +134,7 @@ export default function WeightTrackingPage() {
   return (
     <main className="min-h-screen bg-[#0c0a09] text-[#f7f3ee] px-4 py-6">
       <div className="mx-auto max-w-6xl space-y-5">
+        <p role="status" className="text-xs text-[#a39588]">{status}</p>
         <header className="border-b border-[#2b241f] pb-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -219,6 +214,7 @@ export default function WeightTrackingPage() {
               <button
                 type="button"
                 onClick={addEntry}
+                disabled={!ready || saving}
                 className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-[#d97724] px-3 py-3 text-xs font-bold text-[#0c0a09] hover:bg-[#e6a15c]"
               >
                 <Plus className="h-4 w-4" />
@@ -348,6 +344,7 @@ export default function WeightTrackingPage() {
                     <button
                       type="button"
                       onClick={() => deleteEntry(entry.id)}
+                      disabled={!ready || saving}
                       className="flex h-8 w-8 items-center justify-center rounded-lg text-[#6b5e54] hover:bg-[#c86d51]/10 hover:text-[#c86d51]"
                       title="Delete entry"
                     >

@@ -261,7 +261,7 @@ export const PTSummaryCard: React.FC<PTSummaryCardProps> = ({
               {isZh ? '最佳重量突破' : 'Peak Load Highlight'}
             </span>
             <span className="font-mono font-bold text-[#f5c999]">
-              {heaviest.machineName}: {heaviest.weight} {heaviest.unit} × {heaviest.reps} {isZh ? '次' : 'reps'}
+              {heaviest.exerciseName}: {heaviest.weight} {heaviest.unit} × {heaviest.reps} {isZh ? '次' : 'reps'}
             </span>
           </div>
         )}
@@ -269,7 +269,7 @@ export const PTSummaryCard: React.FC<PTSummaryCardProps> = ({
         {/* Exercises Breakdown */}
         <div className="space-y-3 pt-2">
           <h3 className="text-xs font-serif italic font-semibold opacity-70 tracking-wider flex items-center justify-between">
-            <span>{isZh ? '動作與器材明細' : 'Exercise & Machine Breakdown'}</span>
+            <span>{isZh ? '動作明細' : 'Exercise Breakdown'}</span>
             <span className="text-[10px] font-sans font-normal">
               {workout.exercises.length} {isZh ? '項動作' : 'Exercises'}
             </span>
@@ -291,7 +291,7 @@ export const PTSummaryCard: React.FC<PTSummaryCardProps> = ({
                       <span className="w-5 h-5 rounded-full bg-[#d97724]/20 text-[#e6a15c] flex items-center justify-center text-xs font-mono font-bold">
                         {idx + 1}
                       </span>
-                      {exercise.machineName}
+                      {exercise.exerciseName}
                     </h4>
                     {showSeatSettings && exercise.seatSettings && (
                       <p className="text-[11px] opacity-75 mt-0.5 font-medium">

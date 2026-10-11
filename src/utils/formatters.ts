@@ -24,16 +24,16 @@ export function calculateCompletedReps(workout: Workout): number {
   }, 0);
 }
 
-export function getHeaviestSet(workout: Workout): { weight: number; unit: WeightUnit; reps: number; machineName: string } | null {
+export function getHeaviestSet(workout: Workout): { weight: number; unit: WeightUnit; reps: number; exerciseName: string } | null {
   let maxWeightLbs = 0;
-  let best: { weight: number; unit: WeightUnit; reps: number; machineName: string } | null = null;
+  let best: { weight: number; unit: WeightUnit; reps: number; exerciseName: string } | null = null;
 
   workout.exercises.forEach(ex => {
     ex.sets.forEach(set => {
       const weightLbs = convertWeight(set.weight, set.weightUnit, 'lbs');
       if (set.completed && weightLbs > maxWeightLbs) {
         maxWeightLbs = weightLbs;
-        best = { weight: set.weight, unit: set.weightUnit, reps: set.reps, machineName: ex.machineName };
+        best = { weight: set.weight, unit: set.weightUnit, reps: set.reps, exerciseName: ex.exerciseName };
       }
     });
   });

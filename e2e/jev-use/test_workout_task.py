@@ -42,14 +42,14 @@ def card_page(seat="Seat notch 4", set2="120", set3="140", note=None, outline_ex
         {"role": "spinbutton", "name": "Set 2 load (lbs)", "value": set2},
         {"role": "spinbutton", "name": "Set 3 load (lbs)", "value": set3},
         {"role": "textbox", "name": "Note for your trainer", "value": note},
-        {"role": "button", "name": "Add Exercise Machine", "value": None},
+        {"role": "button", "name": "Add Exercise", "value": None},
     ])
 
 
 def active_state(seat="Seat notch 4", loads=(120, 140), note="", exercise="Leg Press") -> dict:
     sets = [{"type": "warmup", "weight": 80}] + [{"type": "working", "weight": w} for w in loads]
     return {"workouts": [{"isCompleted": False, "ptNotes": note,
-                          "exercises": [{"machineName": exercise, "seatSettings": seat, "sets": sets}]}]}
+                          "exercises": [{"exerciseName": exercise, "seatSettings": seat, "sets": sets}]}]}
 
 
 class WorkoutTaskTest(unittest.TestCase):
@@ -72,10 +72,10 @@ class WorkoutTaskTest(unittest.TestCase):
         start = snapshot("", [{"role": "button", "name": "+ Start New Workout Session"}])
         self.assertEqual(self.ids(start), ["start-workout", "reobserve", "abstain"])
 
-        empty = snapshot("", [{"role": "button", "name": "Add Exercise Machine"}])
+        empty = snapshot("", [{"role": "button", "name": "Add Exercise"}])
         self.assertEqual(self.ids(empty), ["open-add-exercise", "reobserve", "abstain"])
 
-        picker = snapshot('- heading "Select Exercise Machine"', [
+        picker = snapshot('- heading "Select Exercise"', [
             {"role": "button", "name": "Add Leg Press (Quads)"},
             {"role": "button", "name": "Add Seated Leg Curl (Hamstrings)"},
         ])

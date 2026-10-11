@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { CheckCircle2, Circle, Dumbbell, Lock, Maximize2, MessageSquareText, Minimize2, RefreshCw, X } from 'lucide-react';
 import { WorkoutAppState, WorkoutVideo } from '../types';
 import { formatWorkoutDate } from '../utils/formatters';
@@ -21,40 +21,25 @@ export const PTPortal: React.FC = () => {
   const [comments, setComments] = useState<PTCommentState>({});
   const [expandedVideo, setExpandedVideo] = useState<WorkoutVideo | null>(null);
 
-  const dataFileId = useMemo(() => {
-    if (typeof window === 'undefined') return '';
-    return new URLSearchParams(window.location.search).get('dataFileId') || process.env.NEXT_PUBLIC_WORKOUT_DATA_FILE_ID || '';
-  }, []);
-
-  const commentStorageKey = useMemo(
-    () => `workout-recorder-pt-comments-${dataFileId || 'default'}`,
-    [dataFileId]
-  );
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const stored = window.localStorage.getItem(commentStorageKey);
-    if (!stored) return;
-
-    try {
-      setComments(JSON.parse(stored));
-    } catch {
-      setComments({});
-    }
-  }, [commentStorageKey]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem(commentStorageKey, JSON.stringify(comments));
-  }, [commentStorageKey, comments]);
+  const saveQueue = useRef(Promise.resolve());
+  const saveComment = (workoutId: string, text: string, exerciseId?: string) => {
+    setStatus('Saving comment...');
+    saveQueue.current = saveQueue.current.then(async () => {
+      try {
+        const response = await fetch('/api/pt-state', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password, workoutId, exerciseId, text }),
+        });
+        if (!response.ok) throw new Error((await response.json()).error || 'Comment not saved.');
+        setStatus('Comment saved.');
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : 'Comment not saved.');
+      }
+    });
+  };
 
   const loadPortal = async () => {
-    if (!dataFileId) {
-      setStatus('Missing dataFileId in the portal URL.');
-      return;
-    }
-
     setIsLoading(true);
     setStatus('Checking password...');
 
@@ -62,7 +47,7 @@ export const PTPortal: React.FC = () => {
       const response = await fetch('/api/pt-state', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password, dataFileId }),
+        body: JSON.stringify({ password }),
       });
       const data = await response.json();
 
@@ -72,6 +57,10 @@ export const PTPortal: React.FC = () => {
       }
 
       setState(data);
+      setComments(Object.fromEntries((data as WorkoutAppState).workouts.map((workout) => [workout.id, {
+        workoutComment: workout.ptComment || '',
+        exerciseComments: Object.fromEntries(workout.exercises.map((exercise) => [exercise.id, exercise.ptComment || ''])),
+      }])));
       setStatus('Loaded.');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Unable to load workout portal.');
@@ -144,6 +133,7 @@ export const PTPortal: React.FC = () => {
   return (
     <main className="min-h-screen bg-[#0c0a09] text-[#f7f3ee] px-4 py-5">
       <div className="max-w-6xl mx-auto space-y-5">
+        <p role="status" className="text-xs text-[#a39588]">{status}</p>
         <header className="border-b border-[#2b241f] pb-4">
           <p className="text-xs text-[#e6a15c] font-syne font-bold uppercase tracking-wider">Workout Recorder</p>
           <h1 className="text-2xl font-serif font-bold">{state.profile.clientName || 'Athlete'} Training Log</h1>
@@ -230,10 +220,10 @@ export const PTPortal: React.FC = () => {
                     rows={3}
                     value={workoutComments.workoutComment}
                     onChange={(event) => handleWorkoutCommentChange(workout.id, event.target.value)}
+                    onBlur={(event) => saveComment(workout.id, event.target.value)}
                     placeholder="Add overall feedback, progression notes, form priorities, or questions for this workout."
                     className="w-full bg-[#181412] border border-[#382f29] rounded-xl p-3 text-sm text-[#f7f3ee] placeholder-[#6b5e54] outline-none focus:ring-1 focus:ring-[#d97724] resize-y min-h-24"
                   />
-                  <p className="text-[10px] text-[#8c7e72]">Comments auto-save in this browser.</p>
                 </div>
 
                 <div className="space-y-3">
@@ -288,7 +278,7 @@ export const PTPortal: React.FC = () => {
                           <div className="space-y-3">
                             <div>
                               <div className="flex items-center justify-between gap-3">
-                                <h3 className="text-sm font-bold">{exercise.machineName}</h3>
+                                <h3 className="text-sm font-bold">{exercise.exerciseName}</h3>
                                 <span className="text-[10px] text-[#e6a15c]">{exercise.category}</span>
                               </div>
                               <p className="text-xs text-[#a39588] mt-1">
@@ -352,6 +342,7 @@ export const PTPortal: React.FC = () => {
                                 rows={4}
                                 value={workoutComments.exerciseComments[exercise.id] || ''}
                                 onChange={(event) => handleExerciseCommentChange(workout.id, exercise.id, event.target.value)}
+                                onBlur={(event) => saveComment(workout.id, event.target.value, exercise.id)}
                                 placeholder="Comment on load, reps, range of motion, tempo, setup, discomfort, or next-session changes."
                                 className="w-full bg-[#181412] border border-[#382f29] rounded-xl p-3 text-xs text-[#f7f3ee] placeholder-[#6b5e54] outline-none focus:ring-1 focus:ring-[#d97724] resize-y min-h-28"
                               />

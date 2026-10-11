@@ -23,13 +23,13 @@ export const ExerciseLoadHistory: React.FC<ExerciseLoadHistoryProps> = ({ exerci
   const displayUnit = exercise.sets.find((set) => set.weight > 0)?.weightUnit || 'lbs';
 
   const sessions = useMemo<HistorySession[]>(() => {
-    const normalizedName = exercise.machineName.trim().toLocaleLowerCase();
+    const normalizedName = exercise.exerciseName.trim().toLocaleLowerCase();
     if (!normalizedName || exercise.category === 'Cardio & Running') return [];
 
     return workouts
       .filter((workout) => workout.isCompleted)
       .flatMap((workout) => workout.exercises
-        .filter((pastExercise) => pastExercise.machineName.trim().toLocaleLowerCase() === normalizedName)
+        .filter((pastExercise) => pastExercise.exerciseName.trim().toLocaleLowerCase() === normalizedName)
         .map((pastExercise) => {
           const sets = pastExercise.sets
             .filter((set) => set.completed && set.weight > 0 && set.reps > 0)
@@ -51,7 +51,7 @@ export const ExerciseLoadHistory: React.FC<ExerciseLoadHistoryProps> = ({ exerci
         }))
       .filter((session): session is HistorySession => session !== null)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [displayUnit, exercise.category, exercise.machineName, workouts]);
+  }, [displayUnit, exercise.category, exercise.exerciseName, workouts]);
 
   if (sessions.length === 0) return null;
 
@@ -78,7 +78,7 @@ export const ExerciseLoadHistory: React.FC<ExerciseLoadHistoryProps> = ({ exerci
   const axisValues = [chartMax, Math.round(((chartMin + chartMax) / 2) * 10) / 10, chartMin];
 
   return (
-    <section className="bg-[#100d0b] border border-[#d97724]/30 rounded-2xl overflow-hidden" aria-label={`${exercise.machineName} load history`}>
+    <section className="bg-[#100d0b] border border-[#d97724]/30 rounded-2xl overflow-hidden" aria-label={`${exercise.exerciseName} load history`}>
       <button
         type="button"
         onClick={() => setIsExpanded((expanded) => !expanded)}
