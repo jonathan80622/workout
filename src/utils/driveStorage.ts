@@ -6,7 +6,6 @@ import { UserProfile } from './storage';
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3';
-const APP_DATA_FILE_NAME = 'workout-data.json';
 const ROOT_FOLDER_NAME = 'Workout Recorder';
 const VIDEO_FOLDER_NAME = 'videos';
 const LOCAL_STORAGE_KEY = 'workout-recorder-drive-state';
@@ -47,12 +46,6 @@ export type DriveConnection = {
   isConfigured: boolean;
   isConnected: boolean;
   accessToken: string | null;
-};
-
-export type DriveSyncTarget = {
-  folderId: string;
-  dataFileId: string;
-  portalUrl: string;
 };
 
 export function createDefaultAppState(): WorkoutAppState {
@@ -102,13 +95,29 @@ export function saveLocalState(state: WorkoutAppState) {
 
 export function getDriveConnection(): DriveConnection {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-  const stored = typeof window === 'undefined' ? null : window.sessionStorage.getItem(TOKEN_STORAGE_KEY);
+  const stored = readStoredToken();
 
   return {
     isConfigured: isGoogleOAuthClientId(clientId),
     isConnected: Boolean(stored),
     accessToken: stored,
   };
+}
+
+// Google access tokens are short-lived; treat an expired one as disconnected rather than failing on the next Drive call.
+function readStoredToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  const raw = window.sessionStorage.getItem(TOKEN_STORAGE_KEY);
+  if (!raw) return null;
+
+  try {
+    const { token, expiresAt } = JSON.parse(raw) as { token?: string; expiresAt?: number };
+    if (token && typeof expiresAt === 'number' && Date.now() < expiresAt) return token;
+  } catch {
+    // Pre-expiry format (bare token string): drop it and reauthorize.
+  }
+  window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+  return null;
 }
 
 export async function connectGoogleDrive(): Promise<DriveConnection> {
@@ -118,8 +127,10 @@ export async function connectGoogleDrive(): Promise<DriveConnection> {
   }
 
   await loadGoogleIdentityScript();
-  const token = await requestAccessToken(clientId);
-  window.sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
+  const { access_token: token, expires_in: expiresIn = 3600 } = await requestAccessToken(clientId);
+  // Expire a minute early so an in-flight upload doesn't start with a token about to lapse.
+  const expiresAt = Date.now() + (expiresIn - 60) * 1000;
+  window.sessionStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify({ token, expiresAt }));
   return getDriveConnection();
 }
 
@@ -130,58 +141,11 @@ export function isGoogleOAuthClientId(value: unknown): value is string {
 }
 
 export function disconnectGoogleDrive() {
-  const token = typeof window === 'undefined' ? null : window.sessionStorage.getItem(TOKEN_STORAGE_KEY);
+  const token = readStoredToken();
   if (token && window.google?.accounts?.oauth2?.revoke) {
     window.google.accounts.oauth2.revoke(token, () => undefined);
   }
   window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
-}
-
-export async function loadStateFromDrive(accessToken: string): Promise<WorkoutAppState> {
-  const fileId = await findDataFile(accessToken);
-  if (!fileId) {
-    const initial = readLocalState();
-    await saveStateToDrive(accessToken, initial);
-    return initial;
-  }
-
-  const response = await fetch(`${DRIVE_API}/files/${fileId}?alt=media`, {
-    headers: authHeaders(accessToken),
-  });
-  if (!response.ok) throw new Error(await driveError(response, 'Unable to load workout-data.json from Drive.'));
-
-  const state = normalizeAppState(await response.json());
-  saveLocalState(state);
-  return state;
-}
-
-export async function saveStateToDrive(accessToken: string, state: WorkoutAppState): Promise<void> {
-  const normalized = normalizeAppState(state);
-  const fileId = (await findDataFile(accessToken)) || (await createDataFile(accessToken));
-
-  const response = await fetch(`${DRIVE_UPLOAD_API}/files/${fileId}?uploadType=media`, {
-    method: 'PATCH',
-    headers: {
-      ...authHeaders(accessToken),
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(normalized, null, 2),
-  });
-  if (!response.ok) throw new Error(await driveError(response, 'Unable to save workout-data.json to Drive.'));
-  await ensureAnyoneWithLinkReader(accessToken, fileId);
-  saveLocalState(normalized);
-}
-
-export async function getDriveSyncTarget(accessToken: string): Promise<DriveSyncTarget> {
-  const folderId = await getOrCreateRootFolder(accessToken);
-  const dataFileId = (await findDataFile(accessToken)) || (await createDataFile(accessToken));
-  await ensureAnyoneWithLinkReader(accessToken, dataFileId);
-
-  return {
-    folderId,
-    dataFileId,
-    portalUrl: getPortalUrl(dataFileId),
-  };
 }
 
 export async function uploadWorkoutVideo(params: {
@@ -412,36 +376,6 @@ function normalizeWarmupCheckins(value: unknown): WorkoutAppState['warmupCheckin
   return checkins;
 }
 
-async function findDataFile(accessToken: string): Promise<string | null> {
-  const folderId = await getOrCreateRootFolder(accessToken);
-  const q = encodeURIComponent(`name='${APP_DATA_FILE_NAME}' and '${folderId}' in parents and trashed=false`);
-  const response = await fetch(`${DRIVE_API}/files?q=${q}&fields=files(id,name)`, {
-    headers: authHeaders(accessToken),
-  });
-  if (!response.ok) throw new Error(await driveError(response, 'Unable to search Drive workout data.'));
-  const data = await response.json();
-  return data.files?.[0]?.id || null;
-}
-
-async function createDataFile(accessToken: string): Promise<string> {
-  const folderId = await getOrCreateRootFolder(accessToken);
-  const response = await fetch(`${DRIVE_API}/files?fields=id`, {
-    method: 'POST',
-    headers: {
-      ...authHeaders(accessToken),
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      name: APP_DATA_FILE_NAME,
-      parents: [folderId],
-      mimeType: 'application/json',
-    }),
-  });
-  if (!response.ok) throw new Error(await driveError(response, 'Unable to create Drive workout data file.'));
-  const data = await response.json();
-  return data.id;
-}
-
 async function getOrCreateRootFolder(accessToken: string): Promise<string> {
   const q = encodeURIComponent(
     `name='${ROOT_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
@@ -582,11 +516,6 @@ async function ensureAnyoneWithLinkReader(accessToken: string, fileId: string): 
   }
 }
 
-function getPortalUrl(dataFileId: string): string {
-  if (typeof window === 'undefined') return `/pt?dataFileId=${encodeURIComponent(dataFileId)}`;
-  return `${window.location.origin}/pt?dataFileId=${encodeURIComponent(dataFileId)}`;
-}
-
 function authHeaders(accessToken: string) {
   return { Authorization: `Bearer ${accessToken}` };
 }
@@ -612,7 +541,7 @@ async function loadGoogleIdentityScript() {
   });
 }
 
-async function requestAccessToken(clientId: string): Promise<string> {
+async function requestAccessToken(clientId: string): Promise<TokenResponse> {
   return new Promise((resolve, reject) => {
     const tokenClient = window.google?.accounts?.oauth2?.initTokenClient({
       client_id: clientId,
@@ -622,7 +551,7 @@ async function requestAccessToken(clientId: string): Promise<string> {
           reject(new Error(response.error || 'Google authorization failed.'));
           return;
         }
-        resolve(response.access_token);
+        resolve(response);
       },
     });
 
@@ -631,7 +560,8 @@ async function requestAccessToken(clientId: string): Promise<string> {
       return;
     }
 
-    tokenClient.requestAccessToken({ prompt: 'consent' });
+    // Empty prompt: Google shows consent only on first grant, then reuses the existing authorization.
+    tokenClient.requestAccessToken({ prompt: '' });
   });
 }
 

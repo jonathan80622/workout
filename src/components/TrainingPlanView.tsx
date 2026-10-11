@@ -48,7 +48,7 @@ export const TrainingPlanView: React.FC<TrainingPlanViewProps> = ({
             <p className="font-syne text-xs font-bold uppercase tracking-wider text-[#e6a15c]">Training Plan</p>
             <h2 className="mt-1 font-serif text-3xl font-bold text-[#f7f3ee]">{trainingPlan.title}</h2>
             <p className="mt-2 text-sm text-[#a39588]">
-              Synced with workout-data.json for the main app and PT portal.
+              Shared between the main app and PT portal.
             </p>
           </div>
 
