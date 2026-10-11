@@ -97,21 +97,21 @@ model Profile {
 }
 
 model Workout {
-  id                 String            @id @default(uuid()) @db.Uuid
-  ownerId            String            @map("owner_id") @db.Uuid
-  legacyId           String?           @map("legacy_id")
+  id                 String        @id @default(uuid()) @db.Uuid
+  ownerId            String        @map("owner_id") @db.Uuid
+  legacyId           String?       @map("legacy_id")
   title              String
-  date               DateTime          @db.Timestamptz(6)
-  startTimeRaw       String?           @map("start_time_raw")
-  endTimeRaw         String?           @map("end_time_raw")
-  durationMinutes    Int               @map("duration_minutes")
-  isCompleted        Boolean           @map("is_completed")
-  ptNotes            String?           @map("pt_notes")
-  ptComment          String?           @map("pt_comment")
-  runningDistance    Decimal?          @map("running_distance") @db.Decimal(10, 3)
-  runningTimeMinutes Decimal?          @map("running_time_minutes") @db.Decimal(10, 3)
-  revision           Int               @default(1)
-  owner              User              @relation("WorkoutOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  date               DateTime      @db.Timestamptz(6)
+  startTimeRaw       String?       @map("start_time_raw")
+  endTimeRaw         String?       @map("end_time_raw")
+  durationMinutes    Int           @map("duration_minutes")
+  isCompleted        Boolean       @map("is_completed")
+  ptNotes            String?       @map("pt_notes")
+  ptComment          String?       @map("pt_comment")
+  runningDistance    Decimal?      @map("running_distance") @db.Decimal(10, 3)
+  runningTimeMinutes Decimal?      @map("running_time_minutes") @db.Decimal(10, 3)
+  revision           Int           @default(1)
+  owner              User          @relation("WorkoutOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   exercises          ExerciseLog[]
 
   @@unique([ownerId, legacyId])
@@ -120,18 +120,18 @@ model Workout {
 }
 
 model ExerciseLog {
-  id                 String            @id @default(uuid()) @db.Uuid
-  workoutId          String            @map("workout_id") @db.Uuid
-  legacyId           String?           @map("legacy_id")
+  id                 String       @id @default(uuid()) @db.Uuid
+  workoutId          String       @map("workout_id") @db.Uuid
+  legacyId           String?      @map("legacy_id")
   position           Int
-  exerciseName       String            @map("exercise_name")
+  exerciseName       String       @map("exercise_name")
   category           String
-  seatSettings       String?           @map("seat_settings")
+  seatSettings       String?      @map("seat_settings")
   notes              String?
-  distance           Decimal?          @db.Decimal(10, 3)
-  runningTimeMinutes Decimal?          @map("running_time_minutes") @db.Decimal(10, 3)
-  ptComment          String?           @map("pt_comment")
-  workout            Workout           @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  distance           Decimal?     @db.Decimal(10, 3)
+  runningTimeMinutes Decimal?     @map("running_time_minutes") @db.Decimal(10, 3)
+  ptComment          String?      @map("pt_comment")
+  workout            Workout      @relation(fields: [workoutId], references: [id], onDelete: Cascade)
   sets               WorkoutSet[]
   videos             Video[]
 
@@ -282,13 +282,15 @@ model Video {
 }
 
 model ChatConversation {
-  id        String        @id @default(uuid()) @db.Uuid
-  ownerId   String        @map("owner_id") @db.Uuid
-  title     String?
-  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
-  owner     User          @relation("ChatConversationOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  messages  ChatMessage[]
+  id             String        @id @default(uuid()) @db.Uuid
+  ownerId        String        @map("owner_id") @db.Uuid
+  title          String?
+  // Set while a reply is generating; the resumable stream with this id lives in Redis.
+  activeStreamId String?       @map("active_stream_id")
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  owner          User          @relation("ChatConversationOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  messages       ChatMessage[]
 
   @@index([ownerId, updatedAt])
   @@map("chat_conversations")
@@ -297,12 +299,19 @@ model ChatConversation {
 model ChatMessage {
   id             String           @id @default(uuid()) @db.Uuid
   conversationId String           @map("conversation_id") @db.Uuid
+  // The AI SDK UIMessage id the client knows this message by.
+  uiMessageId    String           @map("ui_message_id")
+  position       Int              @default(0)
   role           ChatMessageRole
+  // Plain text of the message, for previews; parts holds the full UIMessage content.
   content        String
+  parts          Json             @default("[]")
+  metadata       Json?
   toolCallsJson  Json?            @map("tool_calls_json")
   createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
+  @@unique([conversationId, uiMessageId])
   @@index([conversationId, createdAt])
   @@map("chat_messages")
 }

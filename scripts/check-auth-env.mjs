@@ -10,3 +10,13 @@ if (/^[0-9a-z-]+\.apps\.googleusercontent\.com$/i.test(clientId)) {
 } else {
   console.warn('NEXT_PUBLIC_GOOGLE_CLIENT_ID is missing or invalid; sign-in will not work in this build.');
 }
+
+// The Bumstead tab needs OpenAI for replies and Redis to resume and stop replies across serverless instances.
+for (const [name, hint] of [['OPENAI_API_KEY', 'the Bumstead tab cannot reply'], ['REDIS_URL', 'Bumstead replies cannot be resumed or stopped across instances']]) {
+  if (name === 'REDIS_URL' ? process.env.REDIS_URL || process.env.KV_URL : process.env[name]) continue;
+  if (process.env.VERCEL_ENV === 'production') {
+    console.error(`${name} is missing; ${hint}.`);
+    process.exit(1);
+  }
+  console.warn(`${name} is missing; ${hint} in this build.`);
+}

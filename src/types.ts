@@ -135,4 +135,4 @@ export interface WorkoutAppState {
   videos?: WorkoutVideo[]; // Legacy top-level video list, migrated into ExerciseLog.videos on load.
 }
 
-export type ActiveTab = 'workout' | 'plan' | 'history' | 'weight';
+export type ActiveTab = 'workout' | 'plan' | 'history' | 'weight' | 'bumstead';

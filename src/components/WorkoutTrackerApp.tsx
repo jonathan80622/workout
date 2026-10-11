@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Workout, ActiveTab, WorkoutAppState, TrainingPlan, WarmupCheckins } from '@/src/types';
+import type { EditToolInput } from '@/src/chat/editTools';
 import { UserProfile } from '@/src/utils/storage';
 import { ScheduledSession } from '@/src/utils/calendar';
 import { AnalyticsProvider, useAnalytics } from '@/src/analytics/AnalyticsProvider';
@@ -14,6 +15,7 @@ import WeightTrackingPage from '@/app/weight-tracking/page';
 import { ProfileModal } from './ProfileModal';
 import { ScheduleCalendarModal } from './ScheduleCalendarModal';
 import { NextSessionBanner } from './NextSessionBanner';
+import { ApplyBumsteadEdit, BumsteadChat } from './BumsteadChat';
 import {
   combineWorkouts,
   createDefaultAppState,
@@ -314,6 +316,75 @@ function WorkoutTrackerAppContent({
     setScheduledSession(null);
   };
 
+  // Bumstead edits go through the same state as manual edits, so the normal autosave persists them.
+  const applyBumsteadEdit: ApplyBumsteadEdit = (name, input) => {
+    if (!isPersistenceReady) throw new Error('Your workouts are still loading. Try again in a moment.');
+    const findWorkout = (workoutId: string) => {
+      const workout = workouts.find((w) => w.id === workoutId);
+      if (!workout) throw new Error('That workout no longer exists.');
+      return workout;
+    };
+    const validDate = (value: string) => {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) throw new Error(`"${value}" is not a valid date.`);
+      return date;
+    };
+    track('bumstead_edit_applied', { tool: name });
+    if (name === 'scheduleSession') {
+      const { title, scheduledDate, notes } = input as EditToolInput<'scheduleSession'>;
+      const date = validDate(scheduledDate);
+      handleSaveScheduledSession({ id: `session-${Date.now()}`, title, scheduledDate: date.toISOString(), notes: notes || '' });
+      return `Scheduled "${title}" for ${date.toLocaleString()}.`;
+    }
+    if (name === 'renameWorkout') {
+      const { workoutId, title } = input as EditToolInput<'renameWorkout'>;
+      const workout = findWorkout(workoutId);
+      handleUpdateWorkoutTitle(workoutId, title);
+      return `Renamed "${workout.title}" to "${title}".`;
+    }
+    if (name === 'moveWorkoutDate') {
+      const { workoutId, date } = input as EditToolInput<'moveWorkoutDate'>;
+      const workout = findWorkout(workoutId);
+      const moved = validDate(date);
+      handleUpdateWorkoutDate(workoutId, moved.toISOString());
+      return `Moved "${workout.title}" to ${moved.toLocaleDateString()}.`;
+    }
+    const { exerciseName, category, sets } = input as EditToolInput<'addExerciseToActiveWorkout'>;
+    const stamp = Date.now();
+    const base: Workout = activeWorkout || {
+      id: `w-${stamp}`,
+      title: 'Full Body Movement',
+      date: new Date().toISOString(),
+      durationMinutes: 0,
+      unit: sets[0].weightUnit,
+      clientName: profile.clientName,
+      ptName: profile.ptName,
+      ptNotes: '',
+      isCompleted: false,
+      exercises: [],
+    };
+    setActiveWorkout({
+      ...base,
+      exercises: [...base.exercises, {
+        id: `ex-${stamp}`,
+        exerciseName,
+        category,
+        seatSettings: '',
+        notes: '',
+        sets: sets.map((set, index) => ({
+          id: `s-${stamp}-${index}`,
+          setNumber: index + 1,
+          type: set.type,
+          weight: set.weight,
+          weightUnit: set.weightUnit,
+          reps: set.reps,
+          completed: false,
+        })),
+      }],
+    });
+    return `Added ${exerciseName} with ${sets.length} set${sets.length === 1 ? '' : 's'} to ${activeWorkout ? 'your workout' : 'a new workout'}.`;
+  };
+
   const handleSignIn = async () => {
     try {
       setSyncStatus('Opening Google sign-in...');
@@ -475,6 +546,9 @@ function WorkoutTrackerAppContent({
 
           </fieldset>
           )}
+
+          {/* Tab 5: Bumstead. Outside the fieldset so chat works while workouts load; edits check readiness themselves. */}
+          {activeTab === 'bumstead' && authState === 'ready' && <BumsteadChat onApplyEdit={applyBumsteadEdit} />}
         </main>
 
         <IOSTabBar

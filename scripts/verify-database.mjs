@@ -70,6 +70,14 @@ try {
   if (!columnNames.has('exercise_name') || columnNames.has('machine_name')) {
     errors.push('ExerciseLog column rename has not been applied.');
   }
+  const chatColumns = await prisma.$queryRaw`
+    SELECT table_name, column_name FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name IN ('chat_messages', 'chat_conversations')
+  `;
+  const chatColumnNames = new Set(chatColumns.map((row) => `${row.table_name}.${row.column_name}`));
+  for (const column of ['chat_messages.ui_message_id', 'chat_messages.parts', 'chat_messages.position', 'chat_conversations.active_stream_id']) {
+    if (!chatColumnNames.has(column)) errors.push(`Missing column: ${column}`);
+  }
   if (tableNames.has('machine_presets')) errors.push('Obsolete machine_presets table still exists.');
   if (missingTables.length > 0) {
     errors.push(`Missing tables: ${missingTables.join(', ')}`);

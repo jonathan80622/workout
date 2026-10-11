@@ -16,7 +16,8 @@ export type AnalyticsEventName =
   | 'drive_disconnected'
   | 'history_searched'
   | 'workout_deleted'
-  | 'video_uploaded';
+  | 'video_uploaded'
+  | 'bumstead_edit_applied';
 
 export type AnalyticsPropertiesByEvent = {
   tab_viewed: { tab: ActiveTab };
@@ -90,6 +91,7 @@ export type AnalyticsPropertiesByEvent = {
     duration_seconds: number;
     existing_video_count: number;
   };
+  bumstead_edit_applied: { tool: string };
 };
 
 export type AnalyticsProperties<TEvent extends AnalyticsEventName = AnalyticsEventName> =
@@ -173,6 +175,9 @@ export const analyticsEventConfig: Record<AnalyticsEventName, Record<string, Pro
     category: 'string',
     duration_seconds: 'number',
     existing_video_count: 'number',
+  },
+  bumstead_edit_applied: {
+    tool: 'string',
   },
 };
 
