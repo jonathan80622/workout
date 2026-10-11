@@ -14,7 +14,6 @@ const expectedTables = [
   'scheduled_sessions',
   'body_weight_entries',
   'videos',
-  'trainer_feedback',
   'chat_conversations',
   'chat_messages',
   'import_batches',
@@ -25,7 +24,6 @@ const expectedConstraints = [
   'workout_sets_nonnegative_reps_distance_time',
   'body_weight_entries_positive_values',
   'videos_positive_duration',
-  'trainer_feedback_exercise_matches_workout',
 ];
 
 if (!process.env.DATABASE_URL) {

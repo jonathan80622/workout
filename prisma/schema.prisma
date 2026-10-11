@@ -30,12 +30,6 @@ enum ScheduledSessionStatus {
   cancelled
 }
 
-enum FeedbackSource {
-  imported_pt_local
-  pt_portal
-  api
-}
-
 enum ChatMessageRole {
   user
   assistant
@@ -70,7 +64,6 @@ model User {
   warmupCheckins    WarmupCheckin[]    @relation("WarmupCheckinOwner")
   scheduledSessions ScheduledSession[] @relation("ScheduledSessionOwner")
   bodyWeights       BodyWeightEntry[]  @relation("BodyWeightOwner")
-  authoredFeedback  TrainerFeedback[]  @relation("TrainerFeedbackAuthor")
   chatConversations ChatConversation[] @relation("ChatConversationOwner")
   importBatches     ImportBatch[]      @relation("ImportBatchOwner")
 
@@ -105,7 +98,6 @@ model Workout {
   revision           Int               @default(1)
   owner              User              @relation("WorkoutOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   exercises          ExerciseLog[]
-  feedback           TrainerFeedback[]
 
   @@unique([ownerId, legacyId])
   @@index([ownerId, date])
@@ -127,7 +119,6 @@ model ExerciseLog {
   workout            Workout           @relation(fields: [workoutId], references: [id], onDelete: Cascade)
   sets               WorkoutSet[]
   videos             Video[]
-  feedback           TrainerFeedback[]
 
   @@unique([workoutId, legacyId])
   @@unique([id, workoutId])
@@ -273,23 +264,6 @@ model Video {
   @@unique([exerciseLogId, legacyId])
   @@index([driveFileId])
   @@map("videos")
-}
-
-model TrainerFeedback {
-  id            String         @id @default(uuid()) @db.Uuid
-  authorId      String         @map("author_id") @db.Uuid
-  workoutId     String         @map("workout_id") @db.Uuid
-  exerciseLogId String?        @map("exercise_log_id") @db.Uuid
-  text          String
-  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  source        FeedbackSource
-  author        User           @relation("TrainerFeedbackAuthor", fields: [authorId], references: [id], onDelete: Restrict)
-  workout       Workout        @relation(fields: [workoutId], references: [id], onDelete: Cascade)
-  exercise      ExerciseLog?   @relation(fields: [exerciseLogId], references: [id], onDelete: Cascade)
-
-  @@index([workoutId, createdAt])
-  @@index([exerciseLogId, createdAt])
-  @@map("trainer_feedback")
 }
 
 model ChatConversation {
