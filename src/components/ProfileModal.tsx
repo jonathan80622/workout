@@ -1,17 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Check, LogIn, LogOut, User as UserIcon } from 'lucide-react';
+import { X, Check, LogOut, User as UserIcon } from 'lucide-react';
 import { UserProfile } from '../utils/storage';
-import { DriveConnection } from '../utils/driveStorage';
 
 interface ProfileModalProps {
   profile: UserProfile;
   isOpen: boolean;
   onClose: () => void;
   onSaveProfile: (profile: UserProfile) => void;
-  driveConnection: DriveConnection;
-  onConnectDrive: () => void;
   onSignOut: () => void;
   syncStatus: string;
   portalUrl: string;
@@ -22,8 +19,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   isOpen,
   onClose,
   onSaveProfile,
-  driveConnection,
-  onConnectDrive,
   onSignOut,
   syncStatus,
   portalUrl
@@ -62,44 +57,23 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             <span className="font-syne font-semibold text-xs text-[#e6a15c] flex items-center gap-1.5">
               <UserIcon className="w-4 h-4 text-[#d97724]" /> Google Account
             </span>
-            {driveConnection === 'connected' ? (
-              <span className="text-[10px] bg-[#849a88]/20 text-[#a3b8a7] px-2 py-0.5 rounded-full border border-[#849a88]/40">
-                Connected
-              </span>
-            ) : (
-              <span className="text-[10px] bg-[#382f29] text-[#8c7e72] px-2 py-0.5 rounded-full">
-                Drive not connected
-              </span>
-            )}
+            <span className="text-[10px] bg-[#849a88]/20 text-[#a3b8a7] px-2 py-0.5 rounded-full border border-[#849a88]/40">
+              Signed in
+            </span>
           </div>
 
-          {driveConnection === 'connected' ? (
-            <div className="flex items-center justify-between pt-1">
-              <div className="text-xs text-[#f7f3ee] truncate max-w-[200px]">
-                <p className="font-medium truncate">Video uploads enabled</p>
-                <p className="text-[10px] text-[#8c7e72] truncate">Videos in your Workout Recorder folder</p>
-              </div>
-              <button
-                onClick={onSignOut}
-                className="px-2.5 py-1 bg-[#211b18] hover:bg-[#2b241f] border border-[#382f29] text-[#c86d51] text-xs font-syne font-bold rounded-xl flex items-center gap-1"
-              >
-                <LogOut className="w-3.5 h-3.5" /> Sign out
-              </button>
+          <div className="flex items-center justify-between pt-1">
+            <div className="text-xs text-[#f7f3ee] truncate max-w-[200px]">
+              <p className="font-medium truncate">Video uploads enabled</p>
+              <p className="text-[10px] text-[#8c7e72] truncate">Videos in your Workout Recorder folder</p>
             </div>
-          ) : (
-            <div className="pt-1 flex items-center justify-between">
-              <p className="text-[11px] text-[#a39588]">
-                Connect Drive for video uploads.
-              </p>
-              <button
-                onClick={onConnectDrive}
-                disabled={driveConnection === 'checking'}
-                className="px-3 py-1.5 bg-[#d97724] hover:bg-[#e6a15c] text-[#0c0a09] text-xs font-syne font-bold rounded-xl flex items-center gap-1 shadow-md shrink-0"
-              >
-                <LogIn className="w-3.5 h-3.5" /> Connect Drive
-              </button>
-            </div>
-          )}
+            <button
+              onClick={onSignOut}
+              className="px-2.5 py-1 bg-[#211b18] hover:bg-[#2b241f] border border-[#382f29] text-[#c86d51] text-xs font-syne font-bold rounded-xl flex items-center gap-1"
+            >
+              <LogOut className="w-3.5 h-3.5" /> Sign out
+            </button>
+          </div>
           {syncStatus && <p className="text-[10px] text-[#8c7e72]">{syncStatus}</p>}
           {portalUrl && (
             <div className="bg-[#181412] border border-[#382f29] rounded-xl p-2 space-y-1">

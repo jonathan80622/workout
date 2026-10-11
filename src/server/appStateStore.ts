@@ -3,16 +3,19 @@ import { prisma } from '@/src/server/db';
 import { createDefaultAppState, normalizeAppState } from '@/src/utils/driveStorage';
 import { TrainingPlan, Workout, WorkoutAppState } from '@/src/types';
 
-// The imported client's data row. Only the PT portal still addresses it directly; the app
-// itself reaches it through the signed-in account's owner link.
-export const OWNER_AUTH_SUBJECT = 'legacy-import:workout-data';
+export class ClientLookupError extends Error {}
+
+/** The PT portal serves the app's one client; more or fewer than one CLIENT user is an error, not a guess. */
+export async function findClientUserId(db: Pick<Prisma.TransactionClient, 'user'> = prisma): Promise<string | null> {
+  const clients = await db.user.findMany({ where: { role: 'CLIENT' }, select: { id: true }, take: 2 });
+  if (clients.length > 1) throw new ClientLookupError('More than one client user exists.');
+  return clients[0]?.id ?? null;
+}
 
 export class StateConflictError extends Error {}
 
-export async function readWorkoutAppState(
-  owner: Prisma.UserWhereUniqueInput = { authSubject: OWNER_AUTH_SUBJECT }
-): Promise<WorkoutAppState> {
-  const user = await prisma.user.findUnique({
+export async function readWorkoutAppState(owner: { id: string } | null): Promise<WorkoutAppState> {
+  const user = owner && await prisma.user.findUnique({
     where: owner,
     include: {
       profile: true,

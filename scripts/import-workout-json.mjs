@@ -8,9 +8,10 @@ const apply = args.includes('--apply');
 const fileArgIndex = args.indexOf('--file');
 const ownerArgIndex = args.indexOf('--owner');
 const filePath = resolve(fileArgIndex === -1 ? 'data/imports/workout-data.json' : args[fileArgIndex + 1] || '');
-const authSubject = ownerArgIndex === -1 ? 'legacy-import:workout-data' : args[ownerArgIndex + 1] || '';
+// No default: the owner is the target user's auth_subject (their Google account ID), and this import replaces that user's workouts.
+const authSubject = ownerArgIndex === -1 ? '' : args[ownerArgIndex + 1] || '';
 
-if (!authSubject.trim()) fail('Missing value after --owner.');
+if (!authSubject.trim()) fail('Missing --owner <users.auth_subject>.');
 if (!process.env.DATABASE_URL && apply) fail('DATABASE_URL is required when using --apply.');
 
 let contents;

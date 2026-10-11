@@ -53,6 +53,7 @@ enum ImportBatchStatus {
 
 model User {
   id                String             @id @default(uuid()) @db.Uuid
+  // The Google account ID ("sub") that signs in as this user.
   authSubject       String             @unique @map("auth_subject")
   stateRevision     Int                @default(0) @map("state_revision")
   role              UserRole
@@ -66,37 +67,21 @@ model User {
   bodyWeights       BodyWeightEntry[]  @relation("BodyWeightOwner")
   chatConversations ChatConversation[] @relation("ChatConversationOwner")
   importBatches     ImportBatch[]      @relation("ImportBatchOwner")
-  accounts          Account[]
+  sessions          Session[]
 
   @@map("users")
-}
-
-// A person who signs in with Google. Kept separate from User, which is the data owner:
-// an account sees data only once it is linked to an owner (scripts/link-owner-account.mjs).
-model Account {
-  id          String    @id @default(uuid()) @db.Uuid
-  googleSub   String    @unique @map("google_sub")
-  email       String?
-  ownerUserId String?   @map("owner_user_id") @db.Uuid
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  owner       User?     @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
-  sessions    Session[]
-
-  @@index([ownerUserId])
-  @@map("accounts")
 }
 
 // A signed-in browser. The cookie holds a random token; only its SHA-256 hash is stored.
 model Session {
   id        String   @id @default(uuid()) @db.Uuid
   tokenHash String   @unique @map("token_hash")
-  accountId String   @map("account_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
-  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([accountId])
+  @@index([userId])
   @@map("sessions")
 }
 

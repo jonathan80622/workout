@@ -11,20 +11,20 @@ function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('base64url');
 }
 
-export async function createSession(accountId: string, now = Date.now()): Promise<string> {
+export async function createSession(userId: string, now = Date.now()): Promise<string> {
   const token = randomBytes(32).toString('base64url');
   await prisma.session.create({
-    data: { tokenHash: hashToken(token), accountId, expiresAt: new Date(now + SESSION_MAX_AGE_SECONDS * 1000) },
+    data: { tokenHash: hashToken(token), userId, expiresAt: new Date(now + SESSION_MAX_AGE_SECONDS * 1000) },
   });
   return token;
 }
 
-export async function readSessionAccountId(request: Request, now = Date.now()): Promise<string | null> {
+export async function readSessionUserId(request: Request, now = Date.now()): Promise<string | null> {
   const token = readCookie(request, SESSION_COOKIE);
   if (!token) return null;
   const session = await prisma.session.findUnique({ where: { tokenHash: hashToken(token) } });
   if (!session || session.expiresAt.getTime() <= now) return null;
-  return session.accountId;
+  return session.userId;
 }
 
 export async function deleteSession(request: Request): Promise<void> {
@@ -50,18 +50,9 @@ function readCookie(request: Request, name: string): string | null {
   return null;
 }
 
-/**
- * Resolves the data owner for the signed-in account.
- * 401 when nobody is signed in; 403 when the account is not linked to an owner yet.
- */
+/** The signed-in user, whose rows are the data the request may touch; 401 when nobody is signed in. */
 export async function requireOwner(request: Request): Promise<{ ownerId: string } | NextResponse> {
-  const accountId = await readSessionAccountId(request);
-  if (!accountId) return NextResponse.json({ error: 'Sign in to continue.' }, { status: 401 });
-
-  const account = await prisma.account.findUnique({ where: { id: accountId }, select: { ownerUserId: true } });
-  if (!account) return NextResponse.json({ error: 'Sign in to continue.' }, { status: 401 });
-  if (!account.ownerUserId) {
-    return NextResponse.json({ error: 'This Google account is not linked to workout data.' }, { status: 403 });
-  }
-  return { ownerId: account.ownerUserId };
+  const userId = await readSessionUserId(request);
+  if (!userId) return NextResponse.json({ error: 'Sign in to continue.' }, { status: 401 });
+  return { ownerId: userId };
 }

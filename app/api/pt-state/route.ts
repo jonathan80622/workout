@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { OWNER_AUTH_SUBJECT, readWorkoutAppState } from '@/src/server/appStateStore';
+import { findClientUserId, readWorkoutAppState } from '@/src/server/appStateStore';
 import { prisma } from '@/src/server/db';
 
 export const runtime = 'nodejs';
@@ -19,7 +19,8 @@ export async function POST(request: Request) {
   }
 
   try {
-    const state = await readWorkoutAppState();
+    const clientId = await findClientUserId();
+    const state = await readWorkoutAppState(clientId ? { id: clientId } : null);
       return NextResponse.json(state, {
         headers: {
           'Cache-Control': 'no-store',
@@ -40,7 +41,9 @@ export async function PATCH(request: Request) {
   }
   try {
     await prisma.$transaction(async (db) => {
-      const owner = await db.user.update({ where: { authSubject: OWNER_AUTH_SUBJECT }, data: { stateRevision: { increment: 1 } } });
+      const clientId = await findClientUserId(db);
+      if (!clientId) throw new Error('No client user exists.');
+      const owner = await db.user.update({ where: { id: clientId }, data: { stateRevision: { increment: 1 } } });
       const workout = await db.workout.findUniqueOrThrow({ where: { ownerId_legacyId: { ownerId: owner.id, legacyId: body.workoutId } } });
       if (body.exerciseId) {
         await db.exerciseLog.update({ where: { workoutId_legacyId: { workoutId: workout.id, legacyId: body.exerciseId } }, data: { ptComment: body.text } });

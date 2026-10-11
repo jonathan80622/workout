@@ -41,8 +41,6 @@ declare global {
   }
 }
 
-export type DriveConnection = 'checking' | 'connected' | 'disconnected';
-
 export function createDefaultAppState(): WorkoutAppState {
   return {
     version: 1,
@@ -129,7 +127,7 @@ export async function getDriveAccessToken(): Promise<string> {
   return readStoredToken() ?? requestGoogleAccessToken();
 }
 
-/** Signs in with the Google popup; the server checks the token and starts a session. */
+/** Signs in with the Google popup, which also grants Drive; the server checks the token and starts a session. */
 export async function signInWithGoogle(): Promise<void> {
   const accessToken = await requestGoogleAccessToken();
   const response = await fetch('/api/auth/session', {
