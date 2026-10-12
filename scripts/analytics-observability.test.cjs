@@ -186,14 +186,12 @@ beforeEach(() => {
   process.env.MIXPANEL_PROJECT_TOKEN = 'mixpanel-token';
   process.env.GA4_MEASUREMENT_ID = '';
   process.env.GA4_API_SECRET = '';
-  process.env.OBSERVABILITY_ADMIN_GOOGLE_SUBS = 'google-admin';
 });
 
 afterEach(() => {
   delete process.env.MIXPANEL_PROJECT_TOKEN;
   delete process.env.GA4_MEASUREMENT_ID;
   delete process.env.GA4_API_SECRET;
-  delete process.env.OBSERVABILITY_ADMIN_GOOGLE_SUBS;
   delete process.env.OBSERVABILITY_CRON_SECRET;
   delete process.env.CRON_SECRET;
 });
@@ -264,15 +262,12 @@ test('/api/analytics returns 204 after durable storage even when providers are u
   assert.equal(db.state.deliveries.length, 1);
 });
 
-test('observability summary requires sign-in and configured admin subject', async () => {
+test('observability summary only requires a signed-in app session', async () => {
   const session = sessionFor('owner-1');
   db.state.sessions.push(session);
-  db.state.users.push({ id: 'owner-1', authSubject: 'not-admin' });
   const route = load('app/api/observability/summary/route.ts');
   assert.equal((await route.GET(new Request('http://localhost/api/observability/summary'))).status, 401);
-  assert.equal((await route.GET(new Request('http://localhost/api/observability/summary', { headers: withSession(session) }))).status, 403);
 
-  db.state.users[0].authSubject = 'google-admin';
   const response = await route.GET(new Request('http://localhost/api/observability/summary', { headers: withSession(session) }));
   assert.equal(response.status, 200);
   assert.equal((await response.json()).analytics.environment.length > 0, true);

@@ -1,7 +1,7 @@
 import { headers } from 'next/headers';
 import type { ReactNode } from 'react';
 import { Activity, AlertTriangle, BarChart3, Bot, CheckCircle2, Database, RefreshCw } from 'lucide-react';
-import { requireObservabilityAdminOrThrow, ObservabilityForbiddenError } from '@/src/server/observability/auth';
+import { requireObservabilityViewerOrThrow } from '@/src/server/observability/auth';
 import { getAnalyticsDashboardSummary } from '@/src/server/observability/analytics';
 
 export const dynamic = 'force-dynamic';
@@ -13,16 +13,15 @@ export default async function ObservabilityDashboardPage() {
   });
 
   try {
-    await requireObservabilityAdminOrThrow(request);
+    await requireObservabilityViewerOrThrow(request);
   } catch (error) {
-    const status = error instanceof ObservabilityForbiddenError ? error.status : 403;
     return (
       <main className="min-h-screen bg-[#0c0a09] text-[#f7f3ee] px-5 py-10">
         <div className="mx-auto max-w-3xl border border-[#382f29] bg-[#181412] p-6">
           <p className="text-xs font-syne font-bold uppercase text-[#e6a15c]">Workout Observatory</p>
-          <h1 className="mt-2 text-2xl font-serif font-bold">{status === 401 ? 'Sign in required' : 'Restricted dashboard'}</h1>
+          <h1 className="mt-2 text-2xl font-serif font-bold">Sign in required</h1>
           <p className="mt-3 text-sm text-[#a39588]">
-            This dashboard is limited to Google accounts listed in `OBSERVABILITY_ADMIN_GOOGLE_SUBS`.
+            Use the normal workout app sign-in, then return to this dashboard.
           </p>
         </div>
       </main>
