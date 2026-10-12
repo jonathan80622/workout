@@ -70,11 +70,14 @@ test('New York date and hour follow DST on both sides of each transition', () =>
   assert.deepEqual(newYorkTime(new Date('2026-10-12T03:30:00Z')), { date: '2026-10-11', hour: 23 });
 });
 
-test('vercel.json keeps the Git setting and schedules one Hobby-compatible daily cron', () => {
+test('vercel.json keeps the Git setting and schedules the expected cron jobs', () => {
   const config = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'));
   assert.deepEqual(config.git, { deploymentEnabled: { main: false } });
-  // Hobby allows one run per day. 13:00 UTC is 9 AM New York in EDT and 8 AM in EST.
-  assert.deepEqual(config.crons, [{ path: '/api/cron/warmup-reminder', schedule: '0 13 * * *' }]);
+  // 13:00 UTC is 9 AM New York in EDT and 8 AM in EST.
+  assert.deepEqual(config.crons, [
+    { path: '/api/cron/warmup-reminder', schedule: '0 13 * * *' },
+    { path: '/api/cron/analytics-delivery', schedule: '*/15 * * * *' },
+  ]);
 });
 
 test('message lists the plan warmup moves in order', () => {

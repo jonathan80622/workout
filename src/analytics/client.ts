@@ -28,6 +28,8 @@ async function sendAnalyticsEvent<TEvent extends AnalyticsEventName>(
       keepalive: true,
       body: JSON.stringify({
         event,
+        eventId: createEventId(),
+        occurredAt: new Date().toISOString(),
         distinctId,
         properties,
         route: window.location.pathname,
@@ -36,4 +38,9 @@ async function sendAnalyticsEvent<TEvent extends AnalyticsEventName>(
   } catch {
     // Analytics is intentionally non-blocking.
   }
+}
+
+function createEventId(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
+  return `evt_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 }
