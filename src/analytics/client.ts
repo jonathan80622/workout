@@ -16,7 +16,6 @@ async function sendAnalyticsEvent<TEvent extends AnalyticsEventName>(
   options?: AnalyticsTrackOptions
 ): Promise<void> {
   if (typeof window === 'undefined') return;
-  if (process.env.NEXT_PUBLIC_ANALYTICS_ENABLED !== 'true') return;
   if (isE2EMode()) return;
 
   const distinctId = getAnalyticsDistinctId();
