@@ -76,7 +76,6 @@ test('vercel.json keeps the Git setting and schedules the expected cron jobs', (
   // 13:00 UTC is 9 AM New York in EDT and 8 AM in EST.
   assert.deepEqual(config.crons, [
     { path: '/api/cron/warmup-reminder', schedule: '0 13 * * *' },
-    { path: '/api/cron/analytics-delivery', schedule: '*/15 * * * *' },
   ]);
 });
 

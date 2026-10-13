@@ -9,10 +9,6 @@
     {
       "path": "/api/cron/warmup-reminder",
       "schedule": "0 13 * * *"
-    },
-    {
-      "path": "/api/cron/analytics-delivery",
-      "schedule": "*/15 * * * *"
     }
   ]
 }

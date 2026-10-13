@@ -13,7 +13,11 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+
   deploy:
+    needs: test
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -46,9 +50,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Test production environment handling
-        run: node --test scripts/prepare-production-env.test.mjs scripts/app-state.test.cjs scripts/chat-store.test.cjs
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest

@@ -9,6 +9,8 @@ const { createHash } = require('node:crypto');
 const root = path.resolve(__dirname, '..');
 let cache;
 let db;
+let mixpanelTrack;
+const originalEnv = { ...process.env };
 
 function load(file) {
   file = path.resolve(root, file);
@@ -19,7 +21,7 @@ function load(file) {
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   const localRequire = (name) => {
     if (name === '@/src/server/db') return { prisma: new Proxy({}, { get: (_, key) => key === '$transaction' ? async (fn) => fn(db) : db[key] }) };
-    if (name === 'mixpanel') return { init: () => ({ track: (_event, _properties, cb) => cb(new Error('network unavailable')) }) };
+    if (name === 'mixpanel') return { default: { init: () => ({ track: (...args) => mixpanelTrack(...args) }) } };
     if (name.startsWith('@/')) return load(name.slice(2));
     if (name.startsWith('.')) return load(path.resolve(path.dirname(file), name));
     return Module.createRequire(file)(name);
@@ -31,6 +33,20 @@ function load(file) {
 const sessionFor = (userId, token = `token-${userId}`, expiresAt = new Date(Date.now() + 60_000)) =>
   ({ token, tokenHash: createHash('sha256').update(token).digest('base64url'), userId, expiresAt });
 const withSession = (session) => ({ cookie: `workout_session=${session.token}` });
+
+function matches(row, where = {}) {
+  return Object.entries(where).every(([key, value]) => {
+    if (key === 'OR') return value.some((branch) => matches(row, branch));
+    if (value && typeof value === 'object' && !(value instanceof Date)) {
+      if ('in' in value) return value.in.includes(row[key]);
+      if ('lte' in value) return row[key] != null && row[key] <= value.lte;
+      if ('gte' in value) return row[key] >= value.gte && (!value.lt || row[key] < value.lt);
+      if ('lt' in value) return row[key] != null && row[key] < value.lt;
+      return matches(row[key] || {}, value);
+    }
+    return row[key] === value;
+  });
+}
 
 function fakeObservabilityDatabase() {
   const state = {
@@ -59,14 +75,15 @@ function fakeObservabilityDatabase() {
         state.events.push(row);
         return row;
       },
-      count: async () => state.events.length,
+      count: async (args = {}) => state.events.filter((row) => matches(row, args.where)).length,
       findMany: async (args = {}) => {
+        const filtered = state.events.filter((row) => matches(row, args.where));
         if (args.distinct?.includes('anonymousId')) {
           const seen = new Set();
-          return state.events.filter((event) => !seen.has(event.anonymousId) && seen.add(event.anonymousId))
+          return filtered.filter((event) => !seen.has(event.anonymousId) && seen.add(event.anonymousId))
             .map((event) => ({ anonymousId: event.anonymousId }));
         }
-        const rows = [...state.events].sort((a, b) => b.recordedAt - a.recordedAt);
+        const rows = [...filtered].sort((a, b) => b.recordedAt - a.recordedAt);
         return rows.slice(0, args.take || rows.length).map((event) => {
           const hydrated = args.select?.deliveries ? { ...event, deliveries: state.deliveries.filter((delivery) => delivery.eventId === event.eventId) } : event;
           if (args.select) return pick(hydrated, args.select);
@@ -96,24 +113,16 @@ function fakeObservabilityDatabase() {
       },
       findMany: async (args = {}) => {
         const rows = state.deliveries.filter((delivery) => {
-          if (!args.where) return true;
-          if (args.where.status?.in) return args.where.status.in.includes(delivery.status);
-          if (args.where.OR) {
-            return args.where.OR.some((branch) => {
-              if (branch.status?.in) return branch.status.in.includes(delivery.status) && delivery.nextAttemptAt <= branch.nextAttemptAt.lte;
-              return branch.status === delivery.status && delivery.leaseExpiresAt && delivery.leaseExpiresAt < branch.leaseExpiresAt.lt;
-            });
-          }
-          return true;
+          return matches({ ...delivery, event: state.events.find((row) => row.eventId === delivery.eventId) }, args.where);
         });
         return rows.slice(0, args.take || rows.length).map((delivery) => {
           const event = state.events.find((row) => row.eventId === delivery.eventId);
-          const hydrated = args.include?.event ? { ...delivery, event } : delivery;
+          const hydrated = { ...delivery, event };
           return args.select ? pick(hydrated, args.select) : hydrated;
         });
       },
       updateMany: async ({ where, data }) => {
-        const row = state.deliveries.find((delivery) => delivery.id === where.id);
+        const row = state.deliveries.find((delivery) => matches({ ...delivery, event: state.events.find((event) => event.eventId === delivery.eventId) }, where));
         if (!row) return { count: 0 };
         Object.assign(row, applyData(row, data));
         return { count: 1 };
@@ -123,9 +132,10 @@ function fakeObservabilityDatabase() {
         Object.assign(row, applyData(row, data));
         return row;
       },
-      groupBy: async () => {
+      groupBy: async (args = {}) => {
         const counts = new Map();
         for (const delivery of state.deliveries) {
+          if (!matches({ ...delivery, event: state.events.find((row) => row.eventId === delivery.eventId) }, args.where)) continue;
           const key = `${delivery.destination}:${delivery.status}`;
           counts.set(key, (counts.get(key) || 0) + 1);
         }
@@ -147,7 +157,7 @@ function fakeObservabilityDatabase() {
         Object.assign(row, data);
         return row;
       },
-      findMany: async () => state.reports,
+      findMany: async (args = {}) => state.reports.filter((row) => matches(row, args.where)),
     },
   };
   return api;
@@ -183,17 +193,20 @@ const validBody = () => ({
 beforeEach(() => {
   cache = new Map();
   db = fakeObservabilityDatabase();
+  mixpanelTrack = (_event, _properties, cb) => cb(new Error('network unavailable'));
+  process.env.VERCEL_ENV = 'production';
+  delete process.env.CRON_SECRET;
+  delete process.env.OBSERVABILITY_CRON_SECRET;
   process.env.MIXPANEL_PROJECT_TOKEN = 'mixpanel-token';
   process.env.GA4_MEASUREMENT_ID = '';
   process.env.GA4_API_SECRET = '';
 });
 
 afterEach(() => {
-  delete process.env.MIXPANEL_PROJECT_TOKEN;
-  delete process.env.GA4_MEASUREMENT_ID;
-  delete process.env.GA4_API_SECRET;
-  delete process.env.OBSERVABILITY_CRON_SECRET;
-  delete process.env.CRON_SECRET;
+  for (const key of ['MIXPANEL_PROJECT_TOKEN', 'GA4_MEASUREMENT_ID', 'GA4_API_SECRET', 'OBSERVABILITY_CRON_SECRET', 'CRON_SECRET', 'VERCEL_ENV']) {
+    if (originalEnv[key] === undefined) delete process.env[key];
+    else process.env[key] = originalEnv[key];
+  }
 });
 
 test('analytics validation rejects unknown events, bad ids, routes, and properties', () => {
@@ -336,4 +349,130 @@ test('analytics cron rejects bad secrets and processes deliveries with the obser
   assert.equal(response.status, 200);
   assert.equal(db.state.deliveries[0].status, 'retrying');
   assert.equal(db.state.reports.length, 1);
+});
+
+async function seedDelivery(eventId = 'evt-race-1', environment = 'production') {
+  const api = load('src/server/observability/analytics.ts');
+  const validated = api.validateAnalyticsBody({ ...validBody(), eventId });
+  await api.recordAnalyticsEvent({ ...validated.event, environment }, ['mixpanel']);
+  return api;
+}
+
+function deferred() {
+  let resolve, reject;
+  const promise = new Promise((yes, no) => { resolve = yes; reject = no; });
+  return { promise, resolve, reject };
+}
+
+for (const outcome of ['success', 'failure']) {
+  test(`expired worker late ${outcome} cannot overwrite a newer delivery`, async () => {
+    const api = await seedDelivery();
+    const started = deferred();
+    const pending = deferred();
+    const first = api.processAnalyticsDeliveries({
+      now: new Date('2026-10-12T10:01:00Z'), workerId: 'same-worker',
+      senders: { mixpanel: () => { started.resolve(); return pending.promise; } },
+    });
+    await started.promise;
+    const competing = await api.processAnalyticsDeliveries({
+      now: new Date('2026-10-12T10:01:01Z'),
+      senders: { mixpanel: async () => { throw new Error('must not run'); } },
+    });
+    assert.equal(competing.claimed, 0);
+    const second = await api.processAnalyticsDeliveries({
+      now: new Date('2026-10-12T10:02:01Z'), workerId: 'same-worker',
+      senders: { mixpanel: async () => ({ ackId: 'new-owner' }) },
+    });
+    assert.equal(second.delivered, 1);
+    if (outcome === 'success') pending.resolve({ ackId: 'stale-owner' });
+    else pending.reject(new Error('late failure'));
+    const stale = await first;
+    assert.equal(stale.delivered + stale.retrying + stale.failed, 0);
+    assert.equal(db.state.deliveries[0].status, 'delivered');
+    assert.equal(db.state.deliveries[0].providerAckId, 'new-owner');
+    assert.equal(db.state.deliveries[0].attempts, 2);
+  });
+}
+
+test('hung sender is aborted and retried without a late completion changing state', async () => {
+  const api = await seedDelivery();
+  const pending = deferred();
+  let signal;
+  const result = await api.processAnalyticsDeliveries({
+    now: new Date('2026-10-12T10:01:00Z'), sendTimeoutMs: 5,
+    senders: { mixpanel: (_item, received) => { signal = received; return pending.promise; } },
+  });
+  assert.equal(result.retrying, 1);
+  assert.equal(signal.aborted, true);
+  pending.resolve({ ackId: 'late' });
+  await Promise.resolve();
+  assert.equal(db.state.deliveries[0].status, 'retrying');
+});
+
+test('claims get fresh leases and worker stops claiming at its time budget', async () => {
+  const api = await seedDelivery();
+  await seedDelivery('evt-race-2');
+  await seedDelivery('evt-race-3');
+  let time = Date.parse('2026-10-12T10:01:00Z');
+  const leases = [];
+  const result = await api.processAnalyticsDeliveries({
+    clock: () => new Date(time),
+    senders: { mixpanel: async (item) => {
+      leases.push(db.state.deliveries.find((row) => row.id === item.id).leaseExpiresAt.getTime());
+      time += 20_000;
+      return {};
+    } },
+  });
+  assert.equal(result.claimed, 2);
+  assert.equal(leases[1] - leases[0], 20_000);
+  assert.equal(db.state.deliveries[2].status, 'pending');
+});
+
+test('preview cannot process or disable production rows and summary is isolated', async () => {
+  const api = await seedDelivery('evt-production', 'production');
+  await seedDelivery('evt-preview', 'preview');
+  process.env.VERCEL_ENV = 'preview';
+  delete process.env.MIXPANEL_PROJECT_TOKEN;
+  const result = await api.processAnalyticsDeliveries({ now: new Date('2026-10-12T10:01:00Z') });
+  assert.equal(result.disabled, 1);
+  assert.equal(db.state.deliveries[0].status, 'pending');
+  db.state.deliveries[0].status = 'failed';
+  const summary = await api.getAnalyticsDashboardSummary(new Date('2026-10-12T12:00:00Z'));
+  assert.equal(summary.eventCount, 1);
+  assert.deepEqual(summary.deliveryCounts, [{ destination: 'mixpanel', status: 'disabled', count: 1 }]);
+  assert.deepEqual(summary.failedDeliveries, []);
+});
+
+test('Mixpanel retry payload keeps its canonical deduplication identity', async () => {
+  const api = await seedDelivery();
+  const calls = [];
+  mixpanelTrack = (name, properties, callback) => {
+    calls.push({ name, properties });
+    callback(calls.length === 1 ? new Error('response lost') : null);
+  };
+  await api.processAnalyticsDeliveries({ now: new Date('2026-10-12T10:01:00Z') });
+  await api.processAnalyticsDeliveries({ now: new Date('2026-10-12T10:02:00Z') });
+  assert.deepEqual(calls[0], calls[1]);
+  assert.equal(calls[0].properties.$insert_id, 'evt-race-1');
+  await seedDelivery('evt-race-2');
+  await api.processAnalyticsDeliveries({ now: new Date('2026-10-12T10:03:00Z') });
+  assert.equal(calls[2].properties.$insert_id, 'evt-race-2');
+});
+
+test('manual delivery accepts either configured secret and rejects malformed auth', async () => {
+  const route = load('app/api/cron/analytics-delivery/route.ts');
+  const request = (value) => new Request('http://localhost/api/cron/analytics-delivery', {
+    headers: value == null ? {} : { authorization: value },
+  });
+  assert.equal((await route.GET(request('Bearer undefined'))).status, 401);
+  for (const [cron, manual] of [['cron', ''], ['', 'manual'], ['cron', 'manual'], ['same', 'same']]) {
+    process.env.CRON_SECRET = cron;
+    process.env.OBSERVABILITY_CRON_SECRET = manual;
+    for (const secret of [cron, manual].filter(Boolean)) {
+      assert.equal((await route.GET(request(`Bearer ${secret}`))).status, 200);
+    }
+    for (const header of [null, 'Bearer wrong', 'cron', 'Basic manual']) {
+      assert.equal((await route.GET(request(header))).status, 401);
+    }
+  }
 });

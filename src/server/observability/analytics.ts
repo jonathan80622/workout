@@ -40,7 +40,7 @@ export type RecordAnalyticsResult = {
   destinations: AnalyticsDestinationName[];
 };
 
-export type DeliverySender = (delivery: AnalyticsDeliveryWorkItem) => Promise<{ ackId?: string | null }>;
+export type DeliverySender = (delivery: AnalyticsDeliveryWorkItem, signal: AbortSignal) => Promise<{ ackId?: string | null }>;
 
 export type AnalyticsDeliveryWorkItem = {
   id: string;
@@ -174,15 +174,21 @@ export async function recordAnalyticsEvent(
 export async function processAnalyticsDeliveries(options: {
   limit?: number;
   now?: Date;
+  clock?: () => Date;
+  sendTimeoutMs?: number;
   workerId?: string;
   senders?: Partial<Record<AnalyticsDestinationName, DeliverySender>>;
 } = {}) {
-  const now = options.now ?? new Date();
+  const clock = options.clock ?? (options.now ? () => options.now! : () => new Date());
+  const now = clock();
+  const environment = observabilityEnvironment();
+  const timeoutMs = Math.min(Math.max(options.sendTimeoutMs ?? 10_000, 1), 10_000);
+  const deadline = now.getTime() + 45_000;
   const limit = options.limit ?? 25;
   const workerId = options.workerId ?? `analytics-${randomUUID()}`;
-  const leaseExpiresAt = new Date(now.getTime() + LEASE_MS);
   const candidates = await prisma.analyticsDelivery.findMany({
     where: {
+      event: { environment },
       OR: [
         { status: { in: ['pending', 'retrying'] }, nextAttemptAt: { lte: now } },
         { status: 'processing', leaseExpiresAt: { lt: now } },
@@ -195,20 +201,25 @@ export async function processAnalyticsDeliveries(options: {
 
   const results = { claimed: 0, delivered: 0, retrying: 0, failed: 0, disabled: 0 };
   for (const candidate of candidates) {
+    const claimedAt = clock();
+    if (claimedAt.getTime() + timeoutMs > deadline) break;
+    const claimOwner = `${workerId}:${randomUUID()}`;
     const claimed = await prisma.analyticsDelivery.updateMany({
       where: {
         id: candidate.id,
+        event: { environment },
+        attempts: candidate.attempts,
         OR: [
-          { status: { in: ['pending', 'retrying'] }, nextAttemptAt: { lte: now } },
-          { status: 'processing', leaseExpiresAt: { lt: now } },
+          { status: { in: ['pending', 'retrying'] }, nextAttemptAt: { lte: claimedAt } },
+          { status: 'processing', leaseExpiresAt: { lt: claimedAt } },
         ],
       },
       data: {
         status: 'processing',
-        leaseOwner: workerId,
-        leaseExpiresAt,
+        leaseOwner: claimOwner,
+        leaseExpiresAt: new Date(claimedAt.getTime() + LEASE_MS),
         attempts: { increment: 1 },
-        lastAttemptAt: now,
+        lastAttemptAt: claimedAt,
         errorMessage: null,
       },
     });
@@ -219,38 +230,39 @@ export async function processAnalyticsDeliveries(options: {
     const workItem = toWorkItem(candidate, attempts);
     const sender = options.senders?.[workItem.destination] ?? defaultSenderFor(workItem.destination);
     if (!sender) {
-      await markDelivery(candidate.id, {
+      const updated = await markDelivery(candidate.id, claimOwner, {
         status: 'disabled',
         errorMessage: `${workItem.destination} is not configured.`,
         leaseOwner: null,
         leaseExpiresAt: null,
       });
-      results.disabled += 1;
+      if (updated) results.disabled += 1;
       continue;
     }
 
     try {
-      const sent = await sender(workItem);
-      await markDelivery(candidate.id, {
+      const sent = await sendWithTimeout(sender, workItem, timeoutMs);
+      const updated = await markDelivery(candidate.id, claimOwner, {
         status: 'delivered',
-        deliveredAt: now,
+        deliveredAt: clock(),
         providerAckId: sent.ackId || null,
         errorMessage: null,
         leaseOwner: null,
         leaseExpiresAt: null,
       });
-      results.delivered += 1;
+      if (updated) results.delivered += 1;
     } catch (error) {
       const retry = attempts < MAX_ATTEMPTS;
-      await markDelivery(candidate.id, {
+      const finishedAt = clock();
+      const updated = await markDelivery(candidate.id, claimOwner, {
         status: retry ? 'retrying' : 'failed',
-        nextAttemptAt: retry ? new Date(now.getTime() + retryDelayMs(attempts)) : now,
+        nextAttemptAt: retry ? new Date(finishedAt.getTime() + retryDelayMs(attempts)) : finishedAt,
         errorMessage: error instanceof Error ? error.message.slice(0, 1000) : 'Analytics delivery failed.',
         leaseOwner: null,
         leaseExpiresAt: null,
       });
-      if (retry) results.retrying += 1;
-      else results.failed += 1;
+      if (updated && retry) results.retrying += 1;
+      else if (updated) results.failed += 1;
     }
   }
 
@@ -297,6 +309,7 @@ export async function getAnalyticsDashboardSummary(now = new Date()) {
       select: { anonymousId: true },
     }),
     prisma.analyticsDelivery.groupBy({
+      where: { event: { environment } },
       by: ['destination', 'status'],
       _count: { _all: true },
     }),
@@ -307,7 +320,7 @@ export async function getAnalyticsDashboardSummary(now = new Date()) {
       select: { eventId: true, name: true, anonymousId: true, route: true, occurredAt: true, recordedAt: true },
     }),
     prisma.analyticsDelivery.findMany({
-      where: { status: { in: ['retrying', 'failed'] } },
+      where: { event: { environment }, status: { in: ['retrying', 'failed'] } },
       orderBy: [{ lastAttemptAt: 'desc' }, { nextAttemptAt: 'asc' }],
       take: 10,
       select: { id: true, destination: true, status: true, attempts: true, nextAttemptAt: true, errorMessage: true, event: { select: { name: true, eventId: true } } },
@@ -379,8 +392,25 @@ function toWorkItem(delivery: any, attempts: number): AnalyticsDeliveryWorkItem 
   };
 }
 
-async function markDelivery(id: string, data: Record<string, unknown>) {
-  await prisma.analyticsDelivery.update({ where: { id }, data });
+async function markDelivery(id: string, leaseOwner: string, data: Record<string, unknown>) {
+  const result = await prisma.analyticsDelivery.updateMany({ where: { id, leaseOwner, status: 'processing' }, data });
+  return result.count === 1;
+}
+
+async function sendWithTimeout(sender: DeliverySender, delivery: AnalyticsDeliveryWorkItem, timeoutMs: number) {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error('Analytics delivery timed out.'));
+      controller.abort();
+    }, timeoutMs);
+  });
+  try {
+    return await Promise.race([Promise.resolve().then(() => sender(delivery, controller.signal)), timeout]);
+  } finally {
+    clearTimeout(timer!);
+  }
 }
 
 function retryDelayMs(attempts: number): number {
@@ -405,7 +435,7 @@ async function sendMixpanelDelivery(delivery: AnalyticsDeliveryWorkItem): Promis
     mixpanelClients.set(token, client);
   }
   await new Promise<void>((resolve, reject) => {
-    client.track(delivery.event.name, providerProperties(delivery), (error) => {
+    client.track(delivery.event.name, { ...providerProperties(delivery), $insert_id: delivery.eventId }, (error) => {
       if (error) reject(error);
       else resolve();
     });
@@ -413,12 +443,13 @@ async function sendMixpanelDelivery(delivery: AnalyticsDeliveryWorkItem): Promis
   return { ackId: delivery.eventId };
 }
 
-async function sendGa4Delivery(delivery: AnalyticsDeliveryWorkItem): Promise<{ ackId: string }> {
+async function sendGa4Delivery(delivery: AnalyticsDeliveryWorkItem, signal: AbortSignal): Promise<{ ackId: string }> {
   const measurementId = process.env.GA4_MEASUREMENT_ID;
   const apiSecret = process.env.GA4_API_SECRET;
   if (!measurementId || !apiSecret) throw new Error('GA4 is not configured.');
   const response = await fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${encodeURIComponent(measurementId)}&api_secret=${encodeURIComponent(apiSecret)}`, {
     method: 'POST',
+    signal,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       client_id: delivery.event.anonymousId.replace(/^workout_/, ''),
