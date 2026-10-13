@@ -27,6 +27,7 @@ import {
 import { isE2EMode, loadE2ESeed, saveE2EState } from '@/src/utils/e2eBridge';
 import { AppStateError, loadStateFromPostgres, saveStateToPostgres } from '@/src/utils/postgresState';
 import { calculateCompletedSets, calculateTotalDistance, calculateWorkoutVolume } from '@/src/utils/formatters';
+import type { AnalyticsEventName, AnalyticsPropertiesByEvent, AnalyticsTrackOptions } from '@/src/analytics/events';
 
 interface WorkoutTrackerAppProps {
   initialProfile: UserProfile;
@@ -37,6 +38,14 @@ interface WorkoutTrackerAppProps {
   initialWarmupCheckins?: WarmupCheckins;
   initialTab?: ActiveTab;
 }
+
+type PendingAnalyticsEvent = {
+  [TEvent in AnalyticsEventName]: {
+    event: TEvent;
+    properties: AnalyticsPropertiesByEvent[TEvent];
+    options?: AnalyticsTrackOptions;
+  }
+}[AnalyticsEventName];
 
 export function WorkoutTrackerApp(props: WorkoutTrackerAppProps) {
   return (
@@ -75,6 +84,7 @@ function WorkoutTrackerAppContent({
   const saveQueue = useRef(Promise.resolve());
   const persistenceBlocked = useRef(false);
   const lastSaved = useRef('');
+  const pendingAnalytics = useRef<PendingAnalyticsEvent[]>([]);
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState<boolean>(false);
@@ -90,6 +100,20 @@ function WorkoutTrackerAppContent({
     }),
     [activeWorkout, profile, scheduledSession, trainingPlan, warmupCheckins, workouts]
   );
+
+  const queueAnalyticsAfterPersistence = <TEvent extends AnalyticsEventName>(
+    event: TEvent,
+    properties: AnalyticsPropertiesByEvent[TEvent],
+    options?: AnalyticsTrackOptions
+  ) => {
+    pendingAnalytics.current.push({ event, properties, options } as PendingAnalyticsEvent);
+  };
+
+  const flushPersistedAnalytics = (queued: PendingAnalyticsEvent[]) => {
+    for (const item of queued) {
+      track(item.event, item.properties as never, item.options);
+    }
+  };
 
   useEffect(() => {
     if (isE2EMode()) {
@@ -142,12 +166,16 @@ function WorkoutTrackerAppContent({
     const timer = window.setTimeout(() => {
       saveQueue.current = saveQueue.current.then(async () => {
         if (persistenceBlocked.current || JSON.stringify(appState) === lastSaved.current) return;
+        const analyticsForThisSave = pendingAnalytics.current;
+        pendingAnalytics.current = [];
         try {
           const saved = await saveStateToPostgres({ ...appState, revision: revision.current });
           revision.current = saved.revision!;
           lastSaved.current = JSON.stringify(appState);
           setSyncStatus('Saved.');
+          flushPersistedAnalytics(analyticsForThisSave);
         } catch (error) {
+          pendingAnalytics.current = [...analyticsForThisSave, ...pendingAnalytics.current];
           persistenceBlocked.current = true;
           setSyncStatus(error instanceof Error ? error.message : 'Save failed. Reload before saving.');
         }
@@ -171,9 +199,12 @@ function WorkoutTrackerAppContent({
     setProfile(newProfile);
   };
 
+  useEffect(() => {
+    track('tab_viewed', { tab: activeTab });
+  }, [activeTab, track]);
+
   const handleTabChange = (tab: ActiveTab) => {
     setActiveTab(tab);
-    track('tab_viewed', { tab });
   };
 
   const handleUpdateActiveWorkout = (updated: Workout) => {
@@ -182,7 +213,8 @@ function WorkoutTrackerAppContent({
 
   const handleFinishWorkout = (completedWorkout: Workout) => {
     const finished = { ...completedWorkout, isCompleted: true };
-    track('workout_completed', {
+    queueAnalyticsAfterPersistence('workout_completed', {
+      workout_id: finished.id,
       duration_minutes: finished.durationMinutes,
       exercise_count: finished.exercises.length,
       completed_set_count: calculateCompletedSets(finished),
@@ -199,6 +231,7 @@ function WorkoutTrackerAppContent({
   const handleDiscardActiveWorkout = () => {
     if (activeWorkout) {
       track('workout_discarded', {
+        workout_id: activeWorkout.id,
         duration_minutes: activeWorkout.durationMinutes,
         exercise_count: activeWorkout.exercises.length,
         completed_set_count: calculateCompletedSets(activeWorkout),
@@ -210,7 +243,8 @@ function WorkoutTrackerAppContent({
   const handleDeleteWorkout = (workoutId: string) => {
     const workout = workouts.find((w) => w.id === workoutId);
     if (workout) {
-      track('workout_deleted', {
+      queueAnalyticsAfterPersistence('workout_deleted', {
+        workout_id: workout.id,
         exercise_count: workout.exercises.length,
         completed_set_count: calculateCompletedSets(workout),
       });
@@ -251,10 +285,14 @@ function WorkoutTrackerAppContent({
     setActiveWorkout(newActive);
     setActiveTab('workout');
     track('workout_repeated', {
+      workout_id: newActive.id,
+      source_workout_id: workout.id,
       exercise_count: workout.exercises.length,
       completed_set_count: calculateCompletedSets(workout),
     });
     track('workout_started', {
+      workout_id: newActive.id,
+      source_workout_id: workout.id,
       source: 'history',
       exercise_count: newActive.exercises.length,
     });
@@ -275,6 +313,8 @@ function WorkoutTrackerAppContent({
     };
     setActiveWorkout(newActive);
     track('workout_started', {
+      workout_id: newActive.id,
+      scheduled_session_id: scheduledSession?.id,
       source: 'scratch',
       has_scheduled_session: Boolean(scheduledSession),
       exercise_count: 0,
@@ -299,9 +339,13 @@ function WorkoutTrackerAppContent({
     setScheduledSession(null);
     setActiveTab('workout');
     track('scheduled_session_started', {
+      workout_id: newActive.id,
+      scheduled_session_id: scheduledSession?.id,
       has_notes: Boolean(scheduledSession?.notes?.trim()),
     });
     track('workout_started', {
+      workout_id: newActive.id,
+      scheduled_session_id: scheduledSession?.id,
       source: 'scheduled',
       has_scheduled_session: true,
       exercise_count: 0,
@@ -329,17 +373,19 @@ function WorkoutTrackerAppContent({
       if (Number.isNaN(date.getTime())) throw new Error(`"${value}" is not a valid date.`);
       return date;
     };
-    track('bumstead_edit_applied', { tool: name });
     if (name === 'scheduleSession') {
       const { title, scheduledDate, notes } = input as EditToolInput<'scheduleSession'>;
       const date = validDate(scheduledDate);
-      handleSaveScheduledSession({ id: `session-${Date.now()}`, title, scheduledDate: date.toISOString(), notes: notes || '' });
+      const session = { id: `session-${Date.now()}`, title, scheduledDate: date.toISOString(), notes: notes || '' };
+      handleSaveScheduledSession(session);
+      queueAnalyticsAfterPersistence('bumstead_edit_applied', { tool: name, scheduled_session_id: session.id });
       return `Scheduled "${title}" for ${date.toLocaleString()}.`;
     }
     if (name === 'renameWorkout') {
       const { workoutId, title } = input as EditToolInput<'renameWorkout'>;
       const workout = findWorkout(workoutId);
       handleUpdateWorkoutTitle(workoutId, title);
+      queueAnalyticsAfterPersistence('bumstead_edit_applied', { tool: name, workout_id: workout.id });
       return `Renamed "${workout.title}" to "${title}".`;
     }
     if (name === 'moveWorkoutDate') {
@@ -347,6 +393,7 @@ function WorkoutTrackerAppContent({
       const workout = findWorkout(workoutId);
       const moved = validDate(date);
       handleUpdateWorkoutDate(workoutId, moved.toISOString());
+      queueAnalyticsAfterPersistence('bumstead_edit_applied', { tool: name, workout_id: workout.id });
       return `Moved "${workout.title}" to ${moved.toLocaleDateString()}.`;
     }
     const { exerciseName, category, sets } = input as EditToolInput<'addExerciseToActiveWorkout'>;
@@ -382,6 +429,7 @@ function WorkoutTrackerAppContent({
         })),
       }],
     });
+    queueAnalyticsAfterPersistence('bumstead_edit_applied', { tool: name, workout_id: base.id });
     return `Added ${exerciseName} with ${sets.length} set${sets.length === 1 ? '' : 's'} to ${activeWorkout ? 'your workout' : 'a new workout'}.`;
   };
 

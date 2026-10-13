@@ -1,18 +1,19 @@
 'use client';
 
 import { isE2EMode } from '@/src/utils/e2eBridge';
-import type { AnalyticsEventName, AnalyticsPropertiesByEvent, AnalyticsTrack } from './events';
+import type { AnalyticsEventName, AnalyticsPropertiesByEvent, AnalyticsTrack, AnalyticsTrackOptions } from './events';
 import { getAnalyticsDistinctId } from './identity';
 
 const ANALYTICS_ENDPOINT = '/api/analytics';
 
-export const track: AnalyticsTrack = (event, properties) => {
-  void sendAnalyticsEvent(event, properties);
+export const track: AnalyticsTrack = (event, properties, options) => {
+  void sendAnalyticsEvent(event, properties, options);
 };
 
 async function sendAnalyticsEvent<TEvent extends AnalyticsEventName>(
   event: TEvent,
-  properties: AnalyticsPropertiesByEvent[TEvent]
+  properties: AnalyticsPropertiesByEvent[TEvent],
+  options?: AnalyticsTrackOptions
 ): Promise<void> {
   if (typeof window === 'undefined') return;
   if (process.env.NEXT_PUBLIC_ANALYTICS_ENABLED !== 'true') return;
@@ -33,6 +34,7 @@ async function sendAnalyticsEvent<TEvent extends AnalyticsEventName>(
         distinctId,
         properties,
         route: window.location.pathname,
+        correlationId: options?.correlationId,
       }),
     });
   } catch {

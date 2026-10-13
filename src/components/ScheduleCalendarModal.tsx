@@ -44,16 +44,30 @@ export const ScheduleCalendarModal: React.FC<ScheduleCalendarModalProps> = ({
     return new Date(year, month - 1, day, hours, minutes, 0);
   };
 
+  const createSession = (startDate: Date): ScheduledSession => ({
+    id: `session-${Date.now()}`,
+    title: sessionTitle || 'Workout Session',
+    scheduledDate: startDate.toISOString(),
+    notes: intentionNote,
+  });
+
+  const trackAppSessionSaved = (session: ScheduledSession, startDate: Date) => {
+    onTrack?.('scheduled_session_saved', {
+      scheduled_session_id: session.id,
+      method: 'app_only',
+      duration_minutes: durationMinutes,
+      days_until_session: getDaysUntil(startDate),
+    });
+  };
+
   const handleSaveToDeviceCalendar = () => {
     const startDate = getConstructedStartDate();
-    const session: ScheduledSession = {
-      title: sessionTitle || 'Workout Session',
-      scheduledDate: startDate.toISOString(),
-      notes: intentionNote,
-    };
+    const session = createSession(startDate);
 
     if (onSessionSaved) onSessionSaved(session);
-    onTrack?.('scheduled_session_saved', {
+    trackAppSessionSaved(session, startDate);
+    onTrack?.('scheduled_session_exported', {
+      scheduled_session_id: session.id,
       method: 'device_calendar',
       duration_minutes: durationMinutes,
       days_until_session: getDaysUntil(startDate),
@@ -75,14 +89,12 @@ export const ScheduleCalendarModal: React.FC<ScheduleCalendarModalProps> = ({
 
   const handleOpenGoogleCalendar = () => {
     const startDate = getConstructedStartDate();
-    const session: ScheduledSession = {
-      title: sessionTitle || 'Workout Session',
-      scheduledDate: startDate.toISOString(),
-      notes: intentionNote,
-    };
+    const session = createSession(startDate);
 
     if (onSessionSaved) onSessionSaved(session);
-    onTrack?.('scheduled_session_saved', {
+    trackAppSessionSaved(session, startDate);
+    onTrack?.('scheduled_session_exported', {
+      scheduled_session_id: session.id,
       method: 'google_calendar',
       duration_minutes: durationMinutes,
       days_until_session: getDaysUntil(startDate),
@@ -104,18 +116,10 @@ export const ScheduleCalendarModal: React.FC<ScheduleCalendarModalProps> = ({
 
   const handleSaveAppOnly = () => {
     const startDate = getConstructedStartDate();
-    const session: ScheduledSession = {
-      title: sessionTitle || 'Workout Session',
-      scheduledDate: startDate.toISOString(),
-      notes: intentionNote,
-    };
+    const session = createSession(startDate);
 
     if (onSessionSaved) onSessionSaved(session);
-    onTrack?.('scheduled_session_saved', {
-      method: 'app_only',
-      duration_minutes: durationMinutes,
-      days_until_session: getDaysUntil(startDate),
-    });
+    trackAppSessionSaved(session, startDate);
 
     setToastMessage('✨ Next workout saved!');
     setTimeout(() => {

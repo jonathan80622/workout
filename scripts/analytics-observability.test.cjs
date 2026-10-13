@@ -208,6 +208,56 @@ test('analytics validation rejects unknown events, bad ids, routes, and properti
   assert.equal(validation.event.route, 'unknown');
 });
 
+test('analytics validation accepts PT events and rejects mistyped PT properties', () => {
+  const { validateAnalyticsBody } = load('src/server/observability/analytics.ts');
+  const validPtComment = validateAnalyticsBody({
+    event: 'pt_comment_saved',
+    eventId: 'evt-pt-comment-1',
+    occurredAt: '2026-10-12T10:00:00.000Z',
+    distinctId: 'workout_anon-pt',
+    properties: {
+      client_id: 'client-1',
+      workout_id: 'workout-1',
+      exercise_id: 'exercise-1',
+      comment_scope: 'exercise',
+      comment_length: 42,
+    },
+    route: '/pt',
+  });
+  assert.equal(validPtComment.ok, true);
+
+  const validExposure = validateAnalyticsBody({
+    event: 'pt_exercise_exposed',
+    eventId: 'evt-pt-exposure-1',
+    occurredAt: '2026-10-12T10:00:00.000Z',
+    distinctId: 'workout_anon-pt',
+    properties: {
+      client_id: 'client-1',
+      workout_id: 'workout-1',
+      exercise_id: 'exercise-1',
+      category: 'Quads',
+      completed_set_count: 3,
+      video_count: 1,
+    },
+    route: '/pt',
+  });
+  assert.equal(validExposure.ok, true);
+
+  assert.equal(validateAnalyticsBody({
+    event: 'pt_comment_saved',
+    eventId: 'evt-pt-comment-2',
+    occurredAt: '2026-10-12T10:00:00.000Z',
+    distinctId: 'workout_anon-pt',
+    properties: {
+      client_id: 'client-1',
+      workout_id: 'workout-1',
+      comment_scope: 'workout',
+      comment_length: '42',
+    },
+    route: '/pt',
+  }).ok, false);
+});
+
 test('ingestion creates one canonical event and one delivery per enabled destination idempotently', async () => {
   process.env.GA4_MEASUREMENT_ID = 'G-TEST';
   process.env.GA4_API_SECRET = 'secret';

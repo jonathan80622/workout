@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { CheckCircle2, Circle, Dumbbell, Lock, Maximize2, MessageSquareText, Minimize2, RefreshCw, X } from 'lucide-react';
-import { WorkoutAppState, WorkoutVideo } from '../types';
+import { MuscleGroup, WorkoutAppState, WorkoutVideo } from '../types';
 import { formatWorkoutDate } from '../utils/formatters';
+import { track } from '../analytics/client';
 
 type PtClient = { id: string; label: string; workoutCount: number };
 
@@ -25,10 +26,63 @@ export const PTPortal: React.FC = () => {
   const [comments, setComments] = useState<PTCommentState>({});
   const [expandedVideo, setExpandedVideo] = useState<WorkoutVideo | null>(null);
 
+  const portalRef = useRef<HTMLElement | null>(null);
   const saveQueue = useRef(Promise.resolve());
+  const exposedItems = useRef(new Set<string>());
+
+  useEffect(() => {
+    if (!state || !portalRef.current || typeof IntersectionObserver === 'undefined') return;
+
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const element = entry.target as HTMLElement;
+        const exposureType = element.dataset.ptExposure;
+        const workoutId = element.dataset.workoutId;
+        if (!exposureType || !workoutId) continue;
+
+        const key = `${clientId || 'unknown'}:${exposureType}:${workoutId}:${element.dataset.exerciseId || ''}`;
+        if (exposedItems.current.has(key)) {
+          observer.unobserve(element);
+          continue;
+        }
+        exposedItems.current.add(key);
+        observer.unobserve(element);
+
+        if (exposureType === 'workout') {
+          track('pt_workout_exposed', {
+            client_id: clientId || undefined,
+            workout_id: workoutId,
+            exercise_count: Number(element.dataset.exerciseCount || 0),
+            completed_set_count: Number(element.dataset.completedSetCount || 0),
+            video_count: Number(element.dataset.videoCount || 0),
+          });
+        }
+
+        if (exposureType === 'exercise' && element.dataset.exerciseId && element.dataset.category) {
+          track('pt_exercise_exposed', {
+            client_id: clientId || undefined,
+            workout_id: workoutId,
+            exercise_id: element.dataset.exerciseId,
+            category: element.dataset.category as MuscleGroup,
+            completed_set_count: Number(element.dataset.completedSetCount || 0),
+            video_count: Number(element.dataset.videoCount || 0),
+          });
+        }
+      }
+    }, { threshold: 0.35 });
+
+    portalRef.current.querySelectorAll<HTMLElement>('[data-pt-exposure]').forEach((element) => {
+      observer.observe(element);
+    });
+
+    return () => observer.disconnect();
+  }, [clientId, state]);
+
   const saveComment = (workoutId: string, text: string, exerciseId?: string) => {
     // Captured now, so a comment queued before switching clients still saves to the client it was written for.
     const commentClientId = clientId;
+    const comment_scope = exerciseId ? 'exercise' : 'workout';
     setStatus('Saving comment...');
     saveQueue.current = saveQueue.current.then(async () => {
       try {
@@ -39,14 +93,28 @@ export const PTPortal: React.FC = () => {
         });
         if (!response.ok) throw new Error((await response.json()).error || 'Comment not saved.');
         setStatus('Comment saved.');
+        track('pt_comment_saved', {
+          client_id: commentClientId || undefined,
+          workout_id: workoutId,
+          exercise_id: exerciseId,
+          comment_scope,
+          comment_length: text.trim().length,
+        });
       } catch (error) {
         setStatus(error instanceof Error ? error.message : 'Comment not saved.');
+        track('pt_comment_save_failed', {
+          client_id: commentClientId || undefined,
+          workout_id: workoutId,
+          exercise_id: exerciseId,
+          comment_scope,
+          comment_length: text.trim().length,
+        });
       }
     });
   };
 
   // Loads one client's data. Without a client ID the server picks the client with the most workouts.
-  const loadPortal = async (requestedClientId?: string) => {
+  const loadPortal = async (requestedClientId?: string, previousClientId?: string | null) => {
     setIsLoading(true);
     setStatus(requestedClientId ? 'Loading client...' : 'Checking password...');
 
@@ -60,23 +128,71 @@ export const PTPortal: React.FC = () => {
 
       if (!response.ok) {
         setStatus(data.error || 'Unable to load workout portal.');
+        track('pt_portal_loaded', { status: 'failure' });
         return;
       }
 
       const loaded = data.state as WorkoutAppState;
+      const loadedClientId = data.clientId as string | null;
+      const loadedClients = data.clients as PtClient[];
       setClients(data.clients);
-      setClientId(data.clientId);
+      setClientId(loadedClientId);
       setState(loaded);
       setComments(Object.fromEntries(loaded.workouts.map((workout) => [workout.id, {
         workoutComment: workout.ptComment || '',
         exerciseComments: Object.fromEntries(workout.exercises.map((exercise) => [exercise.id, exercise.ptComment || ''])),
       }])));
       setStatus('Loaded.');
+      track('pt_portal_loaded', {
+        status: 'success',
+        client_id: loadedClientId || undefined,
+        client_count: loadedClients.length,
+        workout_count: loaded.workouts.filter((workout) => workout.isCompleted).length,
+      });
+      if (requestedClientId) {
+        track('pt_client_selected', {
+          client_id: loadedClientId || requestedClientId,
+          previous_client_id: previousClientId || undefined,
+          workout_count: loaded.workouts.filter((workout) => workout.isCompleted).length,
+        });
+      }
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Unable to load workout portal.');
+      track('pt_portal_loaded', { status: 'failure' });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const openVideo = (video: WorkoutVideo) => {
+    setExpandedVideo(video);
+    track('pt_video_opened', {
+      client_id: clientId || undefined,
+      workout_id: video.workoutId,
+      exercise_id: video.exerciseId,
+      video_id: video.id,
+    });
+  };
+
+  const closeVideo = () => {
+    if (expandedVideo) {
+      track('pt_video_closed', {
+        client_id: clientId || undefined,
+        workout_id: expandedVideo.workoutId,
+        exercise_id: expandedVideo.exerciseId,
+        video_id: expandedVideo.id,
+      });
+    }
+    setExpandedVideo(null);
+  };
+
+  const trackCommentFocus = (workoutId: string, exerciseId?: string) => {
+    track('pt_comment_focused', {
+      client_id: clientId || undefined,
+      workout_id: workoutId,
+      exercise_id: exerciseId,
+      comment_scope: exerciseId ? 'exercise' : 'workout',
+    });
   };
 
   const handleWorkoutCommentChange = (workoutId: string, comment: string) => {
@@ -141,7 +257,7 @@ export const PTPortal: React.FC = () => {
   const warmupsDone = state.trainingPlan.warmupMoves.filter((move) => todayWarmups[move.id]).length;
 
   return (
-    <main className="min-h-screen bg-[#0c0a09] text-[#f7f3ee] px-4 py-5">
+    <main ref={portalRef} className="min-h-screen bg-[#0c0a09] text-[#f7f3ee] px-4 py-5">
       <div className="max-w-6xl mx-auto space-y-5">
         <p role="status" className="text-xs text-[#a39588]">{status}</p>
         <header className="border-b border-[#2b241f] pb-4">
@@ -154,7 +270,7 @@ export const PTPortal: React.FC = () => {
               <select
                 value={clientId ?? ''}
                 disabled={isLoading}
-                onChange={(event) => loadPortal(event.target.value)}
+                onChange={(event) => loadPortal(event.target.value, clientId)}
                 className="bg-[#100d0b] border border-[#2b241f] rounded-xl px-2 py-1.5 font-mono text-[#f7f3ee] outline-none focus:ring-1 focus:ring-[#d97724]"
               >
                 {clients.map((client) => (
@@ -223,8 +339,18 @@ export const PTPortal: React.FC = () => {
         ) : (
           completedWorkouts.map((workout) => {
             const workoutComments = comments[workout.id] || { workoutComment: '', exerciseComments: {} };
+            const completedSetCount = workout.exercises.reduce((sum, exercise) => sum + exercise.sets.filter((set) => set.completed).length, 0);
+            const videoCount = workout.exercises.reduce((sum, exercise) => sum + (exercise.videos?.length || 0), 0);
             return (
-              <section key={workout.id} className="bg-[#181412] border border-[#382f29] rounded-3xl p-4 space-y-4">
+              <section
+                key={workout.id}
+                data-pt-exposure="workout"
+                data-workout-id={workout.id}
+                data-exercise-count={workout.exercises.length}
+                data-completed-set-count={completedSetCount}
+                data-video-count={videoCount}
+                className="bg-[#181412] border border-[#382f29] rounded-3xl p-4 space-y-4"
+              >
                 <div>
                   <p className="text-xs text-[#e6a15c] font-syne font-bold">{formatWorkoutDate(workout.date)}</p>
                   <h2 className="text-xl font-serif font-bold">{workout.title}</h2>
@@ -247,6 +373,7 @@ export const PTPortal: React.FC = () => {
                     rows={3}
                     value={workoutComments.workoutComment}
                     onChange={(event) => handleWorkoutCommentChange(workout.id, event.target.value)}
+                    onFocus={() => trackCommentFocus(workout.id)}
                     onBlur={(event) => saveComment(workout.id, event.target.value)}
                     placeholder="Add overall feedback, progression notes, form priorities, or questions for this workout."
                     className="w-full bg-[#181412] border border-[#382f29] rounded-xl p-3 text-sm text-[#f7f3ee] placeholder-[#6b5e54] outline-none focus:ring-1 focus:ring-[#d97724] resize-y min-h-24"
@@ -259,7 +386,16 @@ export const PTPortal: React.FC = () => {
                     const completedSets = exercise.sets.filter((set) => set.completed);
                     const visibleSets = completedSets.length > 0 ? completedSets : exercise.sets;
                     return (
-                      <div key={exercise.id} className="bg-[#100d0b] border border-[#2b241f] rounded-2xl p-3">
+                      <div
+                        key={exercise.id}
+                        data-pt-exposure="exercise"
+                        data-workout-id={workout.id}
+                        data-exercise-id={exercise.id}
+                        data-category={exercise.category}
+                        data-completed-set-count={completedSets.length}
+                        data-video-count={exerciseVideos.length}
+                        className="bg-[#100d0b] border border-[#2b241f] rounded-2xl p-3"
+                      >
                         <div className={`grid gap-4 ${exerciseVideos.length > 0 ? 'lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)]' : ''}`}>
                           {exerciseVideos.length > 0 && (
                             <div className="space-y-3">
@@ -267,7 +403,7 @@ export const PTPortal: React.FC = () => {
                                 <div key={video.id} className="bg-[#181412] border border-[#382f29] rounded-2xl overflow-hidden">
                                   <button
                                     type="button"
-                                    onClick={() => setExpandedVideo(video)}
+                                    onClick={() => openVideo(video)}
                                     className="relative block w-full aspect-video overflow-hidden bg-black text-left group"
                                     title="Watch video"
                                   >
@@ -369,6 +505,7 @@ export const PTPortal: React.FC = () => {
                                 rows={4}
                                 value={workoutComments.exerciseComments[exercise.id] || ''}
                                 onChange={(event) => handleExerciseCommentChange(workout.id, exercise.id, event.target.value)}
+                                onFocus={() => trackCommentFocus(workout.id, exercise.id)}
                                 onBlur={(event) => saveComment(workout.id, event.target.value, exercise.id)}
                                 placeholder="Comment on load, reps, range of motion, tempo, setup, discomfort, or next-session changes."
                                 className="w-full bg-[#181412] border border-[#382f29] rounded-xl p-3 text-xs text-[#f7f3ee] placeholder-[#6b5e54] outline-none focus:ring-1 focus:ring-[#d97724] resize-y min-h-28"
@@ -395,7 +532,7 @@ export const PTPortal: React.FC = () => {
             </div>
             <button
               type="button"
-              onClick={() => setExpandedVideo(null)}
+              onClick={closeVideo}
               className="h-10 px-3 rounded-full bg-[#181412] border border-[#382f29] text-[#f7f3ee] flex items-center gap-2 hover:bg-[#211b18]"
               title="Close expanded player"
             >

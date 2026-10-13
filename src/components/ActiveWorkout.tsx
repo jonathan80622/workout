@@ -111,6 +111,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       exercises: [...workout.exercises, newExercise]
     });
     onTrack?.('exercise_added', {
+      workout_id: workout.id,
+      exercise_id: newExercise.id,
       source: 'active_workout',
       category: historicalExercise.category,
       exercise_count: workout.exercises.length + 1,
@@ -136,6 +138,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       exercises: [...workout.exercises, newExercise]
     });
     onTrack?.('exercise_added', {
+      workout_id: workout.id,
+      exercise_id: newExercise.id,
       source: 'custom',
       category: customCategory,
       exercise_count: workout.exercises.length + 1,
@@ -152,6 +156,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     });
     if (exercise) {
       onTrack?.('exercise_removed', {
+        workout_id: workout.id,
+        exercise_id: exercise.id,
         category: exercise.category,
         remaining_exercise_count: Math.max(0, workout.exercises.length - 1),
       });
@@ -177,6 +183,9 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     });
     if (exercise) {
       onTrack?.('video_uploaded', {
+        workout_id: workout.id,
+        exercise_id: exercise.id,
+        video_id: video.id,
         category: exercise.category,
         duration_seconds: video.durationSeconds,
         existing_video_count: exercise.videos?.length || 0,
@@ -205,6 +214,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     };
     handleUpdateExercise(updated);
     onTrack?.('set_added', {
+      workout_id: workout.id,
+      exercise_id: exercise.id,
       category: exercise.category,
       set_count: updated.sets.length,
       is_cardio: exercise.category === 'Cardio & Running',
@@ -408,6 +419,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                     handleUpdateExercise({ ...exercise, sets: newSets });
                     if (!set.completed && updatedSet.completed) {
                       onTrack?.('set_completed', {
+                        workout_id: workout.id,
+                        exercise_id: exercise.id,
                         category: exercise.category,
                         set_type: updatedSet.type,
                         weight_unit: updatedSet.weightUnit,
