@@ -145,7 +145,7 @@ export default async function ObservabilityDashboardPage() {
                   <span className="font-mono text-[#8c7e72]">{reportMetricSummary(report.metrics)}</span>
                 </div>
               ))}
-              {!analytics.reports.length && <p className="text-sm text-[#8c7e72]">Reports will appear after the analytics cron runs.</p>}
+              {!analytics.reports.length && <p className="text-sm text-[#8c7e72]">Reports appear after an analytics delivery run.</p>}
             </div>
           </section>
         </section>

@@ -325,6 +325,23 @@ test('/api/analytics returns 204 after durable storage even when providers are u
   assert.equal(db.state.deliveries.length, 1);
 });
 
+test('/api/analytics immediately delivers the event it just stored', async () => {
+  const calls = [];
+  mixpanelTrack = (name, properties, callback) => {
+    calls.push({ name, properties });
+    callback(null);
+  };
+  const route = load('app/api/analytics/route.ts');
+  const response = await route.POST(new Request('http://localhost/api/analytics', {
+    method: 'POST',
+    body: JSON.stringify(validBody()),
+  }));
+  assert.equal(response.status, 204);
+  assert.equal(db.state.deliveries[0].status, 'delivered');
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].properties.$insert_id, 'evt-test-1');
+});
+
 test('observability summary only requires a signed-in app session', async () => {
   const session = sessionFor('owner-1');
   db.state.sessions.push(session);

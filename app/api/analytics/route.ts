@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readSessionUserId } from '@/src/server/auth';
-import { recordAnalyticsEvent, validateAnalyticsBody, type AnalyticsBody } from '@/src/server/observability/analytics';
+import { processAnalyticsDeliveries, recordAnalyticsEvent, validateAnalyticsBody, type AnalyticsBody } from '@/src/server/observability/analytics';
 
 export const runtime = 'nodejs';
 
@@ -18,6 +18,13 @@ export async function POST(request: Request) {
   try {
     const result = await recordAnalyticsEvent(validation.event);
     if (debug) console.info('[analytics] recorded event:', result.eventId, result.destinations);
+    if (result.created && result.destinations.length) {
+      try {
+        await processAnalyticsDeliveries({ eventId: result.eventId });
+      } catch (error) {
+        console.error('[analytics] immediate delivery processing failed:', error);
+      }
+    }
   } catch (error) {
     console.error('[analytics] durable ingest failed:', error);
     return NextResponse.json({ error: 'Analytics event could not be recorded.' }, { status: 503 });

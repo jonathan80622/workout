@@ -172,6 +172,7 @@ export async function recordAnalyticsEvent(
 }
 
 export async function processAnalyticsDeliveries(options: {
+  eventId?: string;
   limit?: number;
   now?: Date;
   clock?: () => Date;
@@ -186,8 +187,10 @@ export async function processAnalyticsDeliveries(options: {
   const deadline = now.getTime() + 45_000;
   const limit = options.limit ?? 25;
   const workerId = options.workerId ?? `analytics-${randomUUID()}`;
+  const eventFilter = options.eventId ? { eventId: options.eventId } : {};
   const candidates = await prisma.analyticsDelivery.findMany({
     where: {
+      ...eventFilter,
       event: { environment },
       OR: [
         { status: { in: ['pending', 'retrying'] }, nextAttemptAt: { lte: now } },
