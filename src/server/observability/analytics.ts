@@ -15,6 +15,7 @@ export type AnalyticsBody = {
   properties?: unknown;
   route?: unknown;
   correlationId?: unknown;
+  gaClientId?: unknown;
 };
 
 export type ValidatedAnalyticsEvent = {
@@ -25,6 +26,7 @@ export type ValidatedAnalyticsEvent = {
   userId: string | null;
   anonymousId: string;
   correlationId: string | null;
+  gaClientId: string | null;
   name: keyof typeof analyticsEventConfig;
   route: string;
   properties: Record<string, string | number | boolean>;
@@ -116,6 +118,7 @@ export function validateAnalyticsBody(body: AnalyticsBody | null, userId: string
   const correlationId = typeof body.correlationId === 'string' && body.correlationId.trim()
     ? body.correlationId.trim().slice(0, 120)
     : null;
+  const gaClientId = isValidGaClientId(body.gaClientId) ? body.gaClientId : null;
 
   return {
     ok: true,
@@ -127,6 +130,7 @@ export function validateAnalyticsBody(body: AnalyticsBody | null, userId: string
       userId,
       anonymousId: body.distinctId,
       correlationId,
+      gaClientId,
       name: body.event,
       route,
       properties,
@@ -154,7 +158,10 @@ export async function recordAnalyticsEvent(
           correlationId: event.correlationId,
           name: event.name,
           route: event.route,
-          properties: event.properties as Prisma.InputJsonValue,
+          properties: {
+            ...event.properties,
+            ...(event.gaClientId ? { _ga_client_id: event.gaClientId } : {}),
+          } as Prisma.InputJsonValue,
         },
       });
     }
@@ -368,6 +375,10 @@ function isValidEventId(value: unknown): boolean {
   return value == null || (typeof value === 'string' && value.length >= 8 && value.length <= 120 && /^[A-Za-z0-9._:-]+$/.test(value));
 }
 
+function isValidGaClientId(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0 && value.length <= 120 && /^[A-Za-z0-9._-]+$/.test(value);
+}
+
 function parseOccurredAt(value: unknown, fallback: Date): Date | null {
   if (value == null) return fallback;
   if (typeof value !== 'string') return null;
@@ -433,6 +444,7 @@ async function sendMixpanelDelivery(delivery: AnalyticsDeliveryWorkItem): Promis
   if (!client) {
     client = mixpanel.init(token, {
       debug: process.env.ANALYTICS_DEBUG === 'true',
+      verbose: true,
       geolocate: false,
     });
     mixpanelClients.set(token, client);
@@ -455,11 +467,15 @@ async function sendGa4Delivery(delivery: AnalyticsDeliveryWorkItem, signal: Abor
     signal,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      client_id: delivery.event.anonymousId.replace(/^workout_/, ''),
+      client_id: gaClientIdFor(delivery) || delivery.event.anonymousId.replace(/^workout_/, ''),
       timestamp_micros: String(delivery.event.occurredAt.getTime() * 1000),
       events: [{
         name: delivery.event.name,
-        params: providerProperties(delivery),
+        params: {
+          ...providerProperties(delivery),
+          engagement_time_msec: 1,
+          ...(process.env.ANALYTICS_DEBUG === 'true' ? { debug_mode: true } : {}),
+        },
       }],
     }),
   });
@@ -468,8 +484,9 @@ async function sendGa4Delivery(delivery: AnalyticsDeliveryWorkItem, signal: Abor
 }
 
 function providerProperties(delivery: AnalyticsDeliveryWorkItem) {
+  const { _ga_client_id: _gaClientId, ...properties } = delivery.event.properties;
   return {
-    ...delivery.event.properties,
+    ...properties,
     distinct_id: delivery.event.anonymousId,
     app: 'workout',
     env: delivery.event.environment,
@@ -478,4 +495,9 @@ function providerProperties(delivery: AnalyticsDeliveryWorkItem) {
     event_id: delivery.event.eventId,
     correlation_id: delivery.event.correlationId || undefined,
   };
+}
+
+function gaClientIdFor(delivery: AnalyticsDeliveryWorkItem): string | null {
+  const value = delivery.event.properties._ga_client_id;
+  return typeof value === 'string' ? value : null;
 }

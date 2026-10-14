@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -11,9 +12,24 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const gaMeasurementId = process.env.GA4_MEASUREMENT_ID;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {gaMeasurementId && (
+          <>
+            <Script src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(gaMeasurementId)}`} strategy="afterInteractive" />
+            <Script id="ga4-initializer" strategy="afterInteractive">
+              {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+window.gtag = gtag;
+window.__workoutGaMeasurementId = ${JSON.stringify(gaMeasurementId)};
+gtag('js', new Date());
+gtag('config', window.__workoutGaMeasurementId, { send_page_view: false });`}
+            </Script>
+          </>
+        )}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

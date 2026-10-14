@@ -10,6 +10,7 @@ const root = path.resolve(__dirname, '..');
 let cache;
 let db;
 let mixpanelTrack;
+let mixpanelInitOptions;
 const originalEnv = { ...process.env };
 
 function load(file) {
@@ -21,7 +22,10 @@ function load(file) {
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   const localRequire = (name) => {
     if (name === '@/src/server/db') return { prisma: new Proxy({}, { get: (_, key) => key === '$transaction' ? async (fn) => fn(db) : db[key] }) };
-    if (name === 'mixpanel') return { default: { init: () => ({ track: (...args) => mixpanelTrack(...args) }) } };
+    if (name === 'mixpanel') return { default: { init: (_token, options) => {
+      mixpanelInitOptions = options;
+      return { track: (...args) => mixpanelTrack(...args) };
+    } } };
     if (name.startsWith('@/')) return load(name.slice(2));
     if (name.startsWith('.')) return load(path.resolve(path.dirname(file), name));
     return Module.createRequire(file)(name);
@@ -194,6 +198,7 @@ beforeEach(() => {
   cache = new Map();
   db = fakeObservabilityDatabase();
   mixpanelTrack = (_event, _properties, cb) => cb(new Error('network unavailable'));
+  mixpanelInitOptions = undefined;
   process.env.VERCEL_ENV = 'production';
   delete process.env.CRON_SECRET;
   delete process.env.OBSERVABILITY_CRON_SECRET;
@@ -340,6 +345,24 @@ test('/api/analytics immediately delivers the event it just stored', async () =>
   assert.equal(db.state.deliveries[0].status, 'delivered');
   assert.equal(calls.length, 1);
   assert.equal(calls[0].properties.$insert_id, 'evt-test-1');
+  assert.equal(mixpanelInitOptions.verbose, true);
+});
+
+test('analytics persists a valid GA client ID without forwarding it as an event property', async () => {
+  const { validateAnalyticsBody, recordAnalyticsEvent, processAnalyticsDeliveries } = load('src/server/observability/analytics.ts');
+  const validation = validateAnalyticsBody({ ...validBody(), gaClientId: '123456789.123456789' });
+  assert.equal(validation.ok, true);
+  assert.equal(validation.event.gaClientId, '123456789.123456789');
+  await recordAnalyticsEvent(validation.event, ['mixpanel']);
+  const calls = [];
+  mixpanelTrack = (name, properties, callback) => {
+    calls.push({ name, properties });
+    callback(null);
+  };
+  await processAnalyticsDeliveries();
+  assert.equal(db.state.events[0].properties._ga_client_id, '123456789.123456789');
+  assert.equal(calls[0].properties._ga_client_id, undefined);
+  assert.equal(validateAnalyticsBody({ ...validBody(), gaClientId: 'bad id' }).event?.gaClientId, null);
 });
 
 test('observability summary only requires a signed-in app session', async () => {

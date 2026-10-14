@@ -5,6 +5,10 @@ import type { AnalyticsEventName, AnalyticsPropertiesByEvent, AnalyticsTrack, An
 import { getAnalyticsDistinctId } from './identity';
 
 const ANALYTICS_ENDPOINT = '/api/analytics';
+type AnalyticsWindow = Window & {
+  __workoutGaMeasurementId?: string;
+  gtag?: (command: 'get', measurementId: string, field: 'client_id', callback: (value: unknown) => void) => void;
+};
 
 export const track: AnalyticsTrack = (event, properties, options) => {
   void sendAnalyticsEvent(event, properties, options);
@@ -20,6 +24,7 @@ async function sendAnalyticsEvent<TEvent extends AnalyticsEventName>(
 
   const distinctId = getAnalyticsDistinctId();
   if (!distinctId) return;
+  const gaClientId = await getGaClientId();
 
   try {
     await fetch(ANALYTICS_ENDPOINT, {
@@ -34,11 +39,26 @@ async function sendAnalyticsEvent<TEvent extends AnalyticsEventName>(
         properties,
         route: window.location.pathname,
         correlationId: options?.correlationId,
+        gaClientId,
       }),
     });
   } catch {
     // Analytics is intentionally non-blocking.
   }
+}
+
+function getGaClientId(): Promise<string | undefined> {
+  const analyticsWindow = window as AnalyticsWindow;
+  const measurementId = analyticsWindow.__workoutGaMeasurementId;
+  if (!measurementId || !analyticsWindow.gtag) return Promise.resolve(undefined);
+
+  return new Promise((resolve) => {
+    const timeout = window.setTimeout(() => resolve(undefined), 500);
+    analyticsWindow.gtag!('get', measurementId, 'client_id', (value) => {
+      window.clearTimeout(timeout);
+      resolve(typeof value === 'string' && value.length <= 120 ? value : undefined);
+    });
+  });
 }
 
 function createEventId(): string {
