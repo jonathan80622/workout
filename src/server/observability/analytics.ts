@@ -61,6 +61,13 @@ export type AnalyticsDeliveryWorkItem = {
   };
 };
 
+export type AnalyticsProviderCanaryResult = {
+  eventName: 'analytics_provider_canary';
+  nonce: string;
+  mixpanel: { configured: boolean; status: number | null; accepted: boolean; result: unknown };
+  ga4: { configured: boolean; collectionStatus: number | null; validationStatus: number | null; validation: unknown };
+};
+
 const SCHEMA_VERSION = 1;
 const MAX_ATTEMPTS = 8;
 const LEASE_MS = 60_000;
@@ -73,8 +80,96 @@ export function observabilityEnvironment(): string {
 export function enabledAnalyticsDestinations(): AnalyticsDestinationName[] {
   const destinations: AnalyticsDestinationName[] = [];
   if (process.env.MIXPANEL_PROJECT_TOKEN) destinations.push('mixpanel');
+  return destinations;
+}
+
+export function configuredAnalyticsDestinations(): AnalyticsDestinationName[] {
+  const destinations = enabledAnalyticsDestinations();
   if (process.env.GA4_MEASUREMENT_ID && process.env.GA4_API_SECRET) destinations.push('ga4');
   return destinations;
+}
+
+export async function verifyAnalyticsProviders(): Promise<AnalyticsProviderCanaryResult> {
+  const nonce = randomUUID();
+  const occurredAt = new Date();
+  const eventName = 'analytics_provider_canary' as const;
+  const mixpanelToken = process.env.MIXPANEL_PROJECT_TOKEN;
+  const measurementId = process.env.GA4_MEASUREMENT_ID;
+  const apiSecret = process.env.GA4_API_SECRET;
+
+  const mixpanel = mixpanelToken
+    ? await verifyMixpanelCanary(mixpanelToken, eventName, nonce, occurredAt)
+    : { configured: false, status: null, accepted: false, result: 'MIXPANEL_PROJECT_TOKEN is not configured.' };
+  const ga4 = measurementId && apiSecret
+    ? await verifyGa4Canary(measurementId, apiSecret, eventName, nonce, occurredAt)
+    : { configured: false, collectionStatus: null, validationStatus: null, validation: 'GA4_MEASUREMENT_ID or GA4_API_SECRET is not configured.' };
+
+  return { eventName, nonce, mixpanel, ga4 };
+}
+
+async function verifyMixpanelCanary(token: string, eventName: string, nonce: string, occurredAt: Date) {
+  try {
+    const payload = {
+      event: eventName,
+      properties: {
+        token,
+        distinct_id: `analytics_canary_${nonce}`,
+        $insert_id: nonce,
+        time: Math.floor(occurredAt.getTime() / 1000),
+        source: 'provider_verification',
+      },
+    };
+    const response = await fetch(`https://${mixpanelApiHost()}/track?verbose=1`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ data: Buffer.from(JSON.stringify(payload)).toString('base64') }),
+    });
+    const result = await responseJsonOrText(response);
+    return {
+      configured: true,
+      status: response.status,
+      accepted: response.ok && isMixpanelAccepted(result),
+      result,
+    };
+  } catch (error) {
+    return { configured: true, status: null, accepted: false, result: error instanceof Error ? error.message : 'Mixpanel canary failed.' };
+  }
+}
+
+async function verifyGa4Canary(measurementId: string, apiSecret: string, eventName: string, nonce: string, occurredAt: Date) {
+  try {
+    const payload = {
+      client_id: `999999999.${occurredAt.getTime()}`,
+      timestamp_micros: String(occurredAt.getTime() * 1000),
+      events: [{ name: eventName, params: { event_id: nonce, source: 'provider_verification', engagement_time_msec: 1, debug_mode: true } }],
+    };
+    const query = new URLSearchParams({ measurement_id: measurementId, api_secret: apiSecret });
+    const [collection, validation] = await Promise.all([
+      fetch(`https://www.google-analytics.com/mp/collect?${query}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+      fetch(`https://www.google-analytics.com/debug/mp/collect?${query}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+    ]);
+    return {
+      configured: true,
+      collectionStatus: collection.status,
+      validationStatus: validation.status,
+      validation: await responseJsonOrText(validation),
+    };
+  } catch (error) {
+    return { configured: true, collectionStatus: null, validationStatus: null, validation: error instanceof Error ? error.message : 'GA4 canary failed.' };
+  }
+}
+
+function isMixpanelAccepted(result: unknown): boolean {
+  return typeof result === 'object' && result !== null && 'status' in result && (result as { status?: unknown }).status === 1;
+}
+
+async function responseJsonOrText(response: Response): Promise<unknown> {
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text.slice(0, 1_000);
+  }
 }
 
 export function validateAnalyticsBody(body: AnalyticsBody | null, userId: string | null = null, now = new Date()): AnalyticsValidation {
@@ -344,7 +439,7 @@ export async function getAnalyticsDashboardSummary(now = new Date()) {
 
   return {
     environment,
-    configuredDestinations: enabledAnalyticsDestinations(),
+    configuredDestinations: configuredAnalyticsDestinations(),
     windowDays: 7,
     eventCount,
     uniqueAnonymousIds: uniqueRows.length,
@@ -446,6 +541,7 @@ async function sendMixpanelDelivery(delivery: AnalyticsDeliveryWorkItem): Promis
       debug: process.env.ANALYTICS_DEBUG === 'true',
       verbose: true,
       geolocate: false,
+      host: mixpanelApiHost(),
     });
     mixpanelClients.set(token, client);
   }
@@ -456,6 +552,14 @@ async function sendMixpanelDelivery(delivery: AnalyticsDeliveryWorkItem): Promis
     });
   });
   return { ackId: delivery.eventId };
+}
+
+function mixpanelApiHost(): string {
+  const host = process.env.MIXPANEL_API_HOST || 'api.mixpanel.com';
+  if (host !== 'api.mixpanel.com' && host !== 'api-eu.mixpanel.com') {
+    throw new Error('MIXPANEL_API_HOST must be api.mixpanel.com or api-eu.mixpanel.com.');
+  }
+  return host;
 }
 
 async function sendGa4Delivery(delivery: AnalyticsDeliveryWorkItem, signal: AbortSignal): Promise<{ ackId: string }> {

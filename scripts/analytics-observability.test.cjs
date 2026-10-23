@@ -276,7 +276,7 @@ test('analytics validation accepts PT events and rejects mistyped PT properties'
   }).ok, false);
 });
 
-test('ingestion creates one canonical event and one delivery per enabled destination idempotently', async () => {
+test('ingestion creates one canonical event and a Mixpanel delivery idempotently', async () => {
   process.env.GA4_MEASUREMENT_ID = 'G-TEST';
   process.env.GA4_API_SECRET = 'secret';
   const { validateAnalyticsBody, recordAnalyticsEvent } = load('src/server/observability/analytics.ts');
@@ -287,7 +287,7 @@ test('ingestion creates one canonical event and one delivery per enabled destina
   assert.equal(first.created, true);
   assert.equal(second.created, false);
   assert.equal(db.state.events.length, 1);
-  assert.deepEqual(db.state.deliveries.map((row) => row.destination).sort(), ['ga4', 'mixpanel']);
+  assert.deepEqual(db.state.deliveries.map((row) => row.destination).sort(), ['mixpanel']);
 });
 
 test('delivery worker marks success, retry, and final failure without double-claiming rows', async () => {

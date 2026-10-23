@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Activity, AlertTriangle, BarChart3, Bot, CheckCircle2, Database, RefreshCw } from 'lucide-react';
 import { requireObservabilityViewerOrThrow } from '@/src/server/observability/auth';
 import { getAnalyticsDashboardSummary } from '@/src/server/observability/analytics';
+import { AnalyticsProviderVerification } from '@/src/components/AnalyticsProviderVerification';
 
 export const dynamic = 'force-dynamic';
 
@@ -96,6 +97,7 @@ export default async function ObservabilityDashboardPage() {
 
             <section className="border border-[#382f29] bg-[#181412]">
               <PanelTitle title="Provider Delivery" subtitle="Per-destination delivery status and retry backlog." />
+              <AnalyticsProviderVerification />
               <div className="space-y-3 p-4">
                 <div className="flex flex-wrap gap-2">
                   {(['mixpanel', 'ga4'] as const).map((destination) => (

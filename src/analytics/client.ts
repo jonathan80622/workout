@@ -7,7 +7,10 @@ import { getAnalyticsDistinctId } from './identity';
 const ANALYTICS_ENDPOINT = '/api/analytics';
 type AnalyticsWindow = Window & {
   __workoutGaMeasurementId?: string;
-  gtag?: (command: 'get', measurementId: string, field: 'client_id', callback: (value: unknown) => void) => void;
+  gtag?: {
+    (command: 'get', measurementId: string, field: 'client_id', callback: (value: unknown) => void): void;
+    (command: 'event', event: string, parameters: Record<string, string | number | boolean>): void;
+  };
 };
 
 export const track: AnalyticsTrack = (event, properties, options) => {
@@ -24,6 +27,7 @@ async function sendAnalyticsEvent<TEvent extends AnalyticsEventName>(
 
   const distinctId = getAnalyticsDistinctId();
   if (!distinctId) return;
+  sendGa4BrowserEvent(event, properties);
   const gaClientId = await getGaClientId();
 
   try {
@@ -45,6 +49,19 @@ async function sendAnalyticsEvent<TEvent extends AnalyticsEventName>(
   } catch {
     // Analytics is intentionally non-blocking.
   }
+}
+
+function sendGa4BrowserEvent<TEvent extends AnalyticsEventName>(
+  event: TEvent,
+  properties: AnalyticsPropertiesByEvent[TEvent]
+): void {
+  const analyticsWindow = window as AnalyticsWindow;
+  if (!analyticsWindow.__workoutGaMeasurementId || !analyticsWindow.gtag) return;
+
+  analyticsWindow.gtag('event', event, {
+    ...properties,
+    page_path: window.location.pathname,
+  });
 }
 
 function getGaClientId(): Promise<string | undefined> {
