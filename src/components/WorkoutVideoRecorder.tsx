@@ -10,6 +10,8 @@ interface WorkoutVideoRecorderProps {
   exercise: ExerciseLog;
   videos: WorkoutVideo[];
   onVideoUploaded: (video: WorkoutVideo) => void;
+  /** The review card supplies a common gallery; recorder only owns upload. */
+  showVideos?: boolean;
 }
 
 export const WorkoutVideoRecorder: React.FC<WorkoutVideoRecorderProps> = ({
@@ -17,6 +19,7 @@ export const WorkoutVideoRecorder: React.FC<WorkoutVideoRecorderProps> = ({
   exercise,
   videos,
   onVideoUploaded,
+  showVideos = true,
 }) => {
   const [status, setStatus] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
@@ -95,7 +98,7 @@ export const WorkoutVideoRecorder: React.FC<WorkoutVideoRecorderProps> = ({
 
       {status && <p className="text-[11px] text-[#a39588]">{status}</p>}
 
-      {videos.length > 0 && (
+      {showVideos && videos.length > 0 && (
         <div className="space-y-3">
           {videos.slice(0, 3).map((video) => (
             <div key={video.id} className="bg-[#181412] border border-[#382f29] rounded-2xl overflow-hidden">

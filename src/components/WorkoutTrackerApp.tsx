@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Workout, ActiveTab, WorkoutAppState, TrainingPlan, WarmupCheckins } from '@/src/types';
+import { Workout, ActiveTab, WorkoutAppState, TrainingPlan, WarmupCheckins, WorkoutVideo } from '@/src/types';
 import type { EditToolInput } from '@/src/chat/editTools';
 import { UserProfile } from '@/src/utils/storage';
 import { ScheduledSession } from '@/src/utils/calendar';
@@ -486,6 +486,26 @@ function WorkoutTrackerAppContent({
     ));
   };
 
+  const handleUpdateWorkoutPtComment = (workoutId: string, ptComment: string) => {
+    setWorkouts((prev) => prev.map((workout) => workout.id === workoutId ? { ...workout, ptComment } : workout));
+  };
+
+  const handleHistoricalVideoUploaded = (workoutId: string, exerciseId: string, video: WorkoutVideo) => {
+    const exercise = workouts.find((workout) => workout.id === workoutId)?.exercises.find((candidate) => candidate.id === exerciseId);
+    setWorkouts((prev) => prev.map((workout) => workout.id !== workoutId ? workout : {
+      ...workout,
+      exercises: workout.exercises.map((exercise) => exercise.id === exerciseId ? { ...exercise, videos: [video, ...(exercise.videos || [])] } : exercise),
+    }));
+    queueAnalyticsAfterPersistence('video_uploaded', {
+      workout_id: workoutId,
+      exercise_id: exerciseId,
+      video_id: video.id,
+      category: exercise?.category || 'Chest',
+      duration_seconds: video.durationSeconds,
+      existing_video_count: 0,
+    });
+  };
+
 
   return (
     <div
@@ -580,7 +600,9 @@ function WorkoutTrackerAppContent({
               onStartNewWorkout={handleStartNewWorkoutFromScratch}
               onUpdateWorkoutTitle={handleUpdateWorkoutTitle}
               onUpdateWorkoutDate={handleUpdateWorkoutDate}
+              onUpdateWorkoutPtComment={handleUpdateWorkoutPtComment}
               onUpdateExercisePtComment={handleUpdateExercisePtComment}
+              onVideoUploaded={handleHistoricalVideoUploaded}
               onTrack={track}
             />
           )}
