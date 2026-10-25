@@ -62,6 +62,18 @@ test('empty startup and normalization never invent sample workouts or picker ent
   assert.deepEqual(getHistoricalExercises([]), []);
 });
 
+test('historical exercise choices retain the most recently logged set without adding defaults', () => {
+  const [exercise] = getHistoricalExercises([{
+    id: 'workout-1', date: '2026-10-24T12:00:00.000Z', isCompleted: true, title: 'Upper', durationMinutes: 30, unit: 'lbs', exercises: [{
+      id: 'exercise-1', exerciseName: 'Cable Row', category: 'Lats & Back', seatSettings: 'Seat 3', sets: [
+        { id: 'set-1', setNumber: 1, type: 'warmup', weight: 70, weightUnit: 'lbs', reps: 12, completed: true },
+        { id: 'set-2', setNumber: 2, type: 'working', weight: 115, weightUnit: 'lbs', reps: 8, completed: true },
+      ],
+    }],
+  }]);
+  assert.deepEqual(exercise.lastSet, { weight: 115, weightUnit: 'lbs', reps: 8 });
+});
+
 test('legacy names become exerciseName without losing sets, videos, or feedback', () => {
   const input = structuredClone(seed);
   const exercise = input.workouts[0].exercises[0];

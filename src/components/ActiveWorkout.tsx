@@ -99,11 +99,16 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       exerciseName: historicalExercise.name,
       category: historicalExercise.category,
       seatSettings: historicalExercise.seatSettings,
-      sets: [
-        { id: 's-' + Date.now() + '-1', setNumber: 1, type: 'warmup', weight: 80, weightUnit: 'lbs', reps: 12, completed: false },
-        { id: 's-' + Date.now() + '-2', setNumber: 2, type: 'working', weight: 120, weightUnit: 'lbs', reps: 10, completed: false },
-        { id: 's-' + Date.now() + '-3', setNumber: 3, type: 'working', weight: 140, weightUnit: 'lbs', reps: 10, completed: false }
-      ],
+      // Start from the most recent logged load; the user can add a warmup if they want one.
+      sets: historicalExercise.lastSet ? [{
+        id: 's-' + Date.now() + '-1',
+        setNumber: 1,
+        type: 'working',
+        weight: historicalExercise.lastSet.weight,
+        weightUnit: historicalExercise.lastSet.weightUnit,
+        reps: historicalExercise.lastSet.reps,
+        completed: false,
+      }] : [],
     };
 
     onUpdateWorkout({
